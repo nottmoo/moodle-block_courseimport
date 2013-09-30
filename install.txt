@@ -1,0 +1,23 @@
+Installation Notes
+==================
+Pre-requisites
+==============
+You must have access to the server containing Moodle. This can be direct access,
+through a network or to a remote server through Internet with an FTP client,
+you can't do it from "inside" Moodle itself.
+
+INSTALLATION
+============
+1.  Latest version of the zipped file for this plug is available from
+https://workspace.nottingham.ac.uk/display/ISLT/1308A-Mo0084+Content+Copy
+2.  Unzip the zipped file somewhere on your local computer
+3.  Upload the unzipped folder to  blocks/ folder on the Moodle servers
+4.  Alternatively the zip file can be uploaded to the folder in step 3 and the zipped file unzipped on the servers.
+5.  Ensure that the folder has the same permissions and owner as the other folders in the directory -
+
+    1.  chown -R apache:apache courseimport
+    2.  chmod -R 755 courseimport
+
+6.  In your browser, go to your Moodle site, login as administrator and
+    choose Site Administration > Notifications  and click on the Continue Button.
+7.  Moodle will report successful completion or any errors.

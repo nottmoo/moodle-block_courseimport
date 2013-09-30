@@ -1,0 +1,111 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+//define('BLOCK_COURSELIFE_NOTARCHIVED', '0'); define('BLOCK_COURSELIFE_ARCHIVED', '1');
+
+/**
+ * findfilesize
+ *
+ * @param resource id
+ * @return fileinfo object
+ */
+function findfilesize($id) {
+    global $DB;
+    $fileinfo = new stdClass;
+    $fileinfo->fsize = "";
+    $fileinfo->ftype = "";
+    $context = null;
+    if (!$cm = get_coursemodule_from_id('resource', $id)) {
+        return false;
+    } else {
+        $cm = get_coursemodule_from_id('resource', $id); //$cm = get_coursemodule_from_instance('resource', $resource->id, $resource->course, false, MUST_EXIST);
+        $resource = $DB->get_record('resource', array('id' => $cm->instance), '*', MUST_EXIST);
+        $context = get_context_instance(CONTEXT_MODULE, $cm->id);
+
+        $fs = get_file_storage();
+        $files = $fs->get_area_files($context->id, 'mod_resource', 'content', 0, 'sortorder DESC, id ASC', false); // TODO: this is not very efficient!!
+
+        if (count($files) < 1) {
+            resource_print_filenotfound($resource, $cm, $course);
+            return false;
+
+        } else {
+            $file = reset($files);
+            unset($files);
+            $fileinfo->fsize = $file->get_filesize();
+            $fileinfo->ftype = $file->get_mimetype();
+            return $fileinfo;
+        }
+    }
+}
+
+/**
+ *  timecheck function : check if time now between param start and end
+ *
+ * @param string start time
+ * @param string start end
+ * @return true/false
+ */
+function timecheck($start,$end) {
+    $time =date("G:i:s");
+    $time1 = strtotime($time); 
+    $resttimefrom = strtotime($start);
+    $resttimeto = strtotime($end);
+
+    if ($resttimefrom < $resttimeto) {
+        if (($time1 >$resttimefrom ) and ($time1 <$resttimeto)) {
+            return true;
+        } else {
+            return false;
+        }
+    } 
+    if ($resttimefrom > $resttimeto) {
+        if ((($time1 > $resttimefrom)  and ($time1 >$resttimeto)) or (($time1 < $resttimefrom)  and ($time1 <$resttimeto))) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+/**
+ *  casting function
+ *
+ * @param string|object $destination
+ * @param object $sourceObject
+ * @return object
+ */
+
+function cast($destination, $sourceobject) {
+    if (is_string($destination)) {
+        $destination = new $destination();
+    }
+    $sourcereflection = new ReflectionObject($sourceobject);
+    $destinationreflection = new ReflectionObject($destination);
+    $sourceproperties = $sourcereflection->getProperties();
+    foreach ($sourceproperties as $sourceproperty) {
+        $sourceproperty->setAccessible(true);
+        $name = $sourceproperty->getName();
+        $value = $sourceproperty->getValue($sourceobject);
+        if ($destinationreflection->hasProperty($name)) {
+            $propdest = $destinationreflection->getProperty($name);
+            $propdest->setAccessible(true);
+            $propdest->setValue($destination, $value);
+        } else {
+            $destination->$name = $value;
+        }
+    }
+    return $destination;
+}
