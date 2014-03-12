@@ -28,33 +28,6 @@ require_once($CFG->dirroot . '/backup/util/ui/import_extensions.php');
 class new_import_course_search extends import_course_search
 {
     /**
-     * Search course with similar shortname but same code
-     */
-    /*final public function searchshortname($coursecode, $shortnamestr) {
-        global $DB;
-        global $COURSE;
-        $contextlevel = 50;
-
-        if ((!is_null($this->shortnameresults)) or (empty($coursecode))) {
-            return $this->shortnameresults;
-        }
-        $this->shortnameresults = array();
-
-        $searchsql = 'select c.id,c.fullname,c.shortname,c.visible,c.sortorder ,
-        ctx.id AS ctxid, ctx.path AS ctxpath, ctx.depth AS ctxdepth, ctx.contextlevel AS ctxlevel,
-        ctx.instanceid AS ctxinstance
-        FROM {course} c
-        LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = 50)
-        where ((LOWER(c.shortname) LIKE (\'%' . $coursecode . '%\')) and (c.shortname <> \'' . $shortnamestr . '\') and (c.id <> ' . SITEID . '))';
-        //To count only use this: $countsql = 'select count(*) as cid FROM {course} c where ((LOWER(c.shortname) LIKE (\' %' . $coursecode . '%\')) AND (c.shortname <> \'' . $str . ' \')) AND (c.id <> SITEID)';
-        $resultsetshortname = $DB->get_records_sql($searchsql);
-        foreach ($resultsetshortname as $result) {
-            $this->shortnameresults[$result->id] = $result;
-        }
-        return count($resultsetshortname); //$this->shortnameresultscount;
-    }*/
-
-    /**
      *
      * @global moodle_database $DB
      */
