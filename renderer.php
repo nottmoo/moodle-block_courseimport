@@ -46,7 +46,7 @@ class block_courseimport_renderer extends core_backup_renderer
      * @return string
      */
     public function progress_bar(array $items) {
-    global $OUTPUT;
+    global $OUTPUT, $OUTPUT;
         foreach ($items as &$item) {
             $text = $item['text'];
             unset($item['text']);
@@ -61,9 +61,9 @@ class block_courseimport_renderer extends core_backup_renderer
         $filefilter='';
         $setsize = get_config('block_courseimport', 'filesize');
 
-        $fnotice = str_replace ('###',$setsize, get_string('filternotice', 'block_courseimport'));
+        $fnotice = get_string('filternotice', 'block_courseimport', array('size' => $setsize));
         $filefilter .= html_writer::tag('div', join(get_separator(), $items), array('class' => 'backup_progress clearfix'));
-        $filefilter .= html_writer::tag('div', $fnotice , array());
+        $filefilter .= $OUTPUT->notification($fnotice, 'notifymessage');
         //$filefilter .= $OUTPUT->help_icon('bigfilesetting','block_courseimport');
         return $filefilter ;
         //return html_writer::tag('div', join(get_separator(), $items), array('class' => 'backup_progress clearfix'));
