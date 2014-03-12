@@ -63,7 +63,7 @@ $renderer = $PAGE->get_renderer('block_courseimport');
 // Check if we already have a import course id
 if ($importcourseid === false) {
     $url = new moodle_url('/blocks/courseimport/import.php', array('id' => $courseid));
-    $search = new restore_course_search_import(array('url' => $url),$courseid);
+    $search = new new_import_course_search(array('url' => $url),$courseid);
     $search = cast('new_import_course_search', $search);
     // show the course selector
     echo $OUTPUT->header();
@@ -190,7 +190,7 @@ if ($backup->enforce_changed_dependencies()) {
     echo $renderer->dependency_notification(get_string('dependenciesenforced', 'backup'));
 }
 echo $renderer->progress_bar($backup->get_progress_bar());
-echo $backup->display();
+echo $backup->display($renderer);
 $backup->destroy();
 unset($backup);
 echo $OUTPUT->footer();
