@@ -33,7 +33,7 @@ set_time_limit(0);
 raise_memory_limit(MEMORY_EXTRA);
 
 $timesetting = get_config('block_courseimport', 'crontime');
-if (($timesetting) and (!empty($timesetting))) { 
+if (($timesetting) and (!empty($timesetting))) {
     echo "Time ranges setting " . $timesetting . "\n";
     $ranges = explode("==", $timesetting);
     $checkresult = false;
@@ -44,7 +44,7 @@ if (($timesetting) and (!empty($timesetting))) {
         } else {
             echo "\ntime ranges set in the block admin's setting page ( $range )is not in right format and it blocked import process, die now ! \n";
             die();
-        }     
+        }
       }
     if ($checkresult == 0 ) {
         echo "\n time ranges set in the block admin's setting page blocked import process die now ! \n";
@@ -60,7 +60,7 @@ $argument1 = $argv[1]; // blocks/courseimport/newbackup.php 0 or 1.  if 0 stop, 
 //333333:backup file created
 echo "\n -- Passed argument -- $argument1 --\n";
 
-if ($argument1 === 0) { 
+if ($argument1 === 0) {
     $table = 'block_courseimport';
     $select = "status ='222222'";
     $counter = $DB->count_records_select($table, $select);
@@ -95,7 +95,7 @@ if ($argument1 === 1) {
 die();
 }
 //Start jobs
-$countstopjobs =$DB->count_records_sql('SELECT * FROM {block_courseimport} where status ="444444"');
+$countstopjobs = $DB->count_records_sql('SELECT COUNT(*) FROM {block_courseimport} where status ="444444"');
 $results = $DB->get_records_sql('SELECT * FROM {block_courseimport} where status ="222222" order by id asc');
 //Need countstopjobs to avoid execut any new added job.
 if ( !empty($results) && ($countstopjobs > 0) ) {
@@ -114,9 +114,9 @@ if ( !empty($results) && ($countstopjobs > 0) ) {
         // The target method for the restore (adding or deleting)
         $restoretarget = 1;
         $userid = $firstcourse->userid;
-        
+
         echo "\n Userid:$userid--ImportToCourseid:$courseid ---ImportFromCourseid:$targetcourseid , create backup for $targetcourseid now. \n";
-        
+
         $bc = backup_ui::load_controller($importid);
         $backup = new block_courseimport_import_ui($bc, array('importid' => $importid, 'target' => $restoretarget));
         $backup->execute();
@@ -155,7 +155,7 @@ if ( !empty($results) && ($countstopjobs > 0) ) {
             echo "\n --Job " . $importid . " finished --" . date('l jS \of F Y h:i:s A') . " \n";
         }
     }
-    
+
     unset($results);
     die();
 }
