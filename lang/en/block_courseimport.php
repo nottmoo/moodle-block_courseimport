@@ -29,3 +29,5 @@ $string['infotime'] = "Here you can set when to run the import job.</br> For exa
 $string['askroleinfo'] = "<h2 class='header'>You dont have permission on below modules, You could contact module's owner to ask a Editting Teacher role on a module to do import.</h2>";
 $string['videofile'] = 'Note:&nbsp;The&nbsp;above&nbsp;video&nbsp;file&nbsp;will&nbsp;not&nbsp;be&nbsp;imported.';
 $string['bigfile'] = 'Note:&nbsp;Above&nbsp;file&nbsp;size&nbsp;is&nbsp;too&nbsp;big&nbsp;to&nbsp;be&nbsp;imported.';
+$string['courseimport:manage'] = 'See and change settings for the course import block';
+$string['courseimport:view'] = 'Use the course import block functionality';
