@@ -153,7 +153,7 @@ abstract class restore_search_base_import implements renderable
 
     /**
      * Invalidates the results collected so far
-     */    
+     */
     final public function invalidate_results() {
         $this->results = null;
         $this->totalcount = null;
@@ -184,14 +184,14 @@ abstract class restore_search_base_import implements renderable
 
         if ((!is_null($this->shortnameresults)) or (empty($coursecode))) {
             return $this->shortnameresults;
-        } 
+        }
         $this->shortnameresults = array();
-        
+
         $searchsql = 'select c.id,c.fullname,c.shortname,c.visible,c.sortorder ,
         ctx.id AS ctxid, ctx.path AS ctxpath, ctx.depth AS ctxdepth, ctx.contextlevel AS ctxlevel,
         ctx.instanceid AS ctxinstance
-        FROM {course} c 
-        LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = 50) 
+        FROM {course} c
+        LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = 50)
         where ((LOWER(c.shortname) LIKE (\'%' . $coursecode . '%\')) and (c.shortname <> \'' . $shortnamestr . '\') and (c.id <> ' . SITEID . '))';
         //To count only use this: $countsql = 'select count(*) as cid FROM {course} c where ((LOWER(c.shortname) LIKE (\' %' . $coursecode . '%\')) AND (c.shortname <> \'' . $str . ' \')) AND (c.id <> SITEID)';
         $resultsetshortname = $DB->get_records_sql($searchsql);
@@ -240,7 +240,8 @@ abstract class restore_search_base_import implements renderable
         $resultset = $DB->get_records_sql($sql, $params, $offs, $blocksz);
             foreach ($resultset as $result) {
                 context_instance_preload($result);
-                $context = get_context_instance($contextlevel, $result->id);
+                $contextclassname = context_helper::get_class_for_level($contextlevel);
+                $context = $contextclassname::instance($result->id);
                 if (count($requiredcaps) > 0) {
                     if (!has_all_capabilities($requiredcaps, $context, $userid)) {
                         continue;
@@ -252,7 +253,7 @@ abstract class restore_search_base_import implements renderable
                     break;
                 }*/
             }
-             
+
             //$offs += $blocksz;
         //}
         return $this->totalcount;

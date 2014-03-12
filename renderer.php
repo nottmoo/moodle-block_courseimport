@@ -61,7 +61,7 @@ class block_courseimport_renderer extends plugin_renderer_base
         }
         $filefilter='';
         $setsize = get_config('block_courseimport', 'filesize');
-        
+
         $fnotice = str_replace ('###',$setsize, get_string('filternotice', 'block_courseimport'));
         $filefilter .= html_writer::tag('div', join(get_separator(), $items), array('class' => 'backup_progress clearfix'));
         $filefilter .= html_writer::tag('div', $fnotice , array());
@@ -220,7 +220,7 @@ class block_courseimport_renderer extends plugin_renderer_base
      * Displays a course selector for restore
      *
      * @param moodle_url $nextstageurl
-     * @param bool $wholecourse true if we are restoring whole course 
+     * @param bool $wholecourse true if we are restoring whole course
      * (as with backup::TYPE_1COURSE), false otherwise
      * @param restore_category_search $categories
      * @param restore_course_search $courses
@@ -538,8 +538,8 @@ class block_courseimport_renderer extends plugin_renderer_base
                 }
                 $row->cells = array(
                     html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'targetid', 'value' => $course->id)),
-                    format_string($course->shortname, true, array('context' => get_context_instance(CONTEXT_COURSE, $course->id))),
-                    format_string($course->fullname, true, array('context' => get_context_instance(CONTEXT_COURSE, $course->id)))
+                    format_string($course->shortname, true, array('context' => context_course::instance($course->id))),
+                    format_string($course->fullname, true, array('context' => context_course::instance($course->id)))
                 );
                 $table->data[] = $row;
             }
@@ -599,25 +599,25 @@ class block_courseimport_renderer extends plugin_renderer_base
         $table->data = array();
         $shortnamestr = strtolower($COURSE->shortname);
         $coursecode = strtolower(substr($shortnamestr, 0, strpos($shortnamestr, '-')));
-        
+
         $yearcode = substr($shortnamestr, -4);
         $isyearnum =is_numeric($yearcode);
-        
-        
+
+
         $colist = null;
         if(strlen($coursecode) >= 4) {
-            $colist = $component->get_shortnameresults($coursecode ,$shortnamestr);    
+            $colist = $component->get_shortnameresults($coursecode ,$shortnamestr);
         } else {
             //$coursecode = "unknowcourseshortname";
             $coursecode = substr($shortnamestr,0,-4);// this is for unsaturn course
         }
-        
+
         $highlightguard = true;
         $highlight = false;
         $cids = array();
 
         foreach ($component->get_results() as $course) {
-        
+
             $cid = $course->id;
             //$cids[]=$course->id;
             if ((! is_null($colist)) and (array_key_exists($cid, $colist))) {
@@ -635,31 +635,31 @@ class block_courseimport_renderer extends plugin_renderer_base
             $thisyearcode = substr($cshortname, -4); // a year cord for other course
             $isthisyearnum =is_numeric($thisyearcode);
             $uuu = strpos($cshortname, $coursecode);
-           
+
             //check if thisyearcode > yearcode for select
             if (($uuu === 0) and $isthisyearnum and $isyearnum and !$highlight) {
                 if ( (int)$thisyearcode < (int)$yearcode ) { // this course is old course with same code
                     $highlight = true;
                 }
             }
-            //echo "===" . $uuu ."===" . $cshortname ."===" . $coursecode . "=====" . $thisyearcode . "===== $highlight ======" . $yearcode . "</br>"; 
+            //echo "===" . $uuu ."===" . $cshortname ."===" . $coursecode . "=====" . $thisyearcode . "===== $highlight ======" . $yearcode . "</br>";
             if (($highlight === true) and ($highlightguard === true)) {
                 $cshortname = "<b>$cshortname</b>";
                 $row->cells = array(
                     //html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $cid, 'checked'=>1)),
                     html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $cid)),
                     $cshortname,
-                    format_string($course->fullname, true, array('context' => get_context_instance(CONTEXT_COURSE, $course->id))),
-                    format_string($cid, true, array('context' => get_context_instance(CONTEXT_COURSE, $cid)))
+                    format_string($course->fullname, true, array('context' => context_course::instance($course->id))),
+                    format_string($cid, true, array('context' => context_course::instance($cid)))
                 );
                 array_unshift($table->data,$row);
                 $highlightguard = false;
             } else {
                 $row->cells = array(
                     html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $cid)),
-                    format_string($cshortname, true, array('context' => get_context_instance(CONTEXT_COURSE, $cid))),
-                    format_string($course->fullname, true, array('context' => get_context_instance(CONTEXT_COURSE, $cid))),
-                    format_string($cid, true, array('context' => get_context_instance(CONTEXT_COURSE, $cid)))
+                    format_string($cshortname, true, array('context' => context_course::instance($cid))),
+                    format_string($course->fullname, true, array('context' => context_course::instance($cid))),
+                    format_string($cid, true, array('context' => context_course::instance($cid)))
                 );
                 $table->data[] = $row;
             }
@@ -672,7 +672,7 @@ class block_courseimport_renderer extends plugin_renderer_base
         } else {
             $searchstr=trim($_REQUEST["search"]);
         }
-        
+
             //echo "<input type='hidden' value='-----$searchstr----' name='checkserver'>";
         // course list for shortname search is not treat as original course list
         if ((! is_null($colist)) and (count($colist) >0) and ($searchstr === "")) {
@@ -690,8 +690,8 @@ class block_courseimport_renderer extends plugin_renderer_base
                 $row->cells = array(
                     //html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $id, 'disabled' => 'disabled')),
                     "",
-                    format_string($course->shortname, true, array('context' => get_context_instance(CONTEXT_COURSE, $id))),
-                    format_string($course->fullname, true, array('context' => get_context_instance(CONTEXT_COURSE, $id))),
+                    format_string($course->shortname, true, array('context' => context_course::instance($id))),
+                    format_string($course->fullname, true, array('context' => context_course::instance($id))),
                     $id
                 );
                 $table->data[] = $row;
@@ -735,7 +735,7 @@ class block_courseimport_renderer extends plugin_renderer_base
                 }
                 $row->cells = array(
                     html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'targetid', 'value' => $category->id)),
-                    format_string($category->name, true, array('context' => get_context_instance(CONTEXT_COURSECAT, $category->id))),
+                    format_string($category->name, true, array('context' => context_coursecat::instance($category->id))),
                     format_text($category->description, $category->descriptionformat, array('overflowdiv' => true))
                 );
                 $table->data[] = $row;
@@ -765,5 +765,5 @@ class block_courseimport_renderer extends plugin_renderer_base
         $output .= html_writer::end_tag('div');
         return $output;
     }
-    
+
 }

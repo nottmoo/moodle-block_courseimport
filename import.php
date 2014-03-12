@@ -44,7 +44,7 @@ $importcourseid = optional_param('importid', false, PARAM_INT);
 $restoretarget = 1;
 // Load the course and context
 $course = $DB->get_record('course', array('id' => $courseid), '*', MUST_EXIST);
-$context = get_context_instance(CONTEXT_COURSE, $courseid);
+$context = context_course::instance($courseid);
 // Must pass login
 require_login($course);
 // Must hold restoretargetimport in the current course
@@ -75,7 +75,7 @@ if ($importcourseid === false) {
 }
 // Load the course +context to import from
 $importcourse = $DB->get_record('course', array('id' => $importcourseid), '*', MUST_EXIST);
-$importcontext = get_context_instance(CONTEXT_COURSE, $importcourseid);
+$importcontext = context_course::instance($importcourseid);
 // Make sure the user can backup from that course
 require_capability('moodle/backup:backuptargetimport', $importcontext);
 // Attempt to load the existing backup controller (backupid will be false if there isn't one)
@@ -116,7 +116,7 @@ if ($backup->get_stage() === 2) {
             $pos1 = strpos($setname, 'resource_');
             $pos2 = strpos($setname, '_included');
             $resourceid = '';
-            //here check forum 
+            //here check forum
             if(preg_match('/^forum_[0-9]+_[a-z]+/' ,$setname)===1) {
                 $setting->set_value("0");
                 $setting->make_ui(10, "<b>$tname</b>", array('disabled' => true), null);
@@ -142,9 +142,9 @@ if ($backup->get_stage() === 2) {
                         $setting->set_status(7);
                     } else {
                     if ($tsize >= $limitsize){
-                        $setting->set_value("0"); 
+                        $setting->set_value("0");
                         $bigfile =get_string('bigfile', 'block_courseimport');
-                        $setting->make_ui(10, "$tname <b><u>$bigfile</u></b>", array('disabled' => true), null); 
+                        $setting->make_ui(10, "$tname <b><u>$bigfile</u></b>", array('disabled' => true), null);
                         $setting->set_status(7);
                     }
                     }

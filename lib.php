@@ -33,7 +33,7 @@ function findfilesize($id) {
     } else {
         $cm = get_coursemodule_from_id('resource', $id); //$cm = get_coursemodule_from_instance('resource', $resource->id, $resource->course, false, MUST_EXIST);
         $resource = $DB->get_record('resource', array('id' => $cm->instance), '*', MUST_EXIST);
-        $context = get_context_instance(CONTEXT_MODULE, $cm->id);
+        $context = context_module::instance($cm->id);
 
         $fs = get_file_storage();
         $files = $fs->get_area_files($context->id, 'mod_resource', 'content', 0, 'sortorder DESC, id ASC', false); // TODO: this is not very efficient!!
@@ -61,7 +61,7 @@ function findfilesize($id) {
  */
 function timecheck($start,$end) {
     $time =date("G:i:s");
-    $time1 = strtotime($time); 
+    $time1 = strtotime($time);
     $resttimefrom = strtotime($start);
     $resttimeto = strtotime($end);
 
@@ -71,7 +71,7 @@ function timecheck($start,$end) {
         } else {
             return false;
         }
-    } 
+    }
     if ($resttimefrom > $resttimeto) {
         if ((($time1 > $resttimefrom)  and ($time1 >$resttimeto)) or (($time1 < $resttimefrom)  and ($time1 <$resttimeto))) {
             return true;

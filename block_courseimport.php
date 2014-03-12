@@ -78,7 +78,7 @@ class block_courseimport extends block_base
 
             $this->content = new stdClass;
             $this->content->text = '';
-            $coursecontext = get_context_instance(CONTEXT_COURSE, $COURSE->id);
+            $coursecontext = context_course::instance($COURSE->id);
 
             if (has_capability('block/courseimport:view', $coursecontext)
                 && has_capability('moodle/course:update', $coursecontext)
