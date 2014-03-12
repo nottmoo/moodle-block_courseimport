@@ -91,6 +91,9 @@ class block_courseimport extends block_base
         }
     }
 
+    public function has_config() {
+        return true;
+    }
 
     public function instance_delete() {
         global $DB;
