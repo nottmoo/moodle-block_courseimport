@@ -24,7 +24,7 @@ $string['pluginname'] = 'Course Import';
 $string['importlink'] = 'Course Import';
 $string['filetype'] = 'File type';
 $string['jobdone'] = 'Your module is now queued for import';
-$string['filternotice'] = "</br><ul><b><li>To improve the experience of Moodle for students, files larger than ### MB or any video files will not be imported.  Please download each file and use the [Equella file upload] resource to add these items to your module.</li><li>Please note, forums and Turnitin assignments on the module will not be imported.</li></b></ul></br>";
+$string['filternotice'] = '<ul><li>To improve the experience of Moodle for students, files larger than {$a->size} MB or any video files will not be imported.  Please download each file and use the [Equella file upload] resource to add these items to your module.</li><li>Please note, forums and Turnitin assignments on the module will not be imported.</li></ul>';
 $string['infotime'] = "Here you can set when to run the import job. For example, If you want define 3 time ranges:
 
  * 02:12-04:15
@@ -45,3 +45,5 @@ $string['videofile'] = 'Note:&nbsp;The&nbsp;above&nbsp;video&nbsp;file&nbsp;will
 $string['bigfile'] = 'Note:&nbsp;Above&nbsp;file&nbsp;size&nbsp;is&nbsp;too&nbsp;big&nbsp;to&nbsp;be&nbsp;imported.';
 $string['courseimport:manage'] = 'See and change settings for the course import block';
 $string['courseimport:view'] = 'Use the course import block functionality';
+$string['max_file_size'] = 'File size limit (MB) ';
+$string['time'] = 'Cron time';
