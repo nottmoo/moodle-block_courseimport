@@ -35,10 +35,9 @@
  */
 
 require_once($CFG->dirroot . '/blocks/courseimport/lib.php');
-//require_once($CFG->dirroot . '/lib/outputcomponents.php ');
+require_once($CFG->dirroot . '/backup/util/ui/renderer.php');
 
-//class core_import_backup_renderer extends plugin_renderer_base {
-class block_courseimport_renderer extends plugin_renderer_base
+class block_courseimport_renderer extends core_backup_renderer
 {
     /**
      * Renderers a progress bar for the backup or restore given the items that
@@ -301,7 +300,7 @@ class block_courseimport_renderer extends plugin_renderer_base
      * @param import_course_search $courses
      * @return string
      */
-    public function import_course_selector(moodle_url $nextstageurl, new_import_course_search $courses = null) {
+    public function import_course_selector(moodle_url $nextstageurl, import_course_search $courses = null) {
         //$courses = cast('import_course_search',$courses);
         $html = html_writer::start_tag('div', array('class' => 'import-course-selector backup-restore'));
         $html .= html_writer::start_tag('form', array('method' => 'post', 'action' => $nextstageurl->out_omit_querystring()));
