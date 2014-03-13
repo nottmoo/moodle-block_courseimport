@@ -28,6 +28,58 @@ require_once($CFG->dirroot . '/backup/util/ui/import_extensions.php');
 class new_import_course_search extends import_course_search
 {
     /**
+     * The results of the search
+     * @var array|null
+     */
+    private $shortnameresults = null;
+
+    /**
+     * Returns an array of results from the search
+     * @return array
+     */
+    public function get_shortnameresults($coursecode, $shortnamestr) {
+        if ($this->shortnameresults === null) {
+            $this->searchshortname($coursecode, $shortnamestr);
+        }
+        return $this->shortnameresults;
+    }
+
+    /**
+     * Search course with similar shortname but same code
+     */
+    public function searchshortname($coursecode, $shortnamestr) {
+        global $DB;
+        global $COURSE;
+        $contextlevel = 50;
+
+        if ((!is_null($this->shortnameresults)) or (empty($coursecode))) {
+            return $this->shortnameresults;
+        }
+        $this->shortnameresults = array();
+
+        $params = array(
+            'shortnamestr' => $shortnamestr,
+            'siteid' => SITEID,
+            'coursecode' => "%$coursecode%",
+            );
+
+        $likesql = $DB->sql_like('LOWER(c.shortname)', ':coursecode');
+
+        $searchsql = 'SELECT c.id,c.fullname,c.shortname,c.visible,c.sortorder ,
+        ctx.id AS ctxid, ctx.path AS ctxpath, ctx.depth AS ctxdepth, ctx.contextlevel AS ctxlevel,
+        ctx.instanceid AS ctxinstance
+        FROM {course} c
+        LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = 50)
+        WHERE (('.$likesql.') and (LOWER(c.shortname) <> :shortnamestr) and (c.id <> :siteid))';
+
+        $resultsetshortname = $DB->get_records_sql($searchsql, $params);
+        foreach ($resultsetshortname as $result) {
+            $this->shortnameresults[$result->id] = $result;
+        }
+        return count($resultsetshortname); //$this->shortnameresultscount;
+    }
+
+    /**
      *
      * @global moodle_database $DB
      */
