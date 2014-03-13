@@ -40,7 +40,7 @@ Time ranges are seperated by ==  with no space in string
 You can define any number of time ranges.
 
 <b>The imput is not validated. Moodle will ignore any times if there is a error with it.</b>.";
-$string['askroleinfo'] = "<h2 class='header'>You dont have permission on below modules, You could contact module's owner to ask a Editting Teacher role on a module to do import.</h2>";
+$string['askroleinfo'] = "You do not have permission to import from the modules below. You should contact module's owner to ask for the Editing Teacher role if you wish to import from one.";
 $string['videofile'] = 'Note:&nbsp;The&nbsp;above&nbsp;video&nbsp;file&nbsp;will&nbsp;not&nbsp;be&nbsp;imported.';
 $string['bigfile'] = 'Note:&nbsp;Above&nbsp;file&nbsp;size&nbsp;is&nbsp;too&nbsp;big&nbsp;to&nbsp;be&nbsp;imported.';
 $string['courseimport:manage'] = 'See and change settings for the course import block';
