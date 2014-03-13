@@ -39,6 +39,7 @@ require_once($CFG->dirroot . '/backup/util/settings/base_setting.class.php');
 $courseid = required_param('id', PARAM_INT);
 // The id of the course we are importing FROM (will only be set if past first stage
 $importcourseid = optional_param('importid', false, PARAM_INT);
+$search = optional_param('searchcourses', false, PARAM_INT);
 
 // The target method for the restore (adding or deleting)
 $restoretarget = 1;
@@ -61,7 +62,7 @@ $shortname = $COURSE->shortname;
 $coursecode = substr($shortname, 0, strpos($shortname, '-'));
 $renderer = $PAGE->get_renderer('block_courseimport');
 // Check if we already have a import course id
-if ($importcourseid === false) {
+if ($importcourseid === false || $search !== false) {
     $url = new moodle_url('/blocks/courseimport/import.php', array('id' => $courseid));
     $search = new new_import_course_search(array('url' => $url),$courseid);
     $search = cast('new_import_course_search', $search);
