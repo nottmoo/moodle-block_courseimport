@@ -68,6 +68,12 @@ $capabilities = array(
         'archetypes' => array(
             'manager' => CAP_ALLOW
         )
-    )
-
+    ),
+    // Capability to allow a user to add the block to a page.
+    'block/courseimport:addinstance' => array(
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_BLOCK,
+        'archetypes' => array(
+        ),
+    ),
 );
