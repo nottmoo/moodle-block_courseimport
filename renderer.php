@@ -129,7 +129,7 @@ class block_courseimport_renderer extends core_backup_renderer
             }
             //echo "===" . $uuu ."===" . $cshortname ."===" . $coursecode . "=====" . $thisyearcode . "===== $highlight ======" . $yearcode . "</br>";
             if (($highlight === true) and ($highlightguard === true)) {
-                $cshortname = "<b>$cshortname</b>";
+                $cshortname = html_writer::tag('strong', $cshortname);
                 $row->cells = array(
                     //html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $cid, 'checked'=>1)),
                     html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $cid)),
