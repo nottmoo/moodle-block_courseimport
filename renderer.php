@@ -129,15 +129,15 @@ class block_courseimport_renderer extends core_backup_renderer
             }
             //echo "===" . $uuu ."===" . $cshortname ."===" . $coursecode . "=====" . $thisyearcode . "===== $highlight ======" . $yearcode . "</br>";
             if (($highlight === true) and ($highlightguard === true)) {
-                $cshortname = html_writer::tag('strong', $cshortname);
+                $cshortname = html_writer::tag('strong', format_string($cshortname, true, array('context' => context_course::instance($cid))));
                 $row->cells = array(
                     //html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $cid, 'checked'=>1)),
-                    html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $cid)),
+                    html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $cid, 'checked' => 'checked')),
                     $cshortname,
-                    format_string($course->fullname, true, array('context' => context_course::instance($course->id))),
-                    format_string($cid, true, array('context' => context_course::instance($cid)))
+                    html_writer::tag('strong', format_string($course->fullname, true, array('context' => context_course::instance($course->id)))),
+                    html_writer::tag('strong', format_string($cid, true, array('context' => context_course::instance($cid))))
                 );
-                array_unshift($table->data,$row);
+                array_unshift($table->data, $row);
                 $highlightguard = false;
             } else {
                 $row->cells = array(
