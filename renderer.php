@@ -134,7 +134,7 @@ class block_courseimport_renderer extends core_backup_renderer
                     //html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $cid, 'checked'=>1)),
                     html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $cid, 'checked' => 'checked')),
                     $cshortname,
-                    html_writer::tag('strong', format_string($course->fullname, true, array('context' => context_course::instance($course->id)))),
+                    html_writer::tag('strong', format_string($course->fullname, true, array('context' => context_course::instance($cid)))),
                     html_writer::tag('strong', format_string($cid, true, array('context' => context_course::instance($cid))))
                 );
                 array_unshift($table->data, $row);
