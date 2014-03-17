@@ -60,7 +60,7 @@ function findfilesize($id) {
  * @return true/false
  */
 function timecheck($start,$end) {
-    $time =date("G:i:s");
+    $time = date("G:i:s");
     $time1 = strtotime($time);
     $resttimefrom = strtotime($start);
     $resttimeto = strtotime($end);
