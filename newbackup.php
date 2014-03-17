@@ -40,7 +40,7 @@ if (($timesetting) and (!empty($timesetting))) {
     foreach($ranges as $range) {
          if(preg_match('/^(([0-1][0-9]|[2][0-3]):([0-5][0-9])-([0-1][0-9]|[2][0-3]):([0-5][0-9]))/' ,$range)===1) {
             $rlist = explode("-", $range);
-            $checkresult += timecheck($rlist[0],$rlist[1]);
+            $checkresult += block_courseimport_timecheck($rlist[0],$rlist[1]);
         } else {
             echo "\ntime ranges set in the block admin's setting page ( $range )is not in right format and it blocked import process, die now ! \n";
             die();

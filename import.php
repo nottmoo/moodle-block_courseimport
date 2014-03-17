@@ -129,7 +129,7 @@ if ($backup->get_stage() === 2) {
             }
             if (($pos1 !== false) && ($pos2 !== false)) {
                 $resourceid = str_replace("_included", "", str_replace("resource_", "", $setname));
-                $afile = findfilesize($resourceid);
+                $afile = block_courseimport_findfilesize($resourceid);
                 if ($afile !== false) {
                     $ttype = $afile->ftype;
                     $tsize = (int)$afile->fsize;

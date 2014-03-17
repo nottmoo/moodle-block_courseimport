@@ -22,7 +22,7 @@
  * @param resource id
  * @return fileinfo object
  */
-function findfilesize($id) {
+function block_courseimport_findfilesize($id) {
     global $DB;
     $fileinfo = new stdClass;
     $fileinfo->fsize = "";
@@ -59,21 +59,21 @@ function findfilesize($id) {
  * @param string start end
  * @return true/false
  */
-function timecheck($start,$end) {
+function block_courseimport_timecheck($start, $end) {
     $time = date("G:i:s");
     $time1 = strtotime($time);
     $resttimefrom = strtotime($start);
     $resttimeto = strtotime($end);
 
     if ($resttimefrom < $resttimeto) {
-        if (($time1 >$resttimefrom ) and ($time1 <$resttimeto)) {
+        if (($time1 > $resttimefrom ) and ($time1 < $resttimeto)) {
             return true;
         } else {
             return false;
         }
     }
     if ($resttimefrom > $resttimeto) {
-        if ((($time1 > $resttimefrom)  and ($time1 >$resttimeto)) or (($time1 < $resttimefrom)  and ($time1 <$resttimeto))) {
+        if ((($time1 > $resttimefrom)  and ($time1 > $resttimeto)) or (($time1 < $resttimefrom)  and ($time1 < $resttimeto))) {
             return true;
         } else {
             return false;
