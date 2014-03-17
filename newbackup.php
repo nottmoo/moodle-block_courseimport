@@ -54,45 +54,45 @@ if (($timesetting) and (!empty($timesetting))) {
 
 $argument1 = null;
 if (isset($argv[1])) {
-$argument1 = $argv[1]; // blocks/courseimport/newbackup.php 0 or 1.  if 0 stop, if 1 start
-//222222:job waiting
-//444444:block jobs
-//333333:backup file created
-echo "\n -- Passed argument -- $argument1 --\n";
+    $argument1 = $argv[1]; // blocks/courseimport/newbackup.php 0 or 1.  if 0 stop, if 1 start
+    //222222:job waiting
+    //444444:block jobs
+    //333333:backup file created
+    echo "\n -- Passed argument -- $argument1 --\n";
 
-if ($argument1 === 0) {
-    $table = 'block_courseimport';
-    $select = "status ='222222'";
-    $counter = $DB->count_records_select($table, $select);
-    echo "-- Jobs count -- $counter --\n";
-    if ($counter > 1) {
-        //get all jobs except 1st, as it is running
-        echo "\n-- Block all jobs except 1st --\n";
-        $sql = 'SELECT t2.* FROM {block_courseimport} t1 JOIN {block_courseimport} t2 ON t1.id + 1 = t2.id';
+    if ($argument1 === 0) {
+        $table = 'block_courseimport';
+        $select = "status ='222222'";
+        $counter = $DB->count_records_select($table, $select);
+        echo "-- Jobs count -- $counter --\n";
+        if ($counter > 1) {
+            //get all jobs except 1st, as it is running
+            echo "\n-- Block all jobs except 1st --\n";
+            $sql = 'SELECT t2.* FROM {block_courseimport} t1 JOIN {block_courseimport} t2 ON t1.id + 1 = t2.id';
+            $results = $DB->get_records_sql($sql);
+            foreach ($results as $result) {
+                $temprecord = new stdClass();
+                $temprecord->id = $result->id;
+                $temprecord->status = 444444;
+                $temprecord->timemodified = time();
+                $DB->update_record('block_courseimport', $temprecord);
+            }
+            echo "\n All jobs been blocked except 1st \n";
+        }
+    }
+    if ($argument1 === 1) {
+        $sql = 'SELECT * FROM {block_courseimport} where status = 444444';
         $results = $DB->get_records_sql($sql);
         foreach ($results as $result) {
             $temprecord = new stdClass();
             $temprecord->id = $result->id;
-            $temprecord->status = 444444;
+            $temprecord->status = 222222;
             $temprecord->timemodified = time();
             $DB->update_record('block_courseimport', $temprecord);
         }
-        echo "\n All jobs been blocked except 1st \n";
+        echo "\n change stauts to restart processing \n";
     }
-}
-if ($argument1 === 1) {
-    $sql = 'SELECT * FROM {block_courseimport} where status = 444444';
-    $results = $DB->get_records_sql($sql);
-    foreach ($results as $result) {
-        $temprecord = new stdClass();
-        $temprecord->id = $result->id;
-        $temprecord->status = 222222;
-        $temprecord->timemodified = time();
-        $DB->update_record('block_courseimport', $temprecord);
-    }
-    echo "\n change stauts to restart processing \n";
-}
-die();
+    die();
 }
 //Start jobs
 $countstopjobs = $DB->count_records_sql('SELECT COUNT(*) FROM {block_courseimport} where status ="444444"');
