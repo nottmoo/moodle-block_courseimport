@@ -80,32 +80,3 @@ function timecheck($start,$end) {
         }
     }
 }
-/**
- *  casting function
- *
- * @param string|object $destination
- * @param object $sourceObject
- * @return object
- */
-
-function cast($destination, $sourceobject) {
-    if (is_string($destination)) {
-        $destination = new $destination();
-    }
-    $sourcereflection = new ReflectionObject($sourceobject);
-    $destinationreflection = new ReflectionObject($destination);
-    $sourceproperties = $sourcereflection->getProperties();
-    foreach ($sourceproperties as $sourceproperty) {
-        $sourceproperty->setAccessible(true);
-        $name = $sourceproperty->getName();
-        $value = $sourceproperty->getValue($sourceobject);
-        if ($destinationreflection->hasProperty($name)) {
-            $propdest = $destinationreflection->getProperty($name);
-            $propdest->setAccessible(true);
-            $propdest->setValue($destination, $value);
-        } else {
-            $destination->$name = $value;
-        }
-    }
-    return $destination;
-}

@@ -65,7 +65,6 @@ $renderer = $PAGE->get_renderer('block_courseimport');
 if ($importcourseid === false || $search !== false) {
     $url = new moodle_url('/blocks/courseimport/import.php', array('id' => $courseid));
     $search = new new_import_course_search(array('url' => $url),$courseid);
-    $search = cast('new_import_course_search', $search);
     // show the course selector
     echo $OUTPUT->header();
     //here find and list the user's course
