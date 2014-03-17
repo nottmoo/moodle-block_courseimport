@@ -25,7 +25,7 @@ require_once($CFG->dirroot . '/backup/util/ui/import_extensions.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-class new_import_course_search extends import_course_search
+class block_courseimport_search extends import_course_search
 {
     /**
      * The results of the search

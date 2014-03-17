@@ -62,7 +62,7 @@ class block_courseimport_renderer extends core_backup_renderer
      * @param import_course_search $component
      * @return string
      */
-    public function render_new_import_course_search(new_import_course_search $component) {
+    public function render_block_courseimport_search(block_courseimport_search $component) {
         global $COURSE ,$OUTPUT;
         $url = $component->get_url();
         $output = html_writer::start_tag('div', array('class' => 'import-course-search'));
@@ -70,7 +70,7 @@ class block_courseimport_renderer extends core_backup_renderer
             $output .= $this->output->notification(get_string('nomatchingcourses', 'backup'));
 
             $output .= html_writer::start_tag('div', array('class' => 'ics-search'));
-            $output .= html_writer::empty_tag('input', array('type' => 'text', 'name' => restore_course_search::$VAR_SEARCH, 'value' => $component->get_search()));
+            $output .= html_writer::empty_tag('input', array('type' => 'text', 'name' => block_courseimport_search::$VAR_SEARCH, 'value' => $component->get_search()));
             $output .= html_writer::empty_tag('input', array('type' => 'submit', 'name' => 'searchcourses', 'value' => get_string('search')));
             $output .= html_writer::end_tag('div');
 
@@ -187,7 +187,7 @@ class block_courseimport_renderer extends core_backup_renderer
         $output .= html_writer::end_tag('div');
 
         $output .= html_writer::start_tag('div', array('class' => 'ics-search'));
-        $output .= html_writer::empty_tag('input', array('type' => 'text', 'name' => restore_course_search::$VAR_SEARCH, 'value' => $component->get_search()));
+        $output .= html_writer::empty_tag('input', array('type' => 'text', 'name' => block_courseimport_search::$VAR_SEARCH, 'value' => $component->get_search()));
         $output .= html_writer::empty_tag('input', array('type' => 'submit', 'name' => 'searchcourses', 'value' => get_string('search')));
         $output .= html_writer::end_tag('div');
 
