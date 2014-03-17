@@ -64,19 +64,26 @@ function block_courseimport_timecheck($start, $end) {
     $time1 = strtotime($time);
     $resttimefrom = strtotime($start);
     $resttimeto = strtotime($end);
+    $midnight = strtotime('midnight');
 
     if ($resttimefrom < $resttimeto) {
+        // When the from time is lower than the to time the current time should be between the values.
         if (($time1 > $resttimefrom ) and ($time1 < $resttimeto)) {
             return true;
         } else {
             return false;
         }
-    }
-    if ($resttimefrom > $resttimeto) {
+    } else if ($resttimefrom > $resttimeto) {
+        // When the from time is greater than the to time the current time should be outside the gap between them.
         if ((($time1 > $resttimefrom)  and ($time1 > $resttimeto)) or (($time1 < $resttimefrom)  and ($time1 < $resttimeto))) {
             return true;
         } else {
             return false;
         }
+    } else if ($resttimefrom == $midnight && $resttimeto == $midnight) {
+        // Assume midnight - midnight means the whole day.
+        return true;
+    } else {
+        return false; // From and to are equal, assume no time.
     }
 }
