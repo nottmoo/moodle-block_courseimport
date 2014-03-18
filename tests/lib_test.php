@@ -17,7 +17,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Tests the New Course Overview block.
+ * Tests the lib.php file of the Course Import block.
  *
  * @package     block_courseimport
  * @copyright   University of Nottingham, 2014

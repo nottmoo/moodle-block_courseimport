@@ -91,10 +91,10 @@ class block_courseimport_renderer extends core_backup_renderer
 
         $colist = null;
         if(strlen($coursecode) >= 4) {
-            $colist = $component->get_shortnameresults($coursecode ,$shortnamestr);
+            $colist = $component->get_shortnameresults($coursecode, $shortnamestr);
         } else {
             //$coursecode = "unknowcourseshortname";
-            $coursecode = substr($shortnamestr,0,-4);// this is for unsaturn course
+            $coursecode = substr($shortnamestr, 0, -4);// This is for non-saturn course.
         }
 
         $highlightguard = true;
