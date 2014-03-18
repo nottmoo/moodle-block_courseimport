@@ -34,38 +34,49 @@ class block_courseimport_search extends import_course_search
     private $shortnameresults = null;
 
     /**
-     * Returns an array of results from the search
-     * @return array
+     * Returns an array of results from the search.
+     *
+     * @param string $coursecode - fragment of a shortname to match.
+     * @param string $shortnamestr - the short name of a course that should not be returned.
+     * @return array - course records that match the coursecode, but not the shortnamestr
      */
     public function get_shortnameresults($coursecode, $shortnamestr) {
-        if ($this->shortnameresults === null) {
+        $queryhash = md5($coursecode.'---@---'.$shortnamestr); // Used to check if the query has been done before.
+        if (!isset($this->shortnameresults[$queryhash])) {
             $this->searchshortname($coursecode, $shortnamestr);
         }
-        return $this->shortnameresults;
+        return $this->shortnameresults[$queryhash];
     }
 
     /**
-     * Search course with similar shortname but same code
+     * Case insensative search for courses with similar shortname but same code.
+     *
+     * @global moodle_database $DB
+     * @global moodle_course $COURSE
+     * @param string $coursecode - fragment of a shortname to match.
+     * @param string $shortnamestr - the short name of a course that should not be returned.
+     * @return int - the number of results found.
      */
     public function searchshortname($coursecode, $shortnamestr) {
         global $DB;
         global $COURSE;
-        $contextlevel = 50;
+        $contextlevel = CONTEXT_COURSE;
+        $queryhash = md5($coursecode.'---@---'.$shortnamestr);
 
-        if ((!is_null($this->shortnameresults)) or (empty($coursecode))) {
-            return $this->shortnameresults;
+        if ((isset($this->shortnameresults[$queryhash]))) {
+            return count($this->shortnameresults[$queryhash]);
         }
         $this->shortnameresults = array();
 
         $params = array(
-            'shortnamestr' => $shortnamestr,
+            'shortnamestr' => strtolower($shortnamestr),
             'siteid' => SITEID,
-            'coursecode' => "%$coursecode%",
+            'coursecode' => '%'.strtolower($coursecode).'%',
             );
 
         $likesql = $DB->sql_like('LOWER(c.shortname)', ':coursecode');
 
-        $searchsql = 'SELECT c.id,c.fullname,c.shortname,c.visible,c.sortorder ,
+        $searchsql = 'SELECT c.id, c.fullname, c.shortname, c.visible, c.sortorder,
         ctx.id AS ctxid, ctx.path AS ctxpath, ctx.depth AS ctxdepth, ctx.contextlevel AS ctxlevel,
         ctx.instanceid AS ctxinstance
         FROM {course} c
@@ -73,10 +84,9 @@ class block_courseimport_search extends import_course_search
         WHERE (('.$likesql.') and (LOWER(c.shortname) <> :shortnamestr) and (c.id <> :siteid))';
 
         $resultsetshortname = $DB->get_records_sql($searchsql, $params);
-        foreach ($resultsetshortname as $result) {
-            $this->shortnameresults[$result->id] = $result;
-        }
-        return count($resultsetshortname); //$this->shortnameresultscount;
+        $this->shortnameresults[$queryhash] = $resultsetshortname;
+
+        return count($resultsetshortname);
     }
 
     /**
