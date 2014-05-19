@@ -17,9 +17,8 @@
 /**
  * Version details
  *
- * @package    block
- * @subpackage course_courseimport
- * @copyright    Nottingham University
+ * @package    block_course_courseimport
+ * @copyright  University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

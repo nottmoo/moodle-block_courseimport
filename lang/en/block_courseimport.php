@@ -15,9 +15,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * This file contains language strings used in the Course life management block
+ * This file contains language strings used in the course import block.
+ *
  * @package block_courseimport
  * @copyright University of Nottingham
+ * @author Yijun Xue
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 $string['pluginname'] = 'Course Import';

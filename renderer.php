@@ -14,29 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * This file contains backup and restore output renderers
- *
- * @package   courseimport
- * @copyright Yijun Xue
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-/**
- * The primary renderer for the backup.
- *
- * Can be retrieved with the following code:
- * <?php
- * $renderer = $PAGE->get_renderer('core','backup');
- * ?>
- *
- * @copyright 2010 Sam Hemelryk
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 require_once($CFG->dirroot . '/blocks/courseimport/lib.php');
 require_once($CFG->dirroot . '/backup/util/ui/renderer.php');
 
+/**
+ * This course import backup and restore output renderers
+ *
+ * @package   block_courseimport
+ * @copyright University of Nottingham
+ * @author    Yijun Xue
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class block_courseimport_renderer extends core_backup_renderer
 {
     /**
@@ -46,13 +34,12 @@ class block_courseimport_renderer extends core_backup_renderer
      * @return string
      */
     public function progress_bar(array $items) {
-        global $OUTPUT;
         $filefilter='';
         $setsize = get_config('block_courseimport', 'filesize');
         $fnotice = get_string('filternotice', 'block_courseimport', array('size' => $setsize));
 
         $filefilter .= parent::progress_bar($items);
-        $filefilter .= $OUTPUT->notification($fnotice, 'notifymessage');
+        $filefilter .= $this->output->notification($fnotice, 'notifymessage');
         return $filefilter ;
     }
 
@@ -63,8 +50,7 @@ class block_courseimport_renderer extends core_backup_renderer
      * @return string
      */
     public function render_block_courseimport_search(block_courseimport_search $component) {
-        global $COURSE ,$OUTPUT;
-        $url = $component->get_url();
+        global $COURSE;
         $output = html_writer::start_tag('div', array('class' => 'import-course-search'));
         if ($component->get_count() === 0) {
             $output .= $this->output->notification(get_string('nomatchingcourses', 'backup'));
@@ -88,12 +74,10 @@ class block_courseimport_renderer extends core_backup_renderer
         $yearcode = substr($shortnamestr, -4);
         $isyearnum =is_numeric($yearcode);
 
-
         $colist = null;
         if(strlen($coursecode) >= 4) {
             $colist = $component->get_shortnameresults($coursecode, $shortnamestr);
         } else {
-            //$coursecode = "unknowcourseshortname";
             $coursecode = substr($shortnamestr, 0, -4);// This is for non-saturn course.
         }
 
@@ -104,7 +88,6 @@ class block_courseimport_renderer extends core_backup_renderer
         foreach ($component->get_results() as $course) {
 
             $cid = $course->id;
-            //$cids[]=$course->id;
             if ((! is_null($colist)) and (array_key_exists($cid, $colist))) {
                 unset($colist[$cid]);
             }
@@ -117,21 +100,20 @@ class block_courseimport_renderer extends core_backup_renderer
                 $row->attributes['class'] .= ' dimmed';
             }
             $cshortname = strtolower($course->shortname);
-            $thisyearcode = substr($cshortname, -4); // a year cord for other course
+            $thisyearcode = substr($cshortname, -4); // A year cord for other course.
             $isthisyearnum =is_numeric($thisyearcode);
             $uuu = strpos($cshortname, $coursecode);
 
-            //check if thisyearcode > yearcode for select
+            // Check if thisyearcode > yearcode for select.
             if (($uuu === 0) and $isthisyearnum and $isyearnum and !$highlight) {
-                if ( (int)$thisyearcode < (int)$yearcode ) { // this course is old course with same code
+                if ((int)$thisyearcode < (int)$yearcode ) { // This course is old course with same code.
                     $highlight = true;
                 }
             }
-            //echo "===" . $uuu ."===" . $cshortname ."===" . $coursecode . "=====" . $thisyearcode . "===== $highlight ======" . $yearcode . "</br>";
+
             if (($highlight === true) and ($highlightguard === true)) {
                 $cshortname = html_writer::tag('strong', format_string($cshortname, true, array('context' => context_course::instance($cid))));
                 $row->cells = array(
-                    //html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $cid, 'checked'=>1)),
                     html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $cid, 'checked' => 'checked')),
                     $cshortname,
                     html_writer::tag('strong', format_string($course->fullname, true, array('context' => context_course::instance($cid)))),
@@ -148,7 +130,6 @@ class block_courseimport_renderer extends core_backup_renderer
                 );
                 $table->data[] = $row;
             }
-            //$table->data[] = $row;
         }
         array_splice($table->data, 100);
 
@@ -158,12 +139,11 @@ class block_courseimport_renderer extends core_backup_renderer
             $searchstr=trim($_REQUEST["search"]);
         }
 
-            //echo "<input type='hidden' value='-----$searchstr----' name='checkserver'>";
-        // course list for shortname search is not treat as original course list
+        // Course list for shortname search is not treat as original course list.
         if ((! is_null($colist)) and (count($colist) >0) and ($searchstr === "")) {
-            // if need more infor user this $strhelp = $OUTPUT->help_icon('clisthelp','block_courseimport');
+            // if need more infor user this $strhelp = $this->help_icon('clisthelp','block_courseimport');
             $askroleinfo = get_string('askroleinfo', 'block_courseimport');
-            $inforcell = new html_table_cell($OUTPUT->notification($askroleinfo, 'notifyproblem'));
+            $inforcell = new html_table_cell($this->output->notification($askroleinfo, 'notifyproblem'));
             $inforcell->colspan = 3;
             $table->data[] = new html_table_row(array($inforcell));
             foreach ($colist as $id => $course) {
@@ -173,7 +153,6 @@ class block_courseimport_renderer extends core_backup_renderer
                     $row->attributes['class'] .= ' dimmed';
                 }
                 $row->cells = array(
-                    //html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $id, 'disabled' => 'disabled')),
                     "",
                     format_string($course->shortname, true, array('context' => context_course::instance($id))),
                     format_string($course->fullname, true, array('context' => context_course::instance($id))),

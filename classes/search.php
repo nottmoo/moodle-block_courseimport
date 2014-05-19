@@ -17,7 +17,7 @@
 require_once($CFG->dirroot . '/backup/util/ui/import_extensions.php');
 
 /**
- * Defines class for course appointments block
+ * Defines class for course import block
  *
  * @package block_courseimport
  * @author      Yijun Xue
@@ -52,15 +52,12 @@ class block_courseimport_search extends import_course_search
      * Case insensative search for courses with similar shortname but same code.
      *
      * @global moodle_database $DB
-     * @global moodle_course $COURSE
      * @param string $coursecode - fragment of a shortname to match.
      * @param string $shortnamestr - the short name of a course that should not be returned.
      * @return int - the number of results found.
      */
     public function searchshortname($coursecode, $shortnamestr) {
         global $DB;
-        global $COURSE;
-        $contextlevel = CONTEXT_COURSE;
         $queryhash = md5($coursecode.'---@---'.$shortnamestr);
 
         if ((isset($this->shortnameresults[$queryhash]))) {
@@ -106,7 +103,7 @@ class block_courseimport_search extends import_course_search
         $select = " SELECT c.id,c.fullname,c.shortname,c.visible,c.sortorder, ";
         $from = " FROM {course} c ";
         $where = " WHERE (" . $DB->sql_like('c.fullname', ':fullnamesearch', false) . " OR " . $DB->sql_like('c.shortname', ':shortnamesearch', false) . ") AND c.id <> :siteid";
-        $orderby = " ORDER BY c.id DESC"; //$orderby    = " ORDER BY c.sortorder";
+        $orderby = " ORDER BY c.id DESC";
 
         if ($this->currentcourseid !== null && !$this->includecurrentcourse) {
             $where .= " AND c.id <> :currentcourseid";

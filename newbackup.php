@@ -156,5 +156,4 @@ if ( !empty($results) && ($countstopjobs > 0) ) {
     }
 
     unset($results);
-    die();
 }

@@ -115,12 +115,6 @@ if ($backup->get_stage() === 2) {
             $pos1 = strpos($setname, 'resource_');
             $pos2 = strpos($setname, '_included');
             $resourceid = '';
-            //here check forum
-            if(preg_match('/^forum_[0-9]+_[a-z]+/' ,$setname)===1) {
-                $setting->set_value("0");
-                $setting->make_ui(10, "<b>$tname</b>", array('disabled' => true), null);
-                $setting->set_status(7);
-            }
             if(preg_match('/^turnitintool_[0-9]+_[a-z]+/' ,$setname)===1) {
                 $setting->set_value("0");
                 $setting->make_ui(10, "<b>$tname</b>", array('disabled' => true), null);
@@ -134,10 +128,8 @@ if ($backup->get_stage() === 2) {
                     $tsize = (int)$afile->fsize;
                     if (strpos($ttype, 'video') !== false) {
                         $setting->set_value("0");
-                        //$setting->make_ui(10, "<b>$tname</b></br><div class='fitemtitle'><label for='id_setting_root_activities'>Include activities </label></div>", array('disabled' => true), null);
                         $videofile =get_string('videofile', 'block_courseimport');
                         $setting->make_ui(10, "$tname <b><u>$videofile</u></b>", array('disabled' => true), null);
-                        //$setting->make_ui(10, "<b>$tname</b>", array('disabled' => true), null);
                         $setting->set_status(7);
                     } else {
                     if ($tsize >= $limitsize){

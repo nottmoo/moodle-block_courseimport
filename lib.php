@@ -31,7 +31,7 @@ function block_courseimport_findfilesize($id) {
     if (!$cm = get_coursemodule_from_id('resource', $id)) {
         return false;
     } else {
-        $cm = get_coursemodule_from_id('resource', $id); //$cm = get_coursemodule_from_instance('resource', $resource->id, $resource->course, false, MUST_EXIST);
+        $cm = get_coursemodule_from_id('resource', $id);
         $resource = $DB->get_record('resource', array('id' => $cm->instance), '*', MUST_EXIST);
         $context = context_module::instance($cm->id);
 
