@@ -53,10 +53,10 @@ if (($timesetting) and (!empty($timesetting))) {
 
 $argument1 = null;
 if (isset($argv[1])) {
-    $argument1 = $argv[1]; // blocks/courseimport/newbackup.php 0 or 1.  if 0 stop, if 1 start
-    //222222:job waiting
-    //444444:block jobs
-    //333333:backup file created
+    $argument1 = $argv[1]; // The file can be called with an argument of 0 or 1. If 0 block processing, if 1 unblock processing.
+    // 222222: job waiting.
+    // 444444: block jobs.
+    // 333333: backup file created.
     echo "\n -- Passed argument -- $argument1 --\n";
 
     if ($argument1 === 0) {
@@ -65,54 +65,40 @@ if (isset($argv[1])) {
         $counter = $DB->count_records_select($table, $select);
         echo "-- Jobs count -- $counter --\n";
         if ($counter > 1) {
-            //get all jobs except 1st, as it is running
-            echo "\n-- Block all jobs except 1st --\n";
-            $sql = 'SELECT t2.* FROM {block_courseimport} t1 JOIN {block_courseimport} t2 ON t1.id + 1 = t2.id';
-            $results = $DB->get_records_sql($sql);
-            foreach ($results as $result) {
-                $temprecord = new stdClass();
-                $temprecord->id = $result->id;
-                $temprecord->status = 444444;
-                $temprecord->timemodified = time();
-                $DB->update_record('block_courseimport', $temprecord);
-            }
-            echo "\n All jobs been blocked except 1st \n";
+            // Set all waiting jobs to blocked.
+            echo "\n-- Block all waiting jobs...";
+            $DB->set_field('block_courseimport', 'status', '444444', array('status' => '222222'));
+            echo " completed --\n";
         }
     }
     if ($argument1 === 1) {
-        $sql = 'SELECT * FROM {block_courseimport} where status = 444444';
-        $results = $DB->get_records_sql($sql);
-        foreach ($results as $result) {
-            $temprecord = new stdClass();
-            $temprecord->id = $result->id;
-            $temprecord->status = 222222;
-            $temprecord->timemodified = time();
-            $DB->update_record('block_courseimport', $temprecord);
-        }
-        echo "\n change stauts to restart processing \n";
+        // Set all blocked jobs to waiting.
+        echo "\n-- Unblock jobs...";
+        $DB->set_field('block_courseimport', 'status', '222222', array('status' => '444444'));
+        echo " completed --\n";
     }
     die();
 }
-//Start jobs
+// Start jobs.
 $countstopjobs = $DB->count_records_sql('SELECT COUNT(*) FROM {block_courseimport} where status ="444444"');
 $results = $DB->get_records_sql('SELECT * FROM {block_courseimport} where status ="222222" order by id asc');
-//Need countstopjobs to avoid execut any new added job.
+// Need countstopjobs to avoid execut any new added job.
 if ( !empty($results) && ($countstopjobs > 0) ) {
     echo "\n --- Processing is blocked. To unblock, run php -f  /var/www/html/blocks/courseimport/newbackup.php 1 . \n";
     die();
 } else {
-    foreach ($results as $firstcourse) {
+    foreach ($results as $job) {
         echo "\n Next processing will start in 20 seconds or you can stop cron now  --  " . date('l jS \of F Y h:i:s A') . " \n";
         sleep(20);
-        $courseid = $firstcourse->courseid;
+        $courseid = $job->courseid;
         $coursecontext = context_course::instance($courseid);
         $contextid = $coursecontext->id;
-        $importid = $firstcourse->backupid;
-        $targetcourseid=$firstcourse->targetcourseid;
+        $importid = $job->backupid;
+        $targetcourseid = $job->targetcourseid;
         $backupid = $importid;
         // The target method for the restore (adding or deleting)
         $restoretarget = 1;
-        $userid = $firstcourse->userid;
+        $userid = $job->userid;
 
         echo "\n Userid:$userid--ImportToCourseid:$courseid ---ImportFromCourseid:$targetcourseid , create backup for $targetcourseid now. \n";
 
@@ -123,11 +109,11 @@ if ( !empty($results) && ($countstopjobs > 0) ) {
         unset($backup);
         $tempdestination = $CFG->tempdir . '/backup/' . $backupid;
         if (!file_exists($tempdestination) || !is_dir($tempdestination)) {
-            print_error('unknownbackupexporterror'); // shouldn't happen ever
+            print_error('unknownbackupexporterror'); // Shouldn't happen ever.
             die();
         }
         $record = new stdClass();
-        $record->id = $firstcourse->id;
+        $record->id = $job->id;
         $record->status = 333333;
         $record->timemodified = time();
         $DB->update_record('block_courseimport', $record);
@@ -139,7 +125,7 @@ if ( !empty($results) && ($countstopjobs > 0) ) {
         $rc = new restore_controller($backupid, $course->id, backup::INTERACTIVE_YES, backup::MODE_IMPORT, $userid, 1);
         // Mark the UI finished.
         $rc->finish_ui();
-        // Execute prechecks
+        // Execute prechecks.
         if (!$rc->execute_precheck()) {
             $precheckresults = $rc->get_precheck_results();
             if (is_array($precheckresults) && !empty($precheckresults['errors'])) {
@@ -147,7 +133,7 @@ if ( !empty($results) && ($countstopjobs > 0) ) {
                 die();
             }
         } else {
-            // Execute the restore
+            // Execute the restore.
             $rc->execute_plan();
             $rc->destroy();
             fulldelete($tempdestination);
