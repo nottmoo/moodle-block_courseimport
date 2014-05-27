@@ -14,7 +14,55 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-//define('BLOCK_COURSELIFE_NOTARCHIVED', '0'); define('BLOCK_COURSELIFE_ARCHIVED', '1');
+/**
+ * block_courseimport_changestatus
+ *
+ * change job status
+ *
+ * @param int jobid
+ * @param string status
+ *
+ */
+function block_courseimport_changestatus($jobid, $status) {
+    global $DB;
+    $temprecord = new stdClass();
+    $temprecord->id = $jobid;
+    $temprecord->status = $status;
+    $temprecord->timemodified = time();
+    $DB->update_record('block_courseimport', $temprecord);
+}
+
+/**
+ * block_courseimport_abandonjob
+ *
+ * abandon job
+ *
+ * @param array $abandonjobs
+ */
+function block_courseimport_abandonjob($abandonjobs) {
+    global $DB;
+    if (count($abandonjobs) > 0) {
+        foreach ($abandonjobs as $abandon) {
+            $jobid = $abandon->id;
+            $temprecord = new stdClass();
+            $temprecord->id = $jobid;
+            $temprecord->status = '777777';
+            $temprecord->timemodified = time();
+            $DB->update_record('block_courseimport', $temprecord);
+            unset($temprecord);
+            $timenow = date('Y-m-d H:i:s');
+            $courseid = $abandon->courseid;
+            $targetcourseid = $abandon->targetcourseid;
+            $userid = $abandon->userid;
+            $message = "$timenow, Job abandoned, Jobid=$jobid, Userid=$userid. Import To Course ID:$courseid. Import From Course ID:$targetcourseid";
+            $subject = get_string('alertemailsubject', 'block_courseimport');
+            $isemail= block_courseimport_sendemail($subject, $message);
+            if (!$isemail) {
+                echo "\n$timenow Error! Jobid: $jobid. Failed to send email to admin. Email message: .\n$message\n";
+            }
+        }
+    }
+}
 
 /**
  * findfilesize
@@ -85,5 +133,38 @@ function block_courseimport_timecheck($start, $end) {
         return true;
     } else {
         return false; // From and to are equal, assume no time.
+    }
+}
+
+/**
+ * block_courseimport_sendemail
+ *
+ * Send email to Moodle admin or to a user
+ *
+ * @param string $subject
+ * @param string $message
+ * @param int $userid
+ * @return bool
+ */
+function block_courseimport_sendemail($subject, $message, $userid = null) {
+    global $DB;
+    $campusmail = local_uonlib_get_campusmail("U"); // Cron send email.
+    if ($campus = $DB->get_record('user', array('email' => $campusmail))) {
+        if ($userid !== null) { // Eamil to a Teacher, not learning-support
+            $touser = $DB->get_record('user', array('id' => $userid));
+            if ($mailsent = email_to_user($campus, $touser, $subject, $message, '', '', '', true, $touser->email, fullname($touser))) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            if ($mailsent = email_to_user($campus, $campus, $subject, $message)) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    } else {
+        return false;
     }
 }

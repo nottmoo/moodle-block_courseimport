@@ -31,6 +31,7 @@ require_once($CFG->dirroot . '/blocks/courseimport/lib.php');
 set_time_limit(0);
 raise_memory_limit(MEMORY_EXTRA);
 
+echo "\n".date('Y-m-d H:i:s')." Process woken by CRON";
 $timesetting = get_config('block_courseimport', 'crontime');
 if (($timesetting) and (!empty($timesetting))) {
     echo "Time ranges setting " . $timesetting . "\n";
@@ -41,54 +42,65 @@ if (($timesetting) and (!empty($timesetting))) {
             $rlist = explode("-", $range);
             $checkresult += block_courseimport_timecheck($rlist[0],$rlist[1]);
         } else {
-            echo "\ntime ranges set in the block admin's setting page ( $range )is not in right format and it blocked import process, die now ! \n";
+            echo "\n".date('Y-m-d H:i:s')." Process stopped as time range setting ( $range )is not in right format\n";
             die();
         }
       }
     if ($checkresult == 0 ) {
-        echo "\n time ranges set in the block admin's setting page blocked import process die now ! \n";
+        echo "\n".date('Y-m-d H:i:s')." Current time outside of operating hours. Operating hours are: ( $timesetting ). Process stopped. \n";
         die();
     }
 }
 
+echo "\n".date('Y-m-d H:i:s')."  Current time is within operating hours. Starting process\n";
 $argument1 = null;
 if (isset($argv[1])) {
-    $argument1 = $argv[1]; // The file can be called with an argument of 0 or 1. If 0 block processing, if 1 unblock processing.
-    // 222222: job waiting.
-    // 444444: block jobs.
-    // 333333: backup file created.
-    echo "\n -- Passed argument -- $argument1 --\n";
+    $argument1 = $argv[1]; 
+    // The file can be called with an argument of 0 or 1. If 0 block processing, if 1 unblock processing.
+    // Status 222222:job waiting.
+    // Status 444444:block jobs.
+    // Status 555555: a course import job finished.
+    // Status 666666: job in processing.
+    // Status 777777: could not be imported and abandoned job, email to admin for import manully and log details.
+    echo "\n".date('Y-m-d H:i:s')." $argument1 has been passed to the process.\n 0=Process stop. 1= Process start \n";
 
     if ($argument1 === 0) {
         $table = 'block_courseimport';
         $select = "status ='222222'";
         $counter = $DB->count_records_select($table, $select);
-        echo "-- Jobs count -- $counter --\n";
-        if ($counter > 1) {
+        if ($counter > 0) {
             // Set all waiting jobs to blocked.
-            echo "\n-- Block all waiting jobs...";
             $DB->set_field('block_courseimport', 'status', '444444', array('status' => '222222'));
-            echo " completed --\n";
+            echo "\n".date('Y-m-d H:i:s')." Process has been blocked manually, $counter jobs in queue."
+                    . "\nTo unblock run php var/www/blocks/courseimport/newbackup.php 1 at the command line.\n";
+        } else {
+            echo "\n".date('Y-m-d H:i:s')." There are no jobs in the queue. Cannot block if there are no jobs";
         }
     }
     if ($argument1 === 1) {
         // Set all blocked jobs to waiting.
-        echo "\n-- Unblock jobs...";
         $DB->set_field('block_courseimport', 'status', '222222', array('status' => '444444'));
-        echo " completed --\n";
+        echo "\n".date('Y-m-d H:i:s')." Process will start at the next CRON\n";
     }
     die();
 }
 // Start jobs.
 $countstopjobs = $DB->count_records_sql('SELECT COUNT(*) FROM {block_courseimport} where status ="444444"');
+// If a job still is processiong status, should be abandoned.
+$abandonjobs = $DB->get_records_sql('SELECT * FROM {block_courseimport} where status ="666666"'); 
 $results = $DB->get_records_sql('SELECT * FROM {block_courseimport} where status ="222222" order by id asc');
-// Need countstopjobs to avoid execut any new added job.
+
+// Need countstopjobs to avoid execute any new added job.
 if ( !empty($results) && ($countstopjobs > 0) ) {
-    echo "\n --- Processing is blocked. To unblock, run php -f  /var/www/html/blocks/courseimport/newbackup.php 1 . \n";
+    echo "\n".date('Y-m-d H:i:s')." Process has been blocked manually and will not run until it is unblocked."
+            . "\nTo unblock run php var/www/blocks/courseimport/newbackup.php 1 at the command line.\n";
     die();
 } else {
+    // Check if any job's status is 666666 or failed jobs, email admain and abandon.
+    block_courseimport_abandonjob($abandonjobs); 
+    
     foreach ($results as $job) {
-        echo "\n Next processing will start in 20 seconds or you can stop cron now  --  " . date('l jS \of F Y h:i:s A') . " \n";
+        echo "\n".date('Y-m-d H:i:s')." Process will start in 20 seconds.\n";
         sleep(20);
         $courseid = $job->courseid;
         $coursecontext = context_course::instance($courseid);
@@ -100,8 +112,11 @@ if ( !empty($results) && ($countstopjobs > 0) ) {
         $restoretarget = 1;
         $userid = $job->userid;
 
-        echo "\n Userid:$userid--ImportToCourseid:$courseid ---ImportFromCourseid:$targetcourseid , create backup for $targetcourseid now. \n";
-
+        // Start processing, successfully will chnage to 555555, otherwise abandon and email admin.
+        block_courseimport_changestatus($jobid,'666666'); 
+        echo "\n".date('Y-m-d H:i:s')." Jobid:$jobid--Userid:$userid\nImport To Course ID:$courseid"
+                . "\nImport From Course ID:$targetcourseid,\nCreating backup for course ID:$targetcourseid now.\n";
+        
         $bc = backup_ui::load_controller($importid);
         $backup = new block_courseimport_import_ui($bc, array('importid' => $importid, 'target' => $restoretarget));
         $backup->execute();
@@ -109,17 +124,11 @@ if ( !empty($results) && ($countstopjobs > 0) ) {
         unset($backup);
         $tempdestination = $CFG->tempdir . '/backup/' . $backupid;
         if (!file_exists($tempdestination) || !is_dir($tempdestination)) {
+            echo "\n".date('Y-m-d H:i:s')." Error, could not find file in CFG->tempdir/backup folder, "
+                    . "Userid:$userid--ImportToCourseid:$courseid ---ImportFromCourseid:$targetcourseid \n";
             print_error('unknownbackupexporterror'); // Shouldn't happen ever.
             die();
         }
-        $record = new stdClass();
-        $record->id = $job->id;
-        $record->status = 333333;
-        $record->timemodified = time();
-        $DB->update_record('block_courseimport', $record);
-        unset($record);
-
-        echo "\n backupfile had been created successfully, so job's status changed to 333333, , now start to restoring. \n";
 
         list($context, $course, $cm) = get_context_info_array($contextid);
         $rc = new restore_controller($backupid, $course->id, backup::INTERACTIVE_YES, backup::MODE_IMPORT, $userid, 1);
@@ -129,17 +138,36 @@ if ( !empty($results) && ($countstopjobs > 0) ) {
         if (!$rc->execute_precheck()) {
             $precheckresults = $rc->get_precheck_results();
             if (is_array($precheckresults) && !empty($precheckresults['errors'])) {
-                echo "\n Execute prechecks Error in precheck when restoring , cron stoped.\n";
-                die();
+                $message = date('Y-m-d H:i:s')." Error! In Jobid: $jobid. Prechecks for importing backupfile failed.\n"
+                        . "Import From Course ID:$targetcourseid -> Import To Course ID:$courseid";
+                echo "\n".$message."\n";
+                // Send email to Moodle admin.
+                $subject =  get_string('alteremailsubject', 'block_courseimport');
+                $isemail = block_courseimport_sendemail($subject, $message);
+                if (!$isemail) {
+                    echo "\n".date('Y-m-d H:i:s')." Error! Jobid: $jobid. "
+                            . "Failed to send email to admin. Content of message below.\n$message\n";
+                }
             }
         } else {
             // Execute the restore.
             $rc->execute_plan();
             $rc->destroy();
             fulldelete($tempdestination);
-            echo "\n --Job " . $importid . " finished --" . date('l jS \of F Y h:i:s A') . " \n";
+            block_courseimport_changestatus($jobid,'555555');
+            echo "\n".date('Y-m-d H:i:s')." Success in Jobid: $jobid. "
+                    . "Import is complete.\nImport From Course ID:$targetcourseid -> Import To Course ID:$courseid.\n";
+            // Send email to user.
+            $importto= $DB->get_field('course', 'fullname', array('id' => $courseid));
+            $importfrom= $DB->get_field('course', 'fullname', array('id' => $targetcourseid));
+            $subject =  get_string('useremailsubject', 'block_courseimport');
+            $message = get_string('useremailmessage', 'block_courseimport',
+                    array('importto' => $importto, 'importfrom' => $importfrom));
+            $isemail = block_courseimport_sendemail($subject, $message, $userid);
+            if (!$isemail) {
+                echo "\n".date('Y-m-d H:i:s')." Error! Jobid: $jobid. "
+                        . "Failed to send email to user to inform of success. Content of message below.\n$message\n";
+            }
         }
     }
-
-    unset($results);
 }
