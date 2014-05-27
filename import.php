@@ -31,7 +31,6 @@ require_once($CFG->dirroot . '/backup/moodle2/backup_plan_builder.class.php');
 require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
 require_once($CFG->dirroot . '/backup/util/ui/import_extensions.php');
 require_once($CFG->dirroot . '/blocks/courseimport/renderer.php');
-require_once($CFG->dirroot . '/blocks/courseimport/coursesearch.php');
 require_once($CFG->dirroot . '/blocks/courseimport/lib.php');
 require_once($CFG->dirroot . '/backup/util/settings/base_setting.class.php');
 
@@ -39,12 +38,13 @@ require_once($CFG->dirroot . '/backup/util/settings/base_setting.class.php');
 $courseid = required_param('id', PARAM_INT);
 // The id of the course we are importing FROM (will only be set if past first stage
 $importcourseid = optional_param('importid', false, PARAM_INT);
+$search = optional_param('searchcourses', false, PARAM_INT);
 
 // The target method for the restore (adding or deleting)
 $restoretarget = 1;
 // Load the course and context
 $course = $DB->get_record('course', array('id' => $courseid), '*', MUST_EXIST);
-$context = get_context_instance(CONTEXT_COURSE, $courseid);
+$context = context_course::instance($courseid);
 // Must pass login
 require_login($course);
 // Must hold restoretargetimport in the current course
@@ -61,10 +61,9 @@ $shortname = $COURSE->shortname;
 $coursecode = substr($shortname, 0, strpos($shortname, '-'));
 $renderer = $PAGE->get_renderer('block_courseimport');
 // Check if we already have a import course id
-if ($importcourseid === false) {
+if ($importcourseid === false || $search !== false) {
     $url = new moodle_url('/blocks/courseimport/import.php', array('id' => $courseid));
-    $search = new restore_course_search_import(array('url' => $url),$courseid);
-    $search = cast('new_import_course_search', $search);
+    $search = new block_courseimport_search(array('url' => $url), $courseid);
     // show the course selector
     echo $OUTPUT->header();
     //here find and list the user's course
@@ -75,7 +74,7 @@ if ($importcourseid === false) {
 }
 // Load the course +context to import from
 $importcourse = $DB->get_record('course', array('id' => $importcourseid), '*', MUST_EXIST);
-$importcontext = get_context_instance(CONTEXT_COURSE, $importcourseid);
+$importcontext = context_course::instance($importcourseid);
 // Make sure the user can backup from that course
 require_capability('moodle/backup:backuptargetimport', $importcontext);
 // Attempt to load the existing backup controller (backupid will be false if there isn't one)
@@ -116,12 +115,6 @@ if ($backup->get_stage() === 2) {
             $pos1 = strpos($setname, 'resource_');
             $pos2 = strpos($setname, '_included');
             $resourceid = '';
-            //here check forum 
-            if(preg_match('/^forum_[0-9]+_[a-z]+/' ,$setname)===1) {
-                $setting->set_value("0");
-                $setting->make_ui(10, "<b>$tname</b>", array('disabled' => true), null);
-                $setting->set_status(7);
-            }
             if(preg_match('/^turnitintool_[0-9]+_[a-z]+/' ,$setname)===1) {
                 $setting->set_value("0");
                 $setting->make_ui(10, "<b>$tname</b>", array('disabled' => true), null);
@@ -129,22 +122,20 @@ if ($backup->get_stage() === 2) {
             }
             if (($pos1 !== false) && ($pos2 !== false)) {
                 $resourceid = str_replace("_included", "", str_replace("resource_", "", $setname));
-                $afile = findfilesize($resourceid);
+                $afile = block_courseimport_findfilesize($resourceid);
                 if ($afile !== false) {
                     $ttype = $afile->ftype;
                     $tsize = (int)$afile->fsize;
                     if (strpos($ttype, 'video') !== false) {
                         $setting->set_value("0");
-                        //$setting->make_ui(10, "<b>$tname</b></br><div class='fitemtitle'><label for='id_setting_root_activities'>Include activities </label></div>", array('disabled' => true), null);
                         $videofile =get_string('videofile', 'block_courseimport');
                         $setting->make_ui(10, "$tname <b><u>$videofile</u></b>", array('disabled' => true), null);
-                        //$setting->make_ui(10, "<b>$tname</b>", array('disabled' => true), null);
                         $setting->set_status(7);
                     } else {
                     if ($tsize >= $limitsize){
-                        $setting->set_value("0"); 
+                        $setting->set_value("0");
                         $bigfile =get_string('bigfile', 'block_courseimport');
-                        $setting->make_ui(10, "$tname <b><u>$bigfile</u></b>", array('disabled' => true), null); 
+                        $setting->make_ui(10, "$tname <b><u>$bigfile</u></b>", array('disabled' => true), null);
                         $setting->set_status(7);
                     }
                     }
@@ -190,7 +181,7 @@ if ($backup->enforce_changed_dependencies()) {
     echo $renderer->dependency_notification(get_string('dependenciesenforced', 'backup'));
 }
 echo $renderer->progress_bar($backup->get_progress_bar());
-echo $backup->display();
+echo $backup->display($renderer);
 $backup->destroy();
 unset($backup);
 echo $OUTPUT->footer();

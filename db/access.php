@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Capability definitions for the medical school block
+ * Capability definitions for the course import block
  *
  * The capabilities are loaded into the database table when the module is
  * installed or updated. Whenever the capability definitions are updated,
@@ -68,6 +68,12 @@ $capabilities = array(
         'archetypes' => array(
             'manager' => CAP_ALLOW
         )
-    )
-
+    ),
+    // Capability to allow a user to add the block to a page.
+    'block/courseimport:addinstance' => array(
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_BLOCK,
+        'archetypes' => array(
+        ),
+    ),
 );

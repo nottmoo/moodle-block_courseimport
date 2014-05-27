@@ -22,7 +22,7 @@
  * @param resource id
  * @return fileinfo object
  */
-function findfilesize($id) {
+function block_courseimport_findfilesize($id) {
     global $DB;
     $fileinfo = new stdClass;
     $fileinfo->fsize = "";
@@ -31,9 +31,9 @@ function findfilesize($id) {
     if (!$cm = get_coursemodule_from_id('resource', $id)) {
         return false;
     } else {
-        $cm = get_coursemodule_from_id('resource', $id); //$cm = get_coursemodule_from_instance('resource', $resource->id, $resource->course, false, MUST_EXIST);
+        $cm = get_coursemodule_from_id('resource', $id);
         $resource = $DB->get_record('resource', array('id' => $cm->instance), '*', MUST_EXIST);
-        $context = get_context_instance(CONTEXT_MODULE, $cm->id);
+        $context = context_module::instance($cm->id);
 
         $fs = get_file_storage();
         $files = $fs->get_area_files($context->id, 'mod_resource', 'content', 0, 'sortorder DESC, id ASC', false); // TODO: this is not very efficient!!
@@ -59,53 +59,31 @@ function findfilesize($id) {
  * @param string start end
  * @return true/false
  */
-function timecheck($start,$end) {
-    $time =date("G:i:s");
-    $time1 = strtotime($time); 
+function block_courseimport_timecheck($start, $end) {
+    $time = date("G:i:s");
+    $time1 = strtotime($time);
     $resttimefrom = strtotime($start);
     $resttimeto = strtotime($end);
+    $midnight = strtotime('midnight');
 
     if ($resttimefrom < $resttimeto) {
-        if (($time1 >$resttimefrom ) and ($time1 <$resttimeto)) {
+        // When the from time is lower than the to time the current time should be between the values.
+        if (($time1 > $resttimefrom ) and ($time1 < $resttimeto)) {
             return true;
         } else {
             return false;
         }
-    } 
-    if ($resttimefrom > $resttimeto) {
-        if ((($time1 > $resttimefrom)  and ($time1 >$resttimeto)) or (($time1 < $resttimefrom)  and ($time1 <$resttimeto))) {
+    } else if ($resttimefrom > $resttimeto) {
+        // When the from time is greater than the to time the current time should be outside the gap between them.
+        if ((($time1 > $resttimefrom)  and ($time1 > $resttimeto)) or (($time1 < $resttimefrom)  and ($time1 < $resttimeto))) {
             return true;
         } else {
             return false;
         }
+    } else if ($resttimefrom == $midnight && $resttimeto == $midnight) {
+        // Assume midnight - midnight means the whole day.
+        return true;
+    } else {
+        return false; // From and to are equal, assume no time.
     }
-}
-/**
- *  casting function
- *
- * @param string|object $destination
- * @param object $sourceObject
- * @return object
- */
-
-function cast($destination, $sourceobject) {
-    if (is_string($destination)) {
-        $destination = new $destination();
-    }
-    $sourcereflection = new ReflectionObject($sourceobject);
-    $destinationreflection = new ReflectionObject($destination);
-    $sourceproperties = $sourcereflection->getProperties();
-    foreach ($sourceproperties as $sourceproperty) {
-        $sourceproperty->setAccessible(true);
-        $name = $sourceproperty->getName();
-        $value = $sourceproperty->getValue($sourceobject);
-        if ($destinationreflection->hasProperty($name)) {
-            $propdest = $destinationreflection->getProperty($name);
-            $propdest->setAccessible(true);
-            $propdest->setValue($destination, $value);
-        } else {
-            $destination->$name = $value;
-        }
-    }
-    return $destination;
 }

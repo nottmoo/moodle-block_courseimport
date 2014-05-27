@@ -16,7 +16,7 @@
 //
 
 /*
- * Displays the form for the blocks admin settings.
+ * Displays the form for the block's admin settings.
  *
  * @package    block_courseimport
  * @subpackage courseimport
@@ -26,12 +26,18 @@
  */
 
 defined('MOODLE_INTERNAL') || die();
-global $DB, $USER;
 if ($hassiteconfig) {
     if ($ADMIN->fulltree) {
-        $settings->add(new admin_setting_configselect('block_courseimport/filesize', "File size limit (MB) ", " ", 1, array(1 => 1, 3 => 3, 5 => 5, 7 => 7, 9 => 9, 10 => 10, 15 => 15, 20 => 20)));
+        $settings->add(new admin_setting_configselect('block_courseimport/filesize',
+                get_string('max_file_size', 'block_courseimport'),
+                " ",
+                1,
+                array(1 => 1, 3 => 3, 5 => 5, 7 => 7, 9 => 9, 10 => 10, 15 => 15, 20 => 20)));
         $infotime = get_string('infotime', 'block_courseimport');
-        $settings->add(new admin_setting_configtext('block_courseimport/crontime', "Cron time", $infotime, null));
+        $settings->add(new admin_setting_configtext('block_courseimport/crontime',
+                get_string('time', 'block_courseimport'),
+                $infotime,
+                null));
     }
 }
 
