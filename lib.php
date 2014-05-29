@@ -152,7 +152,7 @@ function block_courseimport_sendemail($subject, $message, $userid = null) {
     if ($campus = $DB->get_record('user', array('email' => $campusmail))) {
         if ($userid !== null) { // Eamil to a Teacher, not learning-support
             $touser = $DB->get_record('user', array('id' => $userid));
-            if ($mailsent = email_to_user($campus, $touser, $subject, $message, '', '', '', true, $touser->email, fullname($touser))) {
+            if ($mailsent = email_to_user($touser, $campus, $subject, $message, '', '', '', true, $touser->email, fullname($touser))) {
                 return true;
             } else {
                 return false;
