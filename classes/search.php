@@ -91,7 +91,7 @@ class block_courseimport_search extends import_course_search
      * @global moodle_database $DB
      */
     protected function get_searchsql() {
-        global $DB;
+        global $DB, $COURSE;
         $ctxselect = context_helper::get_preload_record_columns_sql('ctx');
         $ctxjoin = "LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = :contextlevel)";
         
@@ -99,10 +99,10 @@ class block_courseimport_search extends import_course_search
             'siteid' => SITEID,
             'contextlevel' => CONTEXT_COURSE
         );
-        
+
         // If no search string supplied use target course short name.
         $shortnamesearch = $this->get_search();
-        if ($shortnamesearch === null) {
+        if (empty($shortnamesearch)) {
             $shortnamestr = strtolower($COURSE->shortname);
             $shortnamesearch = substr($shortnamestr, 0, strpos($shortnamestr, '-'));
             $params['shortnamesearch'] = $shortnamesearch . '%';
@@ -113,7 +113,7 @@ class block_courseimport_search extends import_course_search
             $where = " WHERE (" . $DB->sql_like('c.fullname', ':fullnamesearch', false) . " OR " .
                         $DB->sql_like('c.shortname', ':shortnamesearch', false) . ") AND c.id <> :siteid";
         }
-        
+
         $select = " SELECT c.id,c.fullname,c.shortname,c.visible,c.sortorder, ";
         $from = " FROM {course} c ";
         $orderby = " ORDER BY c.id DESC";
