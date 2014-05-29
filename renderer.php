@@ -52,17 +52,7 @@ class block_courseimport_renderer extends core_backup_renderer
     public function render_block_courseimport_search(block_courseimport_search $component) {
         global $COURSE;
         $output = html_writer::start_tag('div', array('class' => 'import-course-search'));
-        if ($component->get_count() === 0) {
-            $output .= $this->output->notification(get_string('nomatchingcourses', 'backup'));
-
-            $output .= html_writer::start_tag('div', array('class' => 'ics-search'));
-            $output .= html_writer::empty_tag('input', array('type' => 'text', 'name' => block_courseimport_search::$VAR_SEARCH, 'value' => $component->get_search()));
-            $output .= html_writer::empty_tag('input', array('type' => 'submit', 'name' => 'searchcourses', 'value' => get_string('search')));
-            $output .= html_writer::end_tag('div');
-
-            $output .= html_writer::end_tag('div');
-            return $output;
-        }
+        
         $output .= html_writer::tag('div', get_string('totalcoursesearchresults', 'backup', $component->get_count()));
         $output .= html_writer::start_tag('div', array('class' => 'ics-results'));
         $table = new html_table();
@@ -72,66 +62,72 @@ class block_courseimport_renderer extends core_backup_renderer
         $coursecode = strtolower(substr($shortnamestr, 0, strpos($shortnamestr, '-')));
 
         $yearcode = substr($shortnamestr, -4);
-        $isyearnum =is_numeric($yearcode);
+        $isyearnum = is_numeric($yearcode);
 
         $colist = null;
         if(strlen($coursecode) >= 4) {
             $colist = $component->get_shortnameresults($coursecode, $shortnamestr);
         } else {
-            $coursecode = substr($shortnamestr, 0, -4);// This is for non-saturn course.
+            $coursecode = substr($shortnamestr, 0, -4); // This is for non-saturn course.
         }
 
         $highlightguard = true;
         $highlight = false;
-        $cids = array();
 
-        foreach ($component->get_results() as $course) {
-
-            $cid = $course->id;
-            if ((! is_null($colist)) and (array_key_exists($cid, $colist))) {
-                unset($colist[$cid]);
-            }
-            if ($cid == $COURSE->id) {
-                continue;
-            }
+        if ($component->get_count() === 0) {
             $row = new html_table_row();
-            $row->attributes['class'] = 'ics-course';
-            if (!$course->visible) {
-                $row->attributes['class'] .= ' dimmed';
-            }
-            $cshortname = strtolower($course->shortname);
-            $thisyearcode = substr($cshortname, -4); // A year cord for other course.
-            $isthisyearnum =is_numeric($thisyearcode);
-            $uuu = strpos($cshortname, $coursecode);
+            $notice = new html_table_cell($this->output->notification(get_string('nomatchingcourses', 'backup')));
+            $notice->colspan = 4;
+            $row->cells = array($notice);
+            $table->data[] = $row;
+        } else {
+            foreach ($component->get_results() as $course) {
+                $cid = $course->id;
+                if ((!is_null($colist)) and (array_key_exists($cid, $colist))) {
+                    unset($colist[$cid]);
+                }
+                if ($cid == $COURSE->id) {
+                    continue;
+                }
+                $row = new html_table_row();
+                $row->attributes['class'] = 'ics-course';
+                if (!$course->visible) {
+                    $row->attributes['class'] .= ' dimmed';
+                }
+                $cshortname = strtolower($course->shortname);
+                $thisyearcode = substr($cshortname, -4); // A year cord for other course.
+                $isthisyearnum = is_numeric($thisyearcode);
+                $uuu = strpos($cshortname, $coursecode);
 
-            // Check if thisyearcode > yearcode for select.
-            if (($uuu === 0) and $isthisyearnum and $isyearnum and !$highlight) {
-                if ((int)$thisyearcode < (int)$yearcode ) { // This course is old course with same code.
-                    $highlight = true;
+                // Check if thisyearcode > yearcode for select.
+                if (($uuu === 0) and $isthisyearnum and $isyearnum and !$highlight) {
+                    if ((int)$thisyearcode < (int)$yearcode) { // This course is old course with same code.
+                        $highlight = true;
+                    }
+                }
+
+                if (($highlight === true) and ($highlightguard === true)) {
+                    $cshortname = html_writer::tag('strong', format_string($cshortname, true, array('context' => context_course::instance($cid))));
+                    $row->cells = array(
+                        html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $cid, 'checked' => 'checked')),
+                        $cshortname,
+                        html_writer::tag('strong', format_string($course->fullname, true, array('context' => context_course::instance($cid)))),
+                        html_writer::tag('strong', format_string($cid, true, array('context' => context_course::instance($cid))))
+                    );
+                    array_unshift($table->data, $row);
+                    $highlightguard = false;
+                } else {
+                    $row->cells = array(
+                        html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $cid)),
+                        format_string($cshortname, true, array('context' => context_course::instance($cid))),
+                        format_string($course->fullname, true, array('context' => context_course::instance($cid))),
+                        format_string($cid, true, array('context' => context_course::instance($cid)))
+                    );
+                    $table->data[] = $row;
                 }
             }
-
-            if (($highlight === true) and ($highlightguard === true)) {
-                $cshortname = html_writer::tag('strong', format_string($cshortname, true, array('context' => context_course::instance($cid))));
-                $row->cells = array(
-                    html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $cid, 'checked' => 'checked')),
-                    $cshortname,
-                    html_writer::tag('strong', format_string($course->fullname, true, array('context' => context_course::instance($cid)))),
-                    html_writer::tag('strong', format_string($cid, true, array('context' => context_course::instance($cid))))
-                );
-                array_unshift($table->data, $row);
-                $highlightguard = false;
-            } else {
-                $row->cells = array(
-                    html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $cid)),
-                    format_string($cshortname, true, array('context' => context_course::instance($cid))),
-                    format_string($course->fullname, true, array('context' => context_course::instance($cid))),
-                    format_string($cid, true, array('context' => context_course::instance($cid)))
-                );
-                $table->data[] = $row;
-            }
+            array_splice($table->data, 100);
         }
-        array_splice($table->data, 100);
 
         if (empty($_REQUEST['search'])) {
             $searchstr = "";
@@ -141,10 +137,10 @@ class block_courseimport_renderer extends core_backup_renderer
 
         // Course list for shortname search is not treat as original course list.
         if ((! is_null($colist)) and (count($colist) >0) and ($searchstr === "")) {
-            // if need more infor user this $strhelp = $this->help_icon('clisthelp','block_courseimport');
+            // If need more infor user this $strhelp = $this->help_icon('clisthelp','block_courseimport').
             $askroleinfo = get_string('askroleinfo', 'block_courseimport');
             $inforcell = new html_table_cell($this->output->notification($askroleinfo, 'notifyproblem'));
-            $inforcell->colspan = 3;
+            $inforcell->colspan = 4;
             $table->data[] = new html_table_row(array($inforcell));
             foreach ($colist as $id => $course) {
                 $row = new html_table_row();
@@ -164,14 +160,11 @@ class block_courseimport_renderer extends core_backup_renderer
 
         $output .= html_writer::table($table);
         $output .= html_writer::end_tag('div');
-
         $output .= html_writer::start_tag('div', array('class' => 'ics-search'));
         $output .= html_writer::empty_tag('input', array('type' => 'text', 'name' => block_courseimport_search::$VAR_SEARCH, 'value' => $component->get_search()));
         $output .= html_writer::empty_tag('input', array('type' => 'submit', 'name' => 'searchcourses', 'value' => get_string('search')));
         $output .= html_writer::end_tag('div');
-
         $output .= html_writer::end_tag('div');
         return $output;
     }
-
 }
