@@ -51,10 +51,10 @@ class block_courseimport_renderer extends core_backup_renderer
      */
     public function render_block_courseimport_search(block_courseimport_search $component) {
         global $COURSE;
-        $output = html_writer::start_tag('div', array('class' => 'import-course-search'));
+        $output = html_writer::start_div('import-course-search');
         
-        $output .= html_writer::tag('div', get_string('totalcoursesearchresults', 'backup', $component->get_count()));
-        $output .= html_writer::start_tag('div', array('class' => 'ics-results'));
+        $output .= html_writer::div(get_string('totalcoursesearchresults', 'backup', $component->get_count()));
+        $output .= html_writer::start_div('ics-results');
         $table = new html_table();
         $table->head = array('', get_string('shortnamecourse'), get_string('fullnamecourse'), "course ID");
         $table->data = array();
@@ -158,12 +158,12 @@ class block_courseimport_renderer extends core_backup_renderer
         }
 
         $output .= html_writer::table($table);
-        $output .= html_writer::end_tag('div');
-        $output .= html_writer::start_tag('div', array('class' => 'ics-search'));
+        $output .= html_writer::end_div();
+        $output .= html_writer::start_div('ics-search');
         $output .= html_writer::empty_tag('input', array('type' => 'text', 'name' => block_courseimport_search::$VAR_SEARCH, 'value' => $component->get_search()));
         $output .= html_writer::empty_tag('input', array('type' => 'submit', 'name' => 'searchcourses', 'value' => get_string('search')));
-        $output .= html_writer::end_tag('div');
-        $output .= html_writer::end_tag('div');
+        $output .= html_writer::end_div();
+        $output .= html_writer::end_div();
         return $output;
     }
 }
