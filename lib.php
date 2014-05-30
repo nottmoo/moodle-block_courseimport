@@ -14,6 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/** Job waiting to be processed. */
+define('BLOCK_COURSEIMPORT_STATE_WAITING', '222222');
+/** Block jobs. */
+define('BLOCK_COURSEIMPORT_STATE_BLOCK', '444444');
+/** Import job finished. */
+define('BLOCK_COURSEIMPORT_STATE_FINISHED', '555555');
+/** Job is being processed. */
+define('BLOCK_COURSEIMPORT_STATE_PROCESSING', '666666');
+/** Could not be imported and abandoned job. */
+define('BLOCK_COURSEIMPORT_STATE_FAILED', '777777');
+
 /**
  * block_courseimport_changestatus
  *
@@ -46,7 +57,7 @@ function block_courseimport_abandonjob($abandonjobs) {
             $jobid = $abandon->id;
             $temprecord = new stdClass();
             $temprecord->id = $jobid;
-            $temprecord->status = '777777';
+            $temprecord->status = BLOCK_COURSEIMPORT_STATE_FAILED;
             $temprecord->timemodified = time();
             $DB->update_record('block_courseimport', $temprecord);
             unset($temprecord);
@@ -150,7 +161,7 @@ function block_courseimport_sendemail($subject, $message, $userid = null) {
     global $DB;
     $campusmail = local_uonlib_get_campusmail("U"); // Cron send email.
     if ($campus = $DB->get_record('user', array('email' => $campusmail))) {
-        if ($userid !== null) { // Eamil to a Teacher, not learning-support
+        if ($userid !== null) { // Email to a Teacher, not learning-support.
             $touser = $DB->get_record('user', array('id' => $userid));
             if ($mailsent = email_to_user($touser, $campus, $subject, $message, '', '', '', true, $touser->email, fullname($touser))) {
                 return true;

@@ -66,11 +66,11 @@ if (isset($argv[1])) {
 
     if ($argument1 === 0) {
         $table = 'block_courseimport';
-        $select = "status ='222222'";
-        $counter = $DB->count_records_select($table, $select);
+        $select = "status = :status";
+        $counter = $DB->count_records_select($table, $select, array('status' => BLOCK_COURSEIMPORT_STATE_WAITING));
         if ($counter > 0) {
             // Set all waiting jobs to blocked.
-            $DB->set_field('block_courseimport', 'status', '444444', array('status' => '222222'));
+            $DB->set_field('block_courseimport', 'status', BLOCK_COURSEIMPORT_STATE_BLOCK, array('status' => BLOCK_COURSEIMPORT_STATE_WAITING));
             echo "\n".date('Y-m-d H:i:s')." Process has been blocked manually, $counter jobs in queue."
                     . "\nTo unblock run php var/www/blocks/courseimport/newbackup.php 1 at the command line.\n";
         } else {
@@ -79,16 +79,16 @@ if (isset($argv[1])) {
     }
     if ($argument1 === 1) {
         // Set all blocked jobs to waiting.
-        $DB->set_field('block_courseimport', 'status', '222222', array('status' => '444444'));
+        $DB->set_field('block_courseimport', 'status', BLOCK_COURSEIMPORT_STATE_WAITING, array('status' => BLOCK_COURSEIMPORT_STATE_BLOCK));
         echo "\n".date('Y-m-d H:i:s')." Process will start at the next CRON\n";
     }
     die();
 }
 // Start jobs.
-$countstopjobs = $DB->count_records_sql('SELECT COUNT(*) FROM {block_courseimport} where status ="444444"');
+$countstopjobs = $DB->count_records('block_courseimport', array('status' => BLOCK_COURSEIMPORT_STATE_BLOCK));
 // If a job still is processiong status, should be abandoned.
-$abandonjobs = $DB->get_records_sql('SELECT * FROM {block_courseimport} where status ="666666"'); 
-$results = $DB->get_records_sql('SELECT * FROM {block_courseimport} where status ="222222" order by id asc');
+$abandonjobs = $DB->get_records('block_courseimport', array('status' => BLOCK_COURSEIMPORT_STATE_PROCESSING));
+$results = $DB->get_records('block_courseimport', array('status' => BLOCK_COURSEIMPORT_STATE_WAITING), 'id');
 
 // Need countstopjobs to avoid execute any new added job.
 if ( !empty($results) && ($countstopjobs > 0) ) {
@@ -113,7 +113,7 @@ if ( !empty($results) && ($countstopjobs > 0) ) {
         $userid = $job->userid;
 
         // Start processing, successfully will chnage to 555555, otherwise abandon and email admin.
-        block_courseimport_changestatus($jobid,'666666'); 
+        block_courseimport_changestatus($jobid, BLOCK_COURSEIMPORT_STATE_PROCESSING);
         echo "\n".date('Y-m-d H:i:s')." Jobid:$jobid--Userid:$userid\nImport To Course ID:$courseid"
                 . "\nImport From Course ID:$targetcourseid,\nCreating backup for course ID:$targetcourseid now.\n";
         
@@ -154,7 +154,7 @@ if ( !empty($results) && ($countstopjobs > 0) ) {
             $rc->execute_plan();
             $rc->destroy();
             fulldelete($tempdestination);
-            block_courseimport_changestatus($jobid,'555555');
+            block_courseimport_changestatus($jobid, BLOCK_COURSEIMPORT_STATE_FINISHED);
             echo "\n".date('Y-m-d H:i:s')." Success in Jobid: $jobid. "
                     . "Import is complete.\nImport From Course ID:$targetcourseid -> Import To Course ID:$courseid.\n";
             // Send email to user.
