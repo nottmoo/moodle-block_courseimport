@@ -138,8 +138,13 @@ if ( !empty($results) && ($countstopjobs > 0) ) {
         if (!$rc->execute_precheck()) {
             $precheckresults = $rc->get_precheck_results();
             if (is_array($precheckresults) && !empty($precheckresults['errors'])) {
-                $message = date('Y-m-d H:i:s')." Error! In Jobid: $jobid. Prechecks for importing backupfile failed.\n"
-                        . "Import From Course ID:$targetcourseid -> Import To Course ID:$courseid";
+                $message = get_string('precheckfail', 'block_courseimport',
+                    array(
+                        'timenow' => date('Y-m-d H:i:s'),
+                        'jobid' => $jobid,
+                        'targetcourseid' => $targetcourseid,
+                        'courseid' => $courseid
+                        ));
                 echo "\n".$message."\n";
                 // Send email to Moodle admin.
                 $subject =  get_string('alteremailsubject', 'block_courseimport');

@@ -55,3 +55,5 @@ $string['useremailsubject'] = 'Moodle course import';
 $string['useremailmessage'] = 'This is auto created email by Moodle, your course import job had been done. Import From Course:{$a->importfrom}. Import To Course:{$a->importto}.";';
 $string['courseimport:manage'] = 'See and change settings for the course import block';
 $string['courseimport:view'] = 'Use the course import block functionality';
+$string['abandonedmessage'] = '{$a->timenow}, Job abandoned, Jobid={$a->jobid}, Userid={$a->userid}. Import To Course ID:{$a->courseid}. Import From Course ID:{$a->targetcourseid}';
+$string['precheckfail'] = '{$a->timenow} Error! In Jobid: {$a->jobid}. Prechecks for importing backupfile failed. Import From Course ID:{$a->targetcourseid} -> Import To Course ID:{$a->courseid}';

@@ -65,7 +65,14 @@ function block_courseimport_abandonjob($abandonjobs) {
             $courseid = $abandon->courseid;
             $targetcourseid = $abandon->targetcourseid;
             $userid = $abandon->userid;
-            $message = "$timenow, Job abandoned, Jobid=$jobid, Userid=$userid. Import To Course ID:$courseid. Import From Course ID:$targetcourseid";
+            $message = get_string('abandonedmessage', 'block_courseimport',
+                    array(
+                        'timenow' => $timenow,
+                        'jobid' => $jobid,
+                        'userid' => $userid,
+                        'courseid' => $courseid,
+                        'targetcourseid' => $targetcourseid
+                    ));
             $subject = get_string('alertemailsubject', 'block_courseimport');
             $isemail= block_courseimport_sendemail($subject, $message);
             if (!$isemail) {
