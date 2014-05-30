@@ -68,7 +68,7 @@ class block_courseimport_search extends import_course_search
         $params = array(
             'shortnamestr' => strtolower($shortnamestr),
             'siteid' => SITEID,
-            'coursecode' => '%'.strtolower($coursecode).'%',
+            'coursecode' => strtolower($coursecode).'%',
             );
 
         $likesql = $DB->sql_like('LOWER(c.shortname)', ':coursecode');
