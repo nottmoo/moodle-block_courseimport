@@ -131,11 +131,11 @@ class block_courseimport_renderer extends core_backup_renderer
         if (empty($_REQUEST['search'])) {
             $searchstr = "";
         } else {
-            $searchstr=trim($_REQUEST["search"]);
+            $searchstr = trim($_REQUEST["search"]);
         }
 
         // Course list for shortname search is not treat as original course list.
-        if ((! is_null($colist)) and (count($colist) >0) and ($searchstr === "")) {
+        if ((!is_null($colist)) and (count($colist) > 0) and ($searchstr === "")) {
             // If need more infor user this $strhelp = $this->help_icon('clisthelp','block_courseimport').
             $askroleinfo = get_string('askroleinfo', 'block_courseimport');
             $inforcell = new html_table_cell($this->output->notification($askroleinfo, 'notifyproblem'));
