@@ -91,7 +91,7 @@ $abandonjobs = $DB->get_records('block_courseimport', array('status' => BLOCK_CO
 $results = $DB->get_records('block_courseimport', array('status' => BLOCK_COURSEIMPORT_STATE_WAITING), 'id');
 
 // Need countstopjobs to avoid execute any new added job.
-if ( !empty($results) && ($countstopjobs > 0) ) {
+if (($countstopjobs > 0) ) {
     echo "\n".date('Y-m-d H:i:s')." Process has been blocked manually and will not run until it is unblocked."
             . "\nTo unblock run php var/www/blocks/courseimport/newbackup.php 1 at the command line.\n";
     die();
@@ -176,3 +176,5 @@ if ( !empty($results) && ($countstopjobs > 0) ) {
         }
     }
 }
+
+echo "\n".date('Y-m-d H:i:s')."Finished Processing.\n";
