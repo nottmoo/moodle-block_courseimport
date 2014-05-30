@@ -65,11 +65,10 @@ class block_courseimport_renderer extends core_backup_renderer
         $isyearnum = is_numeric($yearcode);
 
         $colist = null;
-        if(strlen($coursecode) >= 4) {
-            $colist = $component->get_shortnameresults($coursecode, $shortnamestr);
-        } else {
+        if(strlen($coursecode) < 4) {
             $coursecode = substr($shortnamestr, 0, -4); // This is for non-saturn course.
         }
+        $colist = $component->get_shortnameresults($coursecode, $shortnamestr);
 
         $highlightguard = true;
         $highlight = false;
