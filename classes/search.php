@@ -105,6 +105,9 @@ class block_courseimport_search extends import_course_search
         if (empty($shortnamesearch)) {
             $shortnamestr = strtolower($COURSE->shortname);
             $shortnamesearch = substr($shortnamestr, 0, strpos($shortnamestr, '-'));
+            if (strlen($shortnamesearch) < 4 && strlen($shortnamestr) > 4) {
+                $shortnamesearch = substr($shortnamestr, 0, -4); // This is for non-saturn course.
+            }
             $params['shortnamesearch'] = $shortnamesearch . '%';
             $where = " WHERE (" . $DB->sql_like('c.shortname', ':shortnamesearch', false) . ") AND c.id <> :siteid";
         } else {
