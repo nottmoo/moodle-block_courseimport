@@ -168,9 +168,9 @@ function block_courseimport_sendemail($subject, $message, $userid = null) {
     global $DB;
     $campusmail = local_uonlib_get_campusmail("U"); // Cron send email.
     if ($campus = $DB->get_record('user', array('email' => $campusmail))) {
-        if ($userid !== null) { // Email to a Teacher, not learning-support.
+        if ($userid !== null) { // Email to a user, not learning-support.
             $touser = $DB->get_record('user', array('id' => $userid));
-            if ($mailsent = email_to_user($touser, $campus, $subject, $message, '', '', '', true, $touser->email, fullname($touser))) {
+            if ($mailsent = email_to_user($touser, $campus, $subject, $message)) {
                 return true;
             } else {
                 return false;
