@@ -103,10 +103,26 @@ class block_courseimport_search extends import_course_search
         // If no search string supplied use target course short name.
         $shortnamesearch = $this->get_search();
         if (empty($shortnamesearch)) {
-            $shortnamestr = strtolower($COURSE->shortname);
-            $shortnamesearch = substr($shortnamestr, 0, strpos($shortnamestr, '-'));
-            if (strlen($shortnamesearch) < 4 && strlen($shortnamestr) > 4) {
-                $shortnamesearch = substr($shortnamestr, 0, -4); // This is for non-saturn course.
+            $shortnamestring = strtolower($COURSE->shortname);
+
+            if (strlen($shortnamestring) > 4) {
+                $shortnamehyphen = strpos($shortnamestring, '-');
+
+                // Saturn / Non Saturn courses should have a hyphen.
+                if ($shortnamehyphen !== false) {
+                    $shortnamesearch = substr($shortnamestring, 0, $shortnamehyphen);
+                }
+
+                // Non saturn courses require a more specific short name.
+                if (strlen($shortnamesearch) < 4 and $shortnamehyphen) {
+                    $shortnamesearch = substr($shortnamestring,0,-4);
+                }
+            } else {
+                // Should not get here if course names in the db are in the right format
+                // If we do bottle out as we dont want to do a bad query
+                $params = array();
+                $select = "SELECT NULL from {course} where FALSE";
+                return array($select, $params);
             }
             $params['shortnamesearch'] = $shortnamesearch . '%';
             $where = " WHERE (" . $DB->sql_like('c.shortname', ':shortnamesearch', false) . ") AND c.id <> :siteid";
