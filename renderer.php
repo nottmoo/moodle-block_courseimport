@@ -58,17 +58,31 @@ class block_courseimport_renderer extends core_backup_renderer
         $table = new html_table();
         $table->head = array('', get_string('shortnamecourse'), get_string('fullnamecourse'), "course ID");
         $table->data = array();
-        $shortnamestr = strtolower($COURSE->shortname);
-        $coursecode = strtolower(substr($shortnamestr, 0, strpos($shortnamestr, '-')));
+
+        // Do shortname search on all courses.
+        $shortnamestring = strtolower($COURSE->shortname);
+        $shortnamehyphen = strpos($shortnamestring, '-');
+        // Default course code to short name.
+        $coursecode = $shortnamestring;
 
         $yearcode = substr($shortnamestr, -4);
         $isyearnum = is_numeric($yearcode);
 
         $colist = null;
-        if(strlen($coursecode) < 4 && strlen($shortnamestr) > 4) {
-            $coursecode = substr($shortnamestr, 0, -4); // This is for non-saturn course.
+        // Assuming all courses in the db are in the correct format they will be over 4 characters in length.
+        // Bottle out if not to avoid doing a bad search.
+        if (strlen($shortnamestring) > 4) {
+            // Saturn / Non Saturn courses should have a hyphen.
+            if ($shortnamehyphen !== false) {
+                $colist = substr($shortnamestring, 0, $shortnamehyphen);
+            }
+
+            // Non saturn courses require a more specific course code.
+            if (strlen($coursecode) < 4 and $shortnamehyphen) {
+                $coursecode = substr($shortnamestring,0,-4);
+            }
+            $colist = $component->get_shortnameresults($coursecode ,$shortnamestring);
         }
-        $colist = $component->get_shortnameresults($coursecode, $shortnamestr);
 
         $highlightguard = true;
         $highlight = false;
