@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+require_once(dirname(dirname(__DIR__)).'/local/uonlib/uoncourselib.php');
+
 /** Job waiting to be processed. */
 define('BLOCK_COURSEIMPORT_STATE_WAITING', '222222');
 /** Block jobs. */
