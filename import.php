@@ -162,7 +162,7 @@ if ($backup->get_stage() == backup_ui::STAGE_FINAL) { //backup_ui::STAGE_FINAL=8
     $DB->insert_record('block_courseimport', $record);
     $jobdone = get_string('jobdone', 'block_courseimport');
     echo $OUTPUT->header();
-    echo $OUTPUT->notification($jobdone);
+    echo $OUTPUT->notification($jobdone, 'notifysuccess');
     echo $OUTPUT->continue_button(new moodle_url('/course/view.php', array('id' => $course->id)));
     echo $OUTPUT->footer();
     die();
