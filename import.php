@@ -100,7 +100,7 @@ if (!($bc = backup_ui::load_controller($backupid))) {
 $backup = new import_ui($bc, array('importid' => $importcourse->id, 'target' => $restoretarget));
 // Process the current stage
 $backup->process();
-if ($backup->get_stage() === 2) {
+if ($backup->get_stage() === backup_ui::STAGE_SCHEMA) {
     $setsize = '';
     if (get_config('block_courseimport', 'filesize')) {
         $setsize = (int)get_config('block_courseimport', 'filesize');
