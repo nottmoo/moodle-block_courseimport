@@ -14,7 +14,75 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-//define('BLOCK_COURSELIFE_NOTARCHIVED', '0'); define('BLOCK_COURSELIFE_ARCHIVED', '1');
+require_once(dirname(dirname(__DIR__)).'/local/uonlib/uoncourselib.php');
+
+/** Job waiting to be processed. */
+define('BLOCK_COURSEIMPORT_STATE_WAITING', '222222');
+/** Block jobs. */
+define('BLOCK_COURSEIMPORT_STATE_BLOCK', '444444');
+/** Import job finished. */
+define('BLOCK_COURSEIMPORT_STATE_FINISHED', '555555');
+/** Job is being processed. */
+define('BLOCK_COURSEIMPORT_STATE_PROCESSING', '666666');
+/** Could not be imported and abandoned job. */
+define('BLOCK_COURSEIMPORT_STATE_FAILED', '777777');
+
+/**
+ * block_courseimport_changestatus
+ *
+ * change job status
+ *
+ * @param int jobid
+ * @param string status
+ *
+ */
+function block_courseimport_changestatus($jobid, $status) {
+    global $DB;
+    $temprecord = new stdClass();
+    $temprecord->id = $jobid;
+    $temprecord->status = $status;
+    $temprecord->timemodified = time();
+    $DB->update_record('block_courseimport', $temprecord);
+}
+
+/**
+ * block_courseimport_abandonjob
+ *
+ * abandon job
+ *
+ * @param array $abandonjobs
+ */
+function block_courseimport_abandonjob($abandonjobs) {
+    global $DB;
+    if (count($abandonjobs) > 0) {
+        foreach ($abandonjobs as $abandon) {
+            $jobid = $abandon->id;
+            $temprecord = new stdClass();
+            $temprecord->id = $jobid;
+            $temprecord->status = BLOCK_COURSEIMPORT_STATE_FAILED;
+            $temprecord->timemodified = time();
+            $DB->update_record('block_courseimport', $temprecord);
+            unset($temprecord);
+            $timenow = date('Y-m-d H:i:s');
+            $courseid = $abandon->courseid;
+            $targetcourseid = $abandon->targetcourseid;
+            $userid = $abandon->userid;
+            $message = get_string('abandonedmessage', 'block_courseimport',
+                    array(
+                        'timenow' => $timenow,
+                        'jobid' => $jobid,
+                        'userid' => $userid,
+                        'courseid' => $courseid,
+                        'targetcourseid' => $targetcourseid
+                    ));
+            $subject = get_string('alertemailsubject', 'block_courseimport');
+            $isemail= block_courseimport_sendemail($subject, $message);
+            if (!$isemail) {
+                echo "\n$timenow Error! Jobid: $jobid. Failed to send email to admin. Email message: .\n$message\n";
+            }
+        }
+    }
+}
 
 /**
  * findfilesize
@@ -85,5 +153,38 @@ function block_courseimport_timecheck($start, $end) {
         return true;
     } else {
         return false; // From and to are equal, assume no time.
+    }
+}
+
+/**
+ * block_courseimport_sendemail
+ *
+ * Send email to Moodle admin or to a user
+ *
+ * @param string $subject
+ * @param string $message
+ * @param int $userid
+ * @return bool
+ */
+function block_courseimport_sendemail($subject, $message, $userid = null) {
+    global $DB;
+    $campusmail = local_uonlib_get_campusmail("U"); // Cron send email.
+    if ($campus = $DB->get_record('user', array('email' => $campusmail))) {
+        if ($userid !== null) { // Email to a user, not learning-support.
+            $touser = $DB->get_record('user', array('id' => $userid));
+            if ($mailsent = email_to_user($touser, $campus, $subject, $message)) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            if ($mailsent = email_to_user($campus, $campus, $subject, $message)) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    } else {
+        return false;
     }
 }

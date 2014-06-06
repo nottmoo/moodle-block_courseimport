@@ -100,7 +100,7 @@ if (!($bc = backup_ui::load_controller($backupid))) {
 $backup = new import_ui($bc, array('importid' => $importcourse->id, 'target' => $restoretarget));
 // Process the current stage
 $backup->process();
-if ($backup->get_stage() === 2) {
+if ($backup->get_stage() === backup_ui::STAGE_SCHEMA) {
     $setsize = '';
     if (get_config('block_courseimport', 'filesize')) {
         $setsize = (int)get_config('block_courseimport', 'filesize');
@@ -162,7 +162,7 @@ if ($backup->get_stage() == backup_ui::STAGE_FINAL) { //backup_ui::STAGE_FINAL=8
     $DB->insert_record('block_courseimport', $record);
     $jobdone = get_string('jobdone', 'block_courseimport');
     echo $OUTPUT->header();
-    echo $OUTPUT->notification($jobdone);
+    echo $OUTPUT->notification($jobdone, 'notifysuccess');
     echo $OUTPUT->continue_button(new moodle_url('/course/view.php', array('id' => $course->id)));
     echo $OUTPUT->footer();
     die();

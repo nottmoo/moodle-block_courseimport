@@ -68,7 +68,7 @@ class block_courseimport_search extends import_course_search
         $params = array(
             'shortnamestr' => strtolower($shortnamestr),
             'siteid' => SITEID,
-            'coursecode' => '%'.strtolower($coursecode).'%',
+            'coursecode' => strtolower($coursecode).'%',
             );
 
         $likesql = $DB->sql_like('LOWER(c.shortname)', ':coursecode');
@@ -91,18 +91,50 @@ class block_courseimport_search extends import_course_search
      * @global moodle_database $DB
      */
     protected function get_searchsql() {
-        global $DB;
+        global $DB, $COURSE;
         $ctxselect = context_helper::get_preload_record_columns_sql('ctx');
         $ctxjoin = "LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = :contextlevel)";
+        
         $params = array(
-            'fullnamesearch' => '%' . $this->get_search() . '%',
-            'shortnamesearch' => '%' . $this->get_search() . '%',
             'siteid' => SITEID,
             'contextlevel' => CONTEXT_COURSE
         );
+
+        // If no search string supplied use target course short name.
+        $shortnamesearch = $this->get_search();
+        if (empty($shortnamesearch)) {
+            $shortnamestring = strtolower($COURSE->shortname);
+
+            if (strlen($shortnamestring) > 4) {
+                $shortnamehyphen = strpos($shortnamestring, '-');
+
+                // Saturn / Non Saturn courses should have a hyphen.
+                if ($shortnamehyphen !== false) {
+                    $shortnamesearch = substr($shortnamestring, 0, $shortnamehyphen);
+                }
+
+                // Non saturn courses require a more specific short name.
+                if (strlen($shortnamesearch) < 4 and $shortnamehyphen) {
+                    $shortnamesearch = substr($shortnamestring,0,-4);
+                }
+            } else {
+                // Should not get here if course names in the db are in the right format
+                // If we do bottle out as we dont want to do a bad query
+                $params = array();
+                $select = "SELECT NULL from {course} where FALSE";
+                return array($select, $params);
+            }
+            $params['shortnamesearch'] = $shortnamesearch . '%';
+            $where = " WHERE (" . $DB->sql_like('c.shortname', ':shortnamesearch', false) . ") AND c.id <> :siteid";
+        } else {
+            $params['fullnamesearch'] = '%'. $this->get_search() . '%';
+            $params['shortnamesearch'] = '%' . $shortnamesearch . '%';
+            $where = " WHERE (" . $DB->sql_like('c.fullname', ':fullnamesearch', false) . " OR " .
+                        $DB->sql_like('c.shortname', ':shortnamesearch', false) . ") AND c.id <> :siteid";
+        }
+
         $select = " SELECT c.id,c.fullname,c.shortname,c.visible,c.sortorder, ";
         $from = " FROM {course} c ";
-        $where = " WHERE (" . $DB->sql_like('c.fullname', ':fullnamesearch', false) . " OR " . $DB->sql_like('c.shortname', ':shortnamesearch', false) . ") AND c.id <> :siteid";
         $orderby = " ORDER BY c.id DESC";
 
         if ($this->currentcourseid !== null && !$this->includecurrentcourse) {

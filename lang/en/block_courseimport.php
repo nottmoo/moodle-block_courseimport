@@ -42,7 +42,7 @@ Time ranges are seperated by ==  with no space in string
 You can define any number of time ranges.
 
 <b>The imput is not validated. Moodle will ignore any times if there is a error with it.</b>.";
-$string['askroleinfo'] = "You do not have permission to import from the modules below. You should contact module's owner to ask for the Editing Teacher role if you wish to import from one.";
+$string['askroleinfo'] = "You do not have permission to import from the modules below. You should contact the module's owner to ask for the Editing Teacher role if you wish to import from one.";
 $string['videofile'] = 'Note:&nbsp;The&nbsp;above&nbsp;video&nbsp;file&nbsp;will&nbsp;not&nbsp;be&nbsp;imported.';
 $string['bigfile'] = 'Note:&nbsp;Above&nbsp;file&nbsp;size&nbsp;is&nbsp;too&nbsp;big&nbsp;to&nbsp;be&nbsp;imported.';
 $string['courseimport:addinstance'] = 'Add the course import block to a page';
@@ -50,3 +50,10 @@ $string['courseimport:manage'] = 'See and change settings for the course import 
 $string['courseimport:view'] = 'Use the course import block functionality';
 $string['max_file_size'] = 'File size limit (MB) ';
 $string['time'] = 'Cron time';
+$string['alertemailsubject'] = 'Course import error alert';
+$string['useremailsubject'] = 'Moodle course import';
+$string['useremailmessage'] = 'This is auto created email by Moodle, your course import job had been done. Import From Course:{$a->importfrom}. Import To Course:{$a->importto}.";';
+$string['courseimport:manage'] = 'See and change settings for the course import block';
+$string['courseimport:view'] = 'Use the course import block functionality';
+$string['abandonedmessage'] = '{$a->timenow}, Job abandoned, Jobid={$a->jobid}, Userid={$a->userid}. Import To Course ID:{$a->courseid}. Import From Course ID:{$a->targetcourseid}';
+$string['precheckfail'] = '{$a->timenow} Error! In Jobid: {$a->jobid}. Prechecks for importing backupfile failed. Import From Course ID:{$a->targetcourseid} -> Import To Course ID:{$a->courseid}';
