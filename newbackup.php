@@ -132,6 +132,11 @@ if (($countstopjobs > 0) ) {
 
         list($context, $course, $cm) = get_context_info_array($contextid);
         $rc = new restore_controller($backupid, $course->id, backup::INTERACTIVE_YES, backup::MODE_IMPORT, $userid, 1);
+
+        // Convert the backup if required.... it should NEVER happed
+        if ($rc->get_status() == backup::STATUS_REQUIRE_CONV) {
+            $rc->convert();
+        }
         // Mark the UI finished.
         $rc->finish_ui();
         // Execute prechecks.
