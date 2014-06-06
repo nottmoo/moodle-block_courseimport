@@ -113,8 +113,8 @@ if (($countstopjobs > 0) ) {
         $userid = $job->userid;
 
         // Start processing, successfully will chnage to 555555, otherwise abandon and email admin.
-        block_courseimport_changestatus($jobid, BLOCK_COURSEIMPORT_STATE_PROCESSING);
-        echo "\n".date('Y-m-d H:i:s')." Jobid:$jobid--Userid:$userid\nImport To Course ID:$courseid"
+        block_courseimport_changestatus($job->id, BLOCK_COURSEIMPORT_STATE_PROCESSING);
+        echo "\n".date('Y-m-d H:i:s')." Jobid:$job->id--Userid:$userid\nImport To Course ID:$courseid"
                 . "\nImport From Course ID:$targetcourseid,\nCreating backup for course ID:$targetcourseid now.\n";
         
         $bc = backup_ui::load_controller($importid);
@@ -141,7 +141,7 @@ if (($countstopjobs > 0) ) {
                 $message = get_string('precheckfail', 'block_courseimport',
                     array(
                         'timenow' => date('Y-m-d H:i:s'),
-                        'jobid' => $jobid,
+                        'jobid' => $job->id,
                         'targetcourseid' => $targetcourseid,
                         'courseid' => $courseid
                         ));
@@ -159,8 +159,8 @@ if (($countstopjobs > 0) ) {
             $rc->execute_plan();
             $rc->destroy();
             fulldelete($tempdestination);
-            block_courseimport_changestatus($jobid, BLOCK_COURSEIMPORT_STATE_FINISHED);
-            echo "\n".date('Y-m-d H:i:s')." Success in Jobid: $jobid. "
+            block_courseimport_changestatus($job->id, BLOCK_COURSEIMPORT_STATE_FINISHED);
+            echo "\n".date('Y-m-d H:i:s')." Success in Jobid: $job->id. "
                     . "Import is complete.\nImport From Course ID:$targetcourseid -> Import To Course ID:$courseid.\n";
             // Send email to user.
             $importto= $DB->get_field('course', 'fullname', array('id' => $courseid));
@@ -170,7 +170,7 @@ if (($countstopjobs > 0) ) {
                     array('importto' => $importto, 'importfrom' => $importfrom));
             $isemail = block_courseimport_sendemail($subject, $message, $userid);
             if (!$isemail) {
-                echo "\n".date('Y-m-d H:i:s')." Error! Jobid: $jobid. "
+                echo "\n".date('Y-m-d H:i:s')." Error! Jobid: $job->id. "
                         . "Failed to send email to user to inform of success. Content of message below.\n$message\n";
             }
         }
