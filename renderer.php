@@ -65,7 +65,7 @@ class block_courseimport_renderer extends core_backup_renderer
         // Default course code to short name.
         $coursecode = $shortnamestring;
 
-        $yearcode = substr($shortnamestr, -4);
+        $yearcode = substr($shortnamestring, -4);
         $isyearnum = is_numeric($yearcode);
 
         $colist = null;
@@ -78,7 +78,7 @@ class block_courseimport_renderer extends core_backup_renderer
             }
 
             // Non saturn courses require a more specific course code.
-            if (strlen($coursecode) < 4 and $shortnamehyphen) {
+            if (strlen($coursecode) > 4 and $shortnamehyphen) {
                 $coursecode = substr($shortnamestring,0,-4);
             }
             $colist = $component->get_shortnameresults($coursecode ,$shortnamestring);
