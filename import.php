@@ -60,6 +60,23 @@ $PAGE->set_pagelayout('incourse');
 $shortname = $COURSE->shortname;
 $coursecode = substr($shortname, 0, strpos($shortname, '-'));
 $renderer = $PAGE->get_renderer('block_courseimport');
+
+// Before we do anything else check that there are no imports for this course in the queue.
+$alreadyqueued = $DB->record_exists_select('block_courseimport',
+    "courseid = $courseid AND (status = :status1 OR status = :status2)",
+    array(
+        'courseid' => $courseid,
+        'status1' => BLOCK_COURSEIMPORT_STATE_WAITING,
+        'status2' => BLOCK_COURSEIMPORT_STATE_PROCESSING,
+    ));
+if ($alreadyqueued) {
+    echo $OUTPUT->header();
+    echo $OUTPUT->notification(get_string('alreadyimporting', 'block_courseimport'), 'notifyproblem');
+    echo $OUTPUT->continue_button(new moodle_url('/course/view.php', array('id' => $course->id)));
+    echo $OUTPUT->footer();
+    die();
+}
+
 // Check if we already have a import course id
 if ($importcourseid === false || $search !== false) {
     $url = new moodle_url('/blocks/courseimport/import.php', array('id' => $courseid));
