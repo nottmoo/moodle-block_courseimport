@@ -57,3 +57,4 @@ $string['courseimport:manage'] = 'See and change settings for the course import 
 $string['courseimport:view'] = 'Use the course import block functionality';
 $string['abandonedmessage'] = '{$a->timenow}, Job abandoned, Jobid={$a->jobid}, Userid={$a->userid}. Import To Course ID:{$a->courseid}. Import From Course ID:{$a->targetcourseid}';
 $string['precheckfail'] = '{$a->timenow} Error! In Jobid: {$a->jobid}. Prechecks for importing backupfile failed. Import From Course ID:{$a->targetcourseid} -> Import To Course ID:{$a->courseid}';
+$string['alreadyimporting'] = 'There is an import in progress for this course. Please wait for it to complete.';
