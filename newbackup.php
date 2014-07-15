@@ -31,7 +31,7 @@ require_once($CFG->dirroot . '/blocks/courseimport/lib.php');
 set_time_limit(0);
 raise_memory_limit(MEMORY_EXTRA);
 
-echo "\n".date('Y-m-d H:i:s')." Process woken by CRON";
+echo "\n".date('Y-m-d H:i:s')." Process woken by CRON\n";
 $timesetting = get_config('block_courseimport', 'crontime');
 if (($timesetting) and (!empty($timesetting))) {
     echo "Time ranges setting " . $timesetting . "\n";
