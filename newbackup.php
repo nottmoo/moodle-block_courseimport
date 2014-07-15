@@ -42,7 +42,7 @@ if (($timesetting) and (!empty($timesetting))) {
             $rlist = explode("-", $range);
             $checkresult += block_courseimport_timecheck($rlist[0],$rlist[1]);
         } else {
-            echo "\n".date('Y-m-d H:i:s')." Process stopped as time range setting ( $range )is not in right format\n";
+            echo "\n".date('Y-m-d H:i:s')." Process stopped as time range setting ( $range ) is not in right format\n";
             die();
         }
       }
@@ -52,7 +52,7 @@ if (($timesetting) and (!empty($timesetting))) {
     }
 }
 
-echo "\n".date('Y-m-d H:i:s')."  Current time is within operating hours. Starting process\n";
+echo "\n".date('Y-m-d H:i:s')." Current time is within operating hours. Starting process\n";
 $argument1 = null;
 if (isset($argv[1])) {
     $argument1 = $argv[1]; 
@@ -182,4 +182,4 @@ if (($countstopjobs > 0) ) {
     }
 }
 
-echo "\n".date('Y-m-d H:i:s')."Finished Processing.\n";
+echo "\n".date('Y-m-d H:i:s')." Finished Processing.\n";
