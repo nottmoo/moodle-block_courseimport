@@ -27,14 +27,15 @@ require_once($CFG->dirroot . '/backup/moodle2/backup_plan_builder.class.php');
 require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
 require_once($CFG->dirroot . '/backup/util/ui/import_extensions.php');
 require_once($CFG->dirroot . '/blocks/courseimport/lib.php');
+require_once($CFG->dirroot . '/local/uonlib/uoncronlib.php');
 
 set_time_limit(0);
 raise_memory_limit(MEMORY_EXTRA);
 
-echo "\n".date('Y-m-d H:i:s')." Process woken by CRON\n";
+local_uonlib_logline("Process woken by CRON");
 $timesetting = get_config('block_courseimport', 'crontime');
 if (($timesetting) and (!empty($timesetting))) {
-    echo "Time ranges setting " . $timesetting . "\n";
+    local_uonlib_logline("Time ranges setting " . $timesetting);
     $ranges = explode("==", $timesetting);
     $checkresult = false;
     foreach($ranges as $range) {
@@ -42,17 +43,17 @@ if (($timesetting) and (!empty($timesetting))) {
             $rlist = explode("-", $range);
             $checkresult += block_courseimport_timecheck($rlist[0],$rlist[1]);
         } else {
-            echo "\n".date('Y-m-d H:i:s')." Process stopped as time range setting ( $range ) is not in right format\n";
+            local_uonlib_logline("Process stopped as time range setting ( $range ) is not in right format");
             die();
         }
       }
     if ($checkresult == 0 ) {
-        echo "\n".date('Y-m-d H:i:s')." Current time outside of operating hours. Operating hours are: ( $timesetting ). Process stopped. \n";
+        local_uonlib_logline("Current time outside of operating hours. Operating hours are: ( $timesetting ). Process stopped.");
         die();
     }
 }
 
-echo "\n".date('Y-m-d H:i:s')." Current time is within operating hours. Starting process\n";
+local_uonlib_logline("Current time is within operating hours. Starting process");
 $argument1 = null;
 if (isset($argv[1])) {
     $argument1 = $argv[1]; 
@@ -62,7 +63,7 @@ if (isset($argv[1])) {
     // Status 555555: a course import job finished.
     // Status 666666: job in processing.
     // Status 777777: could not be imported and abandoned job, email to admin for import manully and log details.
-    echo "\n".date('Y-m-d H:i:s')." $argument1 has been passed to the process.\n 0=Process stop. 1= Process start \n";
+    local_uonlib_logline("$argument1 has been passed to the process.\n0=Process stop. 1= Process start", false);
 
     if ($argument1 === 0) {
         $table = 'block_courseimport';
@@ -71,16 +72,16 @@ if (isset($argv[1])) {
         if ($counter > 0) {
             // Set all waiting jobs to blocked.
             $DB->set_field('block_courseimport', 'status', BLOCK_COURSEIMPORT_STATE_BLOCK, array('status' => BLOCK_COURSEIMPORT_STATE_WAITING));
-            echo "\n".date('Y-m-d H:i:s')." Process has been blocked manually, $counter jobs in queue."
-                    . "\nTo unblock run php var/www/blocks/courseimport/newbackup.php 1 at the command line.\n";
+            local_uonlib_logline("Process has been blocked manually, $counter jobs in queue."
+                    . "\nTo unblock run php var/www/blocks/courseimport/newbackup.php 1 at the command line.", false);
         } else {
-            echo "\n".date('Y-m-d H:i:s')." There are no jobs in the queue. Cannot block if there are no jobs";
+            local_uonlib_logline("There are no jobs in the queue. Cannot block if there are no jobs");
         }
     }
     if ($argument1 === 1) {
         // Set all blocked jobs to waiting.
         $DB->set_field('block_courseimport', 'status', BLOCK_COURSEIMPORT_STATE_WAITING, array('status' => BLOCK_COURSEIMPORT_STATE_BLOCK));
-        echo "\n".date('Y-m-d H:i:s')." Process will start at the next CRON\n";
+        local_uonlib_logline("Process will start at the next CRON");
     }
     die();
 }
@@ -92,15 +93,15 @@ $results = $DB->get_records('block_courseimport', array('status' => BLOCK_COURSE
 
 // Need countstopjobs to avoid execute any new added job.
 if (($countstopjobs > 0) ) {
-    echo "\n".date('Y-m-d H:i:s')." Process has been blocked manually and will not run until it is unblocked."
-            . "\nTo unblock run php var/www/blocks/courseimport/newbackup.php 1 at the command line.\n";
+    local_uonlib_logline("Process has been blocked manually and will not run until it is unblocked."
+            . "\nTo unblock run php var/www/blocks/courseimport/newbackup.php 1 at the command line.", false);
     die();
 } else {
     // Check if any job's status is 666666 or failed jobs, email admain and abandon.
     block_courseimport_abandonjob($abandonjobs); 
     
     foreach ($results as $job) {
-        echo "\n".date('Y-m-d H:i:s')." Process will start in 20 seconds.\n";
+        local_uonlib_logline("Process will start in 20 seconds.");
         sleep(20);
         $courseid = $job->courseid;
         $coursecontext = context_course::instance($courseid);
@@ -114,8 +115,8 @@ if (($countstopjobs > 0) ) {
 
         // Start processing, successfully will chnage to 555555, otherwise abandon and email admin.
         block_courseimport_changestatus($job->id, BLOCK_COURSEIMPORT_STATE_PROCESSING);
-        echo "\n".date('Y-m-d H:i:s')." Jobid:$job->id--Userid:$userid\nImport To Course ID:$courseid"
-                . "\nImport From Course ID:$targetcourseid,\nCreating backup for course ID:$targetcourseid now.\n";
+        local_uonlib_logline("Jobid:$job->id--Userid:$userid\nImport To Course ID:$courseid"
+                . "\nImport From Course ID:$targetcourseid,\nCreating backup for course ID:$targetcourseid now.", false);
         
         $bc = backup_ui::load_controller($importid);
         $backup = new block_courseimport_import_ui($bc, array('importid' => $importid, 'target' => $restoretarget));
@@ -124,9 +125,9 @@ if (($countstopjobs > 0) ) {
         unset($backup);
         $tempdestination = $CFG->tempdir . '/backup/' . $backupid;
         if (!file_exists($tempdestination) || !is_dir($tempdestination)) {
-            echo "\n".date('Y-m-d H:i:s')." Error, could not find file in CFG->tempdir/backup folder, "
-                    . "Userid:$userid--ImportToCourseid:$courseid ---ImportFromCourseid:$targetcourseid \n";
-            print_error('unknownbackupexporterror'); // Shouldn't happen ever.
+            local_uonlib_logline("Error, could not find file in CFG->tempdir/backup folder, "
+                    . "Userid:$userid--ImportToCourseid:$courseid ---ImportFromCourseid:$targetcourseid", false);
+            local_uonlib_logline(get_string('unknownbackupexporterror', 'error')); // Shouldn't happen ever.
             die();
         }
 
@@ -150,13 +151,13 @@ if (($countstopjobs > 0) ) {
                         'targetcourseid' => $targetcourseid,
                         'courseid' => $courseid
                         ));
-                echo "\n".$message."\n";
+                local_uonlib_logline($message);
                 // Send email to Moodle admin.
                 $subject =  get_string('alteremailsubject', 'block_courseimport');
                 $isemail = block_courseimport_sendemail($subject, $message);
                 if (!$isemail) {
-                    echo "\n".date('Y-m-d H:i:s')." Error! Jobid: $jobid. "
-                            . "Failed to send email to admin. Content of message below.\n$message\n";
+                    local_uonlib_logline("Error! Jobid: $jobid. "
+                            . "Failed to send email to admin. Content of message below.\n$message", false);
                 }
             }
         } else {
@@ -165,8 +166,8 @@ if (($countstopjobs > 0) ) {
             $rc->destroy();
             fulldelete($tempdestination);
             block_courseimport_changestatus($job->id, BLOCK_COURSEIMPORT_STATE_FINISHED);
-            echo "\n".date('Y-m-d H:i:s')." Success in Jobid: $job->id. "
-                    . "Import is complete.\nImport From Course ID:$targetcourseid -> Import To Course ID:$courseid.\n";
+            local_uonlib_logline("Success in Jobid: $job->id. "
+                    . "Import is complete.\nImport From Course ID:$targetcourseid -> Import To Course ID:$courseid.", false);
             // Send email to user.
             $importto= $DB->get_field('course', 'fullname', array('id' => $courseid));
             $importfrom= $DB->get_field('course', 'fullname', array('id' => $targetcourseid));
@@ -175,11 +176,11 @@ if (($countstopjobs > 0) ) {
                     array('importto' => $importto, 'importfrom' => $importfrom));
             $isemail = block_courseimport_sendemail($subject, $message, $userid);
             if (!$isemail) {
-                echo "\n".date('Y-m-d H:i:s')." Error! Jobid: $job->id. "
-                        . "Failed to send email to user to inform of success. Content of message below.\n$message\n";
+                local_uonlib_logline("Error! Jobid: $job->id. "
+                        . "Failed to send email to user to inform of success. Content of message below.\n$message", false);
             }
         }
     }
 }
 
-echo "\n".date('Y-m-d H:i:s')." Finished Processing.\n";
+local_uonlib_logline("Finished Processing.");
