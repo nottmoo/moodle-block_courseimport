@@ -43,7 +43,7 @@ Background:
         Given I fill the moodle form with:
         | search | P13140 |
         And I press "Search"
-        And I should not see "P13140-UK-SPR1415"
+        Then I should not see "P13140-UK-SPR1415"
         Given I fill the moodle form with:
         | search | P12130 |
         And I press "Search"
