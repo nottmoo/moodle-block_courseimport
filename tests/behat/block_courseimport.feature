@@ -1,7 +1,7 @@
 @block @uon @block_courseimport
 Feature: Test block_courseimport function 
    In order to import course content
-   As a moodle editingteacher
+   As a moodle editingteacher in a course
    I need to use course searching page to find imported course
 Background:
         Given the following "users" exist:
@@ -26,7 +26,6 @@ Background:
         Scenario: only admin can add the plugin in Moodle
         When I log in as "admin"
         And I follow "N12401-UK-SPR1415"
-        #And I follow "Turn editing on"
         And I turn editing mode on
         And I add the "Course Import" block
         And I should see "Course Import"
