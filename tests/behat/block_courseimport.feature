@@ -1,5 +1,8 @@
 @block @uon @block_courseimport
 Feature: Test block_courseimport function 
+   In order to import course content
+   As a moodle editingteacher
+   I need to use course searching page to find imported course
 Background:
         Given the following "users" exist:
             | username | firstname | lastname | email |
@@ -20,40 +23,36 @@ Background:
               | teacher1 | N12401-UK-SPR1415 | editingteacher |
               | teacher1 | P12130-UK-SPR1314 | editingteacher |
                 
-        @javascript
         Scenario: only admin can add the plugin in Moodle
         When I log in as "admin"
-        And I follow "Courses"
         And I follow "N12401-UK-SPR1415"
-        And I follow "Turn editing on"
+        #And I follow "Turn editing on"
+        And I turn editing mode on
         And I add the "Course Import" block
         And I should see "Course Import"
-        # Course Import link can also see in courselife block
-        And I follow "Turn editing off"
+        # Course Import link can also be seen in courselife block
+        And I turn editing mode off
         Then I log out
         
         #Editing teacher can see the link
         When I log in as "teacher1"
-        And I follow "Current modules"
         And I follow "N12401-UK-SPR1415"
         Then I should see "Course Import" 
         And I click on "Course Import" "link" in the "Course Import" "block"
         Then I should see "Select a course"
         And I should see "N12401-UK-SPR1314"
-        
-        Then I set the following fields to these values:
+        Given I fill the moodle form with:
         | search | P13140 |
         And I press "Search"
         And I should not see "P13140-UK-SPR1415"
-        Then I set the following fields to these values:
+        Given I fill the moodle form with:
         | search | P12130 |
         And I press "Search"
-        And I should see "P12130-UK-SPR1314"
-        #And I click on "importid" "radio" in the "P12130-UK-SPR1314"  "table_row"
-        And I select "importid" radio button
+        Then I should see "P12130-UK-SPR1314"
+        Given I select "importid" radio button
         And I press "Continue"
-        And the "setting_root_activities" checkbox should be checked
-        And the "setting_root_blocks" checkbox should be checked
-        And the "setting_root_filters" checkbox should be checked
-        And the "setting_root_questionbank" checkbox should be checked
+        Then the "setting_root_activities" checkbox should be checked
+        Then the "setting_root_blocks" checkbox should be checked
+        Then the "setting_root_filters" checkbox should be checked
+        Then the "setting_root_questionbank" checkbox should be checked
         # other backup&import test had been defined in Moodle's backup module
