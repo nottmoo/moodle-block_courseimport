@@ -57,12 +57,6 @@ local_uonlib_logline("Current time is within operating hours. Starting process")
 $argument1 = null;
 if (isset($argv[1])) {
     $argument1 = $argv[1];
-    // The file can be called with an argument of 0 or 1. If 0 block processing, if 1 unblock processing.
-    // Status 222222:job waiting.
-    // Status 444444:block jobs.
-    // Status 555555: a course import job finished.
-    // Status 666666: job in processing.
-    // Status 777777: could not be imported and abandoned job, email to admin for import manully and log details.
     local_uonlib_logline("$argument1 has been passed to the process.\n0=Process stop. 1= Process start", false);
 
     if ($argument1 === 0) {
@@ -167,7 +161,7 @@ if (($countstopjobs > 0) ) {
             try {
                 $rc->execute_plan();
             } catch (Exception $e) {
-                // need to abandon this job ===========
+                // need to abandon this job.
                 block_courseimport_changestatus($jobid,BLOCK_COURSEIMPORT_STATE_FAILED);
                 $message = $e->getMessage();
                 $message .= get_string('importfail', 'block_courseimport',
@@ -183,8 +177,8 @@ if (($countstopjobs > 0) ) {
             $rc->destroy(); // Always call these
             fulldelete($tempdestination);
 
-            $importto= $DB->get_field('course', 'fullname', array('id' => $courseid));
-            $importfrom= $DB->get_field('course', 'fullname', array('id' => $targetcourseid));
+            $importto = $DB->get_field('course', 'fullname', array('id' => $courseid));
+            $importfrom = $DB->get_field('course', 'fullname', array('id' => $targetcourseid));
             $subject =  get_string('useremailsubject', 'block_courseimport');
 
             if ($message === null) {
@@ -197,7 +191,6 @@ if (($countstopjobs > 0) ) {
             } else {
                 $isemail = block_courseimport_sendemail($subject, $message); // Send error to Moodle admin
             }
-
             if (!$isemail) {
                 local_uonlib_logline("Error! Jobid: $jobid. "
                             . "Failed to send email. Content of message below.\n$message", false);
