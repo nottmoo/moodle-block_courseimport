@@ -56,13 +56,7 @@ if (($timesetting) and (!empty($timesetting))) {
 local_uonlib_logline("Current time is within operating hours. Starting process");
 $argument1 = null;
 if (isset($argv[1])) {
-    $argument1 = $argv[1]; 
-    // The file can be called with an argument of 0 or 1. If 0 block processing, if 1 unblock processing.
-    // Status 222222:job waiting.
-    // Status 444444:block jobs.
-    // Status 555555: a course import job finished.
-    // Status 666666: job in processing.
-    // Status 777777: could not be imported and abandoned job, email to admin for import manully and log details.
+    $argument1 = $argv[1];
     local_uonlib_logline("$argument1 has been passed to the process.\n0=Process stop. 1= Process start", false);
 
     if ($argument1 === 0) {
@@ -98,11 +92,12 @@ if (($countstopjobs > 0) ) {
     die();
 } else {
     // Check if any job's status is 666666 or failed jobs, email admain and abandon.
-    block_courseimport_abandonjob($abandonjobs); 
-    
+    block_courseimport_abandonjob($abandonjobs);
+
     foreach ($results as $job) {
         local_uonlib_logline("Process will start in 20 seconds.");
         sleep(20);
+        $jobid = $job->id;
         $courseid = $job->courseid;
         $coursecontext = context_course::instance($courseid);
         $contextid = $coursecontext->id;
@@ -114,10 +109,10 @@ if (($countstopjobs > 0) ) {
         $userid = $job->userid;
 
         // Start processing, successfully will chnage to 555555, otherwise abandon and email admin.
-        block_courseimport_changestatus($job->id, BLOCK_COURSEIMPORT_STATE_PROCESSING);
-        local_uonlib_logline("Jobid:$job->id--Userid:$userid\nImport To Course ID:$courseid"
+        block_courseimport_changestatus($jobid, BLOCK_COURSEIMPORT_STATE_PROCESSING);
+        local_uonlib_logline("Jobid:$jobid--Userid:$userid\nImport To Course ID:$courseid"
                 . "\nImport From Course ID:$targetcourseid,\nCreating backup for course ID:$targetcourseid now.", false);
-        
+
         $bc = backup_ui::load_controller($importid);
         $backup = new block_courseimport_import_ui($bc, array('importid' => $importid, 'target' => $restoretarget));
         $backup->execute();
@@ -147,7 +142,7 @@ if (($countstopjobs > 0) ) {
                 $message = get_string('precheckfail', 'block_courseimport',
                     array(
                         'timenow' => date('Y-m-d H:i:s'),
-                        'jobid' => $job->id,
+                        'jobid' => $jobid,
                         'targetcourseid' => $targetcourseid,
                         'courseid' => $courseid
                         ));
@@ -161,26 +156,46 @@ if (($countstopjobs > 0) ) {
                 }
             }
         } else {
+            $message = null;
             // Execute the restore.
-            $rc->execute_plan();
-            $rc->destroy();
+            try {
+                $rc->execute_plan();
+            } catch (Exception $e) {
+                // need to abandon this job.
+                block_courseimport_changestatus($jobid,BLOCK_COURSEIMPORT_STATE_FAILED);
+                $message = $e->getMessage();
+                $message .= get_string('importfail', 'block_courseimport',
+                    array(
+                        'timenow' => date('Y-m-d H:i:s'),
+                        'jobid' => $jobid,
+                        'targetcourseid' => $targetcourseid,
+                        'courseid' => $courseid
+                        ));
+                local_uonlib_logline("Error! Jobid: $jobid " . "\n$message", false);
+            }
+
+            $rc->destroy(); // Always call these
             fulldelete($tempdestination);
-            block_courseimport_changestatus($job->id, BLOCK_COURSEIMPORT_STATE_FINISHED);
-            local_uonlib_logline("Success in Jobid: $job->id. "
-                    . "Import is complete.\nImport From Course ID:$targetcourseid -> Import To Course ID:$courseid.", false);
-            // Send email to user.
-            $importto= $DB->get_field('course', 'fullname', array('id' => $courseid));
-            $importfrom= $DB->get_field('course', 'fullname', array('id' => $targetcourseid));
+
+            $importto = $DB->get_field('course', 'fullname', array('id' => $courseid));
+            $importfrom = $DB->get_field('course', 'fullname', array('id' => $targetcourseid));
             $subject =  get_string('useremailsubject', 'block_courseimport');
-            $message = get_string('useremailmessage', 'block_courseimport',
-                    array('importto' => $importto, 'importfrom' => $importfrom));
-            $isemail = block_courseimport_sendemail($subject, $message, $userid);
+
+            if ($message === null) {
+                block_courseimport_changestatus($jobid, BLOCK_COURSEIMPORT_STATE_FINISHED);
+                local_uonlib_logline("Success in Jobid: $jobid. "
+                        . "Import is complete.\nImport From Course ID:$targetcourseid -> Import To Course ID:$courseid.", false);
+                $message = get_string('useremailmessage', 'block_courseimport',
+                        array('importto' => $importto, 'importfrom' => $importfrom));
+                $isemail = block_courseimport_sendemail($subject, $message, $userid);
+            } else {
+                $isemail = block_courseimport_sendemail($subject, $message); // Send error to Moodle admin
+            }
             if (!$isemail) {
-                local_uonlib_logline("Error! Jobid: $job->id. "
-                        . "Failed to send email to user to inform of success. Content of message below.\n$message", false);
+                local_uonlib_logline("Error! Jobid: $jobid. "
+                            . "Failed to send email. Content of message below.\n$message", false);
             }
         }
     }
 }
-
 local_uonlib_logline("Finished Processing.");
