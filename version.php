@@ -17,15 +17,15 @@
 /**
  * Version details
  *
- * @package    block_course_courseimport
+ * @package    block_courseimport
  * @copyright  University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2014090800; // The current plugin version (Date: YYYYMMDDXX)
-$plugin->requires = 2013110500; // Requires this Moodle version
+$plugin->version = 2015011200; // The current plugin version (Date: YYYYMMDDXX)
+$plugin->requires = 2014050800; // Requires this Moodle version
 $plugin->component = 'block_courseimport'; // Full name of the plugin (used for diagnostics).
 $plugin->dependencies = array(
     'local_uonlib' => 2014071410,
