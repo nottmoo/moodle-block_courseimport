@@ -1,5 +1,5 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of courseimport block in Moodle Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ class block_courseimport_renderer extends core_backup_renderer
     public function render_block_courseimport_search(block_courseimport_search $component) {
         global $COURSE;
         $output = html_writer::start_div('import-course-search');
-        
+
         $output .= html_writer::div(get_string('totalcoursesearchresults', 'backup', $component->get_count()));
         $output .= html_writer::start_div('ics-results');
         $table = new html_table();

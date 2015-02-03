@@ -1,5 +1,5 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of courseimport block in Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-require_once(dirname(dirname(__DIR__)).'/local/uonlib/uoncourselib.php');
+defined('MOODLE_INTERNAL') || die();
 
 /** Job waiting to be processed. */
 define('BLOCK_COURSEIMPORT_STATE_WAITING', '222222');
@@ -168,7 +168,8 @@ function block_courseimport_timecheck($start, $end) {
  */
 function block_courseimport_sendemail($subject, $message, $userid = null) {
     global $DB;
-    $campusmail = local_uonlib_get_campusmail("U"); // Cron send email.
+    $courselib = new local_uonlib_courselib();
+    $campusmail = $courselib->get_campusmail("U"); // Cron send email to.
     if ($campus = $DB->get_record('user', array('email' => $campusmail))) {
         if ($userid !== null) { // Email to a user, not learning-support.
             $touser = $DB->get_record('user', array('id' => $userid));

@@ -1,5 +1,5 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of courseimport block in Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ class block_courseimport_search_testcase extends advanced_testcase {
     public function test_searchshortname() {
         $this->resetAfterTest(true);
 
-        /* First create some courses. */
+        // First create some courses.
         // This group should all match each other.
         $course0g1 = self::getDataGenerator()->create_course(array('shortname' => 'XX3L11-UK-FYR1112'));
         $course1g1 = self::getDataGenerator()->create_course(array('shortname' => 'XX3L11-UK-FYR1213'));
@@ -53,7 +53,6 @@ class block_courseimport_search_testcase extends advanced_testcase {
         $course0g3 = self::getDataGenerator()->create_course(array('shortname' => 'XX3L12-UK-FYR1413'));
         $course0g3 = self::getDataGenerator()->create_course(array('shortname' => 'G53NMD-UK-AUT-G53NMD-MY-AUT-1314'));
         $course0g3 = self::getDataGenerator()->create_course(array('shortname' => 'PA-HS-INDUCT-UK'));
-
         $search = new block_courseimport_search();
 
         $results0 = $search->searchshortname('XX3L11', 'XX3L11-UK-FYR1112');
@@ -80,7 +79,6 @@ class block_courseimport_search_testcase extends advanced_testcase {
         $this->assertCount(2, $results0);
         $results0 = $search->searchshortname('LE-CAREERS-ECON-UK-', 'LE-CAREERS-ECON-CN-1314');
         $this->assertEquals(2, $results0);
-
         $this->assertDebuggingNotCalled();
     }
 }

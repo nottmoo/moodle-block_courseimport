@@ -1,5 +1,5 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of courseimport block in Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,9 +17,9 @@
 /**
  * Defines class for course block_courseimport_import_ui block
  *
- * @package block_courseimport
- * @author      Neill Magill
- * @copyright   University of Nottingham
+ * @package    block_courseimport
+ * @author     Neill Magill
+ * @copyright  University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class block_courseimport_import_ui extends import_ui {
