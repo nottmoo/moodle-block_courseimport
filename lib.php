@@ -176,12 +176,14 @@ function block_courseimport_sendemail($subject, $message, $userid = null) {
             if ($mailsent = email_to_user($touser, $campus, $subject, $message)) {
                 return true;
             } else {
+                block_courseimport_logemailfail($userid);
                 return false;
             }
         } else {
             if ($mailsent = email_to_user($campus, $campus, $subject, $message)) {
                 return true;
             } else {
+                block_courseimport_logemailfail($campus->id);
                 return false;
             }
         }
@@ -189,3 +191,28 @@ function block_courseimport_sendemail($subject, $message, $userid = null) {
         return false;
     }
 }
+
+
+/**
+ * block_courseimport_logemailfail
+ *
+ * Log error of moodle core function email_to_user()
+ *
+ * @param string $adminuserid
+ */
+function block_courseimport_logemailfail($adminuserid) {
+
+    $subject = get_string('emailfailure', 'block_courseimport');
+    $messagetext = $subject;
+    // Trigger event for failing to send email.
+    $event = \core\event\email_failed::create(array(
+        'context' => context_system::instance(),
+        'userid' => $adminuserid,
+        'relateduserid' => $adminuserid,
+        'other' => array(
+            'subject' => $subject,
+            'errorinfo' => $messagetext,
+            'message' => $messagetext)));
+    $event->trigger();
+}
+

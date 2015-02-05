@@ -15,7 +15,6 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 defined('MOODLE_INTERNAL') || die;
-require_once(dirname(__FILE__) . '/../../config.php');
 require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
 require_once($CFG->dirroot . '/backup/moodle2/backup_plan_builder.class.php');
 require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
@@ -35,11 +34,13 @@ require_once($CFG->dirroot . '/local/uonlib/uoncronlib.php');
 class block_courseimport_process {
 
     /**
-     * cron
-     *
      * Cron job for courseimport.
+     *
+     * @global moodle_database $DB
+     * @global stdClass $CFG
      */
     public function cron() {
+        global $CFG,$DB;
         set_time_limit(0);
         $log = new local_uonlib_cronlib();
         $timesetting = get_config('block_courseimport', 'crontime');
@@ -49,8 +50,9 @@ class block_courseimport_process {
             $checkresult = false;
             foreach ($ranges as $range) {
                 if (preg_match('/^(([0-1][0-9]|[2][0-3]):([0-5][0-9])-([0-1][0-9]|[2][0-3]):([0-5][0-9]))/', $range) === 1) {
-                    $rlist = explode("-", $range);
-                    $checkresult += block_courseimport_timecheck($rlist[0], $rlist[1]);
+                    // User defined time range should like this 02:12-04:15.
+                    $timelist = explode("-", $range);
+                    $checkresult += block_courseimport_timecheck($timelist[0], $timelist[1]);
                 } else {
                     $log->logline("Process stopped as time range setting ( $range ) is not in right format", false);
                     die();
@@ -62,12 +64,12 @@ class block_courseimport_process {
             }
         }
         $log->logline("Current time is within operating hours. Starting process", false);
-        $argument1 = null;
-        if (isset($argv[1])) {
-            $argument1 = $argv[1];
-            $log->logline("$argument1 has been passed to the process.\n0=Process stop. 1= Process start", false);
+        $controller = null;
+        if (isset($argv[1])) {  // In PHP 4, PHP 5, $argv — Array of arguments passed to script.
+            $controller = $argv[1];
+            $log->logline("$controller has been passed to the process.\n0=Process stop. 1= Process start", false);
 
-            if ($argument1 === 0) {
+            if ($controller === 0) {
                 $table = 'block_courseimport';
                 $select = "status = :status";
                 $counter = $DB->count_records_select($table, $select, array('status' => BLOCK_COURSEIMPORT_STATE_WAITING));
@@ -80,7 +82,7 @@ class block_courseimport_process {
                     $log->logline("There are no jobs in the queue. Cannot block if there are no jobs", false);
                 }
             }
-            if ($argument1 === 1) {
+            if ($controller === 1) {
                 // Set all blocked jobs to waiting.
                 $DB->set_field('block_courseimport', 'status', BLOCK_COURSEIMPORT_STATE_WAITING, array('status' => BLOCK_COURSEIMPORT_STATE_BLOCK));
                 $log->logline("Process will start at the next CRON", false);
@@ -89,7 +91,7 @@ class block_courseimport_process {
         }
         // Start jobs.
         $countstopjobs = $DB->count_records('block_courseimport', array('status' => BLOCK_COURSEIMPORT_STATE_BLOCK));
-        // If a job still is processiong status, should be abandoned.
+        // If a job still is processing status, should be abandoned.
         $abandonjobs = $DB->get_records('block_courseimport', array('status' => BLOCK_COURSEIMPORT_STATE_PROCESSING));
         $results = $DB->get_records('block_courseimport', array('status' => BLOCK_COURSEIMPORT_STATE_WAITING), 'id');
         // Need countstopjobs to avoid execute any new added job.
@@ -98,12 +100,12 @@ class block_courseimport_process {
                     . "\nTo unblock run php var/www/blocks/courseimport/newbackup.php 1 at the command line.", false);
             die();
         } else {
-            // Check if any job's status is 666666 or failed jobs, email admain and abandon.
+            // Check if any job's status is 666666 or failed jobs, email admin and abandon.
             block_courseimport_abandonjob($abandonjobs);
 
             foreach ($results as $job) {
                 $log->logline("Process will start in 20 seconds.", false);
-                sleep(20);
+                sleep(20); // Give admin a change to stop next job if necessary.
                 $jobid = $job->id;
                 $courseid = $job->courseid;
                 $coursecontext = context_course::instance($courseid);
@@ -114,7 +116,7 @@ class block_courseimport_process {
                 // The target method for the restore (adding or deleting).
                 $restoretarget = 1;
                 $userid = $job->userid;
-                // Start processing, successfully will chnage to 555555, otherwise abandon and email admin.
+                // Start processing, successfully will change to 555555, otherwise abandon and email admin.
                 block_courseimport_changestatus($jobid, BLOCK_COURSEIMPORT_STATE_PROCESSING);
                 $log->logline("Jobid:$jobid--Userid:$userid\nImport To Course ID:$courseid"
                         . "\nImport From Course ID:$targetcourseid,\nCreating backup for course ID:$targetcourseid now.", false);
