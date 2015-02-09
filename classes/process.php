@@ -41,7 +41,6 @@ class block_courseimport_process {
      */
     public function cron() {
         global $CFG,$DB;
-        set_time_limit(0);
         $log = new local_uonlib_cronlib();
         $timesetting = get_config('block_courseimport', 'crontime');
         if (($timesetting) and ( !empty($timesetting))) {
@@ -55,40 +54,15 @@ class block_courseimport_process {
                     $checkresult += block_courseimport_timecheck($timelist[0], $timelist[1]);
                 } else {
                     $log->logline("Process stopped as time range setting ( $range ) is not in right format", false);
-                    die();
+                    return;
                 }
             }
             if ($checkresult == 0) {
                 $log->logline("Current time outside of operating hours. Operating hours are: ( $timesetting ). Process stopped.", false);
-                die();
+                return;
             }
         }
         $log->logline("Current time is within operating hours. Starting process", false);
-        $controller = null;
-        if (isset($argv[1])) {  // In PHP 4, PHP 5, $argv — Array of arguments passed to script.
-            $controller = $argv[1];
-            $log->logline("$controller has been passed to the process.\n0=Process stop. 1= Process start", false);
-
-            if ($controller === 0) {
-                $table = 'block_courseimport';
-                $select = "status = :status";
-                $counter = $DB->count_records_select($table, $select, array('status' => BLOCK_COURSEIMPORT_STATE_WAITING));
-                if ($counter > 0) {
-                    // Set all waiting jobs to blocked.
-                    $DB->set_field('block_courseimport', 'status', BLOCK_COURSEIMPORT_STATE_BLOCK, array('status' => BLOCK_COURSEIMPORT_STATE_WAITING));
-                    $log->logline("Process has been blocked manually, $counter jobs in queue."
-                            . "\nTo unblock run php var/www/blocks/courseimport/newbackup.php 1 at the command line.", false);
-                } else {
-                    $log->logline("There are no jobs in the queue. Cannot block if there are no jobs", false);
-                }
-            }
-            if ($controller === 1) {
-                // Set all blocked jobs to waiting.
-                $DB->set_field('block_courseimport', 'status', BLOCK_COURSEIMPORT_STATE_WAITING, array('status' => BLOCK_COURSEIMPORT_STATE_BLOCK));
-                $log->logline("Process will start at the next CRON", false);
-            }
-            die();
-        }
         // Start jobs.
         $countstopjobs = $DB->count_records('block_courseimport', array('status' => BLOCK_COURSEIMPORT_STATE_BLOCK));
         // If a job still is processing status, should be abandoned.
@@ -98,14 +72,12 @@ class block_courseimport_process {
         if (($countstopjobs > 0)) {
             $log->logline("Process has been blocked manually and will not run until it is unblocked."
                     . "\nTo unblock run php var/www/blocks/courseimport/newbackup.php 1 at the command line.", false);
-            die();
+            return;
         } else {
             // Check if any job's status is 666666 or failed jobs, email admin and abandon.
             block_courseimport_abandonjob($abandonjobs);
 
             foreach ($results as $job) {
-                $log->logline("Process will start in 20 seconds.", false);
-                sleep(20); // Give admin a change to stop next job if necessary.
                 $jobid = $job->id;
                 $courseid = $job->courseid;
                 $coursecontext = context_course::instance($courseid);
@@ -131,7 +103,7 @@ class block_courseimport_process {
                     $log->logline("Error, could not find file in CFG->tempdir/backup folder, "
                             . "Userid:$userid--ImportToCourseid:$courseid ---ImportFromCourseid:$targetcourseid", false);
                     $log->logline(get_string('unknownbackupexporterror', 'error'), false); // Shouldn't happen ever.
-                    die();
+                    return;
                 }
                 list($context, $course, $cm) = get_context_info_array($contextid);
                 $rc = new restore_controller($backupid, $course->id, backup::INTERACTIVE_YES, backup::MODE_IMPORT, $userid, 1);

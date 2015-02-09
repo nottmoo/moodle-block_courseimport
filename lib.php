@@ -205,7 +205,7 @@ function block_courseimport_logemailfail($adminuserid) {
     $subject = get_string('emailfailure', 'block_courseimport');
     $messagetext = $subject;
     // Trigger event for failing to send email.
-    $event = \core\event\email_failed::create(array(
+    $event = \block_courseimport\event\email_failed::create(array(
         'context' => context_system::instance(),
         'userid' => $adminuserid,
         'relateduserid' => $adminuserid,

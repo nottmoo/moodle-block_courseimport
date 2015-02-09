@@ -23,7 +23,6 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 $string['pluginname'] = 'Course Import';
-$string['modulename'] = 'Course Import';
 $string['importlink'] = 'Course Import';
 $string['filetype'] = 'File type';
 $string['jobdone'] = 'Your module is now queued for import';

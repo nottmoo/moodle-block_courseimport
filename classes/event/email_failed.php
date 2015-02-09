@@ -1,5 +1,5 @@
 <?php
-// This file is part of the the courseimport block plugin for Moodle
+// This file is part of Moodle block plugin courseimport - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,32 +14,30 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace block_courseimport\task;
+/**
+ * This file contains an event for when email user failed.
+ *
+ * @package    block_courseimport
+ * @copyright  2014 University of Nottingham
+ * @author     Yijun Xue
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+namespace block_courseimport\event;
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Courseimport task class
- *
- * @package    block_courseimport
- * @author     Yijun Xue <yijun.xue@nottingham.ac.uk>
- * @copyright  2014 University of Nottingham
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * Event for when send user eamil failed.
+ * @since      Moodle 2.7
  */
-class courseimport_task extends \core\task\scheduled_task {
+class email_failed extends \core\event\email_failed {
+
     /**
-     * Get a descriptive name for this task (shown to admins).
+     * Returns description of what happened.
      *
      * @return string
      */
-    public function get_name() {
-        return get_string('pluginname', 'block_courseimport');
+    public function get_description() {
+        return get_string('emailfailure', 'block_courseimport');
     }
 
-    /**
-     * Do the scheduled job.
-     */
-    public function execute() {
-        $auto = new \block_courseimport_process();
-        $auto->cron();
-    }
 }
