@@ -171,19 +171,20 @@ function block_courseimport_sendemail($subject, $message, $userid = null) {
     $courselib = new local_uonlib_courselib();
     $campusmail = $courselib->get_campusmail("U"); // Cron send email to.
     if ($campus = $DB->get_record('user', array('email' => $campusmail))) {
+        $campussupport = $campus->id;
         if ($userid !== null) { // Email to a user, not learning-support.
             $touser = $DB->get_record('user', array('id' => $userid));
             if ($mailsent = email_to_user($touser, $campus, $subject, $message)) {
                 return true;
             } else {
-                block_courseimport_logemailfail($userid);
+                block_courseimport_logemailfail($campussupport, $userid);
                 return false;
             }
         } else {
             if ($mailsent = email_to_user($campus, $campus, $subject, $message)) {
                 return true;
             } else {
-                block_courseimport_logemailfail($campus->id);
+                block_courseimport_logemailfail($campussupport, $campussupport);
                 return false;
             }
         }
@@ -199,8 +200,9 @@ function block_courseimport_sendemail($subject, $message, $userid = null) {
  * Log error of moodle core function email_to_user()
  *
  * @param string $adminuserid
+ * @param string $userid
  */
-function block_courseimport_logemailfail($adminuserid) {
+function block_courseimport_logemailfail($adminuserid, $userid) {
 
     $subject = get_string('emailfailure', 'block_courseimport');
     $messagetext = $subject;
@@ -208,7 +210,7 @@ function block_courseimport_logemailfail($adminuserid) {
     $event = \block_courseimport\event\email_failed::create(array(
         'context' => context_system::instance(),
         'userid' => $adminuserid,
-        'relateduserid' => $adminuserid,
+        'relateduserid' => $userid,
         'other' => array(
             'subject' => $subject,
             'errorinfo' => $messagetext,
