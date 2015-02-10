@@ -1,5 +1,5 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of courseimport block in Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,11 +15,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Defines class for course appointments block
+ * Defines class for courseimport block
  *
- * @package block_courseimport
- * @author      Yijun Xue
- * @copyright   University of Nottingham
+ * @package    block_courseimport
+ * @author     Yijun Xue
+ * @copyright  University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -34,24 +34,23 @@ require_once($CFG->dirroot . '/blocks/courseimport/renderer.php');
 require_once($CFG->dirroot . '/blocks/courseimport/lib.php');
 require_once($CFG->dirroot . '/backup/util/settings/base_setting.class.php');
 
-// The courseid we are importing to
+// The courseid we are importing to.
 $courseid = required_param('id', PARAM_INT);
-// The id of the course we are importing FROM (will only be set if past first stage
+// The id of the course we are importing FROM (will only be set if past first stage.
 $importcourseid = optional_param('importid', false, PARAM_INT);
 $search = optional_param('searchcourses', false, PARAM_INT);
-
-// The target method for the restore (adding or deleting)
+// The target method for the restore (adding or deleting).
 $restoretarget = 1;
-// Load the course and context
+// Load the course and context.
 $course = $DB->get_record('course', array('id' => $courseid), '*', MUST_EXIST);
 $context = context_course::instance($courseid);
-// Must pass login
+// Must pass login.
 require_login($course);
-// Must hold restoretargetimport in the current course
+// Must hold restoretargetimport in the current course.
 require_capability('moodle/backup:backuptargetimport', $context);
 require_capability('moodle/restore:restoretargetimport', $context);
 $heading = get_string('import');
-// Set up the page
+// Set up the page.
 $PAGE->set_title($heading);
 $PAGE->set_heading($heading);
 $PAGE->set_url(new moodle_url('/blocks/courseimport/import.php', array('id' => $courseid)));
@@ -60,7 +59,6 @@ $PAGE->set_pagelayout('incourse');
 $shortname = $COURSE->shortname;
 $coursecode = substr($shortname, 0, strpos($shortname, '-'));
 $renderer = $PAGE->get_renderer('block_courseimport');
-
 // Before we do anything else check that there are no imports for this course in the queue.
 $alreadyqueued = $DB->record_exists_select('block_courseimport',
     "courseid = $courseid AND (status = :status1 OR status = :status2)",
@@ -76,33 +74,30 @@ if ($alreadyqueued) {
     echo $OUTPUT->footer();
     die();
 }
-
-// Check if we already have a import course id
+// Check if we already have a import course id.
 if ($importcourseid === false || $search !== false) {
     $url = new moodle_url('/blocks/courseimport/import.php', array('id' => $courseid));
     $search = new block_courseimport_search(array('url' => $url), $courseid);
-    // show the course selector
+    // Show the course selector.
     echo $OUTPUT->header();
-    //here find and list the user's course
+    //Here find and list the user's course.
     echo $renderer->import_course_selector($url, $search);
-    //$ddd=$_REQUEST["search"];    echo "<input type='hidden' value='-----$ddd----' name='checkserver'>";
     echo $OUTPUT->footer();
     die();
 }
-// Load the course +context to import from
+// Load the course +context to import from.
 $importcourse = $DB->get_record('course', array('id' => $importcourseid), '*', MUST_EXIST);
 $importcontext = context_course::instance($importcourseid);
-// Make sure the user can backup from that course
+// Make sure the user can backup from that course.
 require_capability('moodle/backup:backuptargetimport', $importcontext);
-// Attempt to load the existing backup controller (backupid will be false if there isn't one)
+// Attempt to load the existing backup controller (backupid will be false if there isn't one).
 $backupid = optional_param('backup', false, PARAM_ALPHANUM); // Initial settings - false
 if (!($bc = backup_ui::load_controller($backupid))) {
     $bc = new backup_controller(backup::TYPE_1COURSE, $importcourse->id, backup::FORMAT_MOODLE,
         backup::INTERACTIVE_YES, backup::MODE_IMPORT, $USER->id);
     $bc->get_plan()->get_setting('users')->set_status(backup_setting::LOCKED_BY_CONFIG);
     $settings = $bc->get_plan()->get_settings();
-    // For the initial stage we want to hide all locked settings and if there are
-    // no visible settings move to the next stage
+    // For the initial stage we want to hide all locked settings and if there are no visible settings move to the next stage.
     $visiblesettings = false;
     foreach ($settings as $setting) {
         if ($setting->get_status() !== backup_setting::NOT_LOCKED) {
@@ -113,9 +108,9 @@ if (!($bc = backup_ui::load_controller($backupid))) {
     }
     import_ui::skip_current_stage(!$visiblesettings);
 }
-//Prepare the import UI
+//Prepare the import UI.
 $backup = new import_ui($bc, array('importid' => $importcourse->id, 'target' => $restoretarget));
-// Process the current stage
+// Process the current stage.
 $backup->process();
 if ($backup->get_stage() === backup_ui::STAGE_SCHEMA) {
     $setsize = '';
@@ -126,7 +121,6 @@ if ($backup->get_stage() === backup_ui::STAGE_SCHEMA) {
     $tsks = $bc->get_plan()->get_tasks();
     foreach ($tsks as $task) {
         foreach ($task->get_settings() as $setting) {
-
             $tname = $task->get_name();
             $setname = $setting->get_name();
             $pos1 = strpos($setname, 'resource_');
@@ -162,7 +156,7 @@ if ($backup->get_stage() === backup_ui::STAGE_SCHEMA) {
     }
 }
 
-// If this is the confirmation stage remove the filename setting
+// If this is the confirmation stage remove the filename setting.
 if ($backup->get_stage() == backup_ui::STAGE_CONFIRMATION) {
     $backup->get_setting('filename')->set_visibility(backup_setting::HIDDEN);
 }
@@ -173,7 +167,7 @@ if ($backup->get_stage() == backup_ui::STAGE_FINAL) { //backup_ui::STAGE_FINAL=8
     $record->targetcourseid = $importcourseid;
     $record->userid = $USER->id;
     $record->backupid = $backupid;
-    $record->status = 222222; // means job is waiting to be done.
+    $record->status = BLOCK_COURSEIMPORT_STATE_WAITING; // This means job is waiting to be done.
     $record->timecreated = time();
     $record->timemodified = time();
     $DB->insert_record('block_courseimport', $record);

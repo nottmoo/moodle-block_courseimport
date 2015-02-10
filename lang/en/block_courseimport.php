@@ -1,5 +1,5 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of courseimport block in Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -59,3 +59,4 @@ $string['abandonedmessage'] = '{$a->timenow}, Job abandoned, Jobid={$a->jobid}, 
 $string['precheckfail'] = '{$a->timenow} Error! In Jobid: {$a->jobid}. Prechecks for importing backupfile failed. Import From Course ID:{$a->targetcourseid} -> Import To Course ID:{$a->courseid}';
 $string['importfail'] = '{$a->timenow} Error! In Jobid: {$a->jobid}. Course import failed. Import From Course ID:{$a->targetcourseid} -> Import To Course ID:{$a->courseid}';
 $string['alreadyimporting'] = 'There is an import in progress for this course. Please wait for it to complete.';
+$string['emailfailure'] = "Course import could not send email to user";

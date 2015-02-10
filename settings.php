@@ -1,5 +1,5 @@
 <?php
-// This file is part of the tutor meeting confirm block
+// This file is part of courseimport block in Moodle
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
  * Displays the form for the block's admin settings.
  *
  * @package    block_courseimport
- * @subpackage courseimport
  * @author     Yijun Xue
  * @copyright  University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later

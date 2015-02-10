@@ -1,5 +1,5 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of  courseimport block in Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,6 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+require_once($CFG->dirroot . "/backup/util/interfaces/checksumable.class.php");
+require_once($CFG->dirroot . '/backup/backup.class.php');
+require_once($CFG->dirroot . '/backup/util/ui/base_ui.class.php');
+require_once($CFG->dirroot . "/backup/backup.class.php");
+require_once($CFG->dirroot . "/backup/util/ui/backup_ui.class.php");
+require_once($CFG->dirroot . '/backup/util/ui/base_ui_stage.class.php');
+require_once($CFG->dirroot . '/backup/util/ui/backup_ui_stage.class.php');
+require_once($CFG->dirroot . '/backup/util/ui/restore_ui_components.php');
 require_once($CFG->dirroot . '/backup/util/ui/import_extensions.php');
 
 /**
@@ -24,7 +32,6 @@ require_once($CFG->dirroot . '/backup/util/ui/import_extensions.php');
  * @copyright   University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 class block_courseimport_search extends import_course_search
 {
     /**
@@ -59,12 +66,10 @@ class block_courseimport_search extends import_course_search
     public function searchshortname($coursecode, $shortnamestr) {
         global $DB;
         $queryhash = md5($coursecode.'---@---'.$shortnamestr);
-
         if ((isset($this->shortnameresults[$queryhash]))) {
             return count($this->shortnameresults[$queryhash]);
         }
         $this->shortnameresults = array();
-
         $params = array(
             'shortnamestr' => strtolower($shortnamestr),
             'siteid' => SITEID,
@@ -72,47 +77,41 @@ class block_courseimport_search extends import_course_search
             );
 
         $likesql = $DB->sql_like('LOWER(c.shortname)', ':coursecode');
-
         $searchsql = 'SELECT c.id, c.fullname, c.shortname, c.visible, c.sortorder,
         ctx.id AS ctxid, ctx.path AS ctxpath, ctx.depth AS ctxdepth, ctx.contextlevel AS ctxlevel,
         ctx.instanceid AS ctxinstance
         FROM {course} c
         LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = 50)
         WHERE (('.$likesql.') and (LOWER(c.shortname) <> :shortnamestr) and (c.id <> :siteid))';
-
         $resultsetshortname = $DB->get_records_sql($searchsql, $params);
         $this->shortnameresults[$queryhash] = $resultsetshortname;
-
         return count($resultsetshortname);
     }
 
     /**
+     * Create search SQL
      *
      * @global moodle_database $DB
+     * @return array sql and parameters
      */
     protected function get_searchsql() {
         global $DB, $COURSE;
         $ctxselect = context_helper::get_preload_record_columns_sql('ctx');
         $ctxjoin = "LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = :contextlevel)";
-        
         $params = array(
             'siteid' => SITEID,
             'contextlevel' => CONTEXT_COURSE
         );
-
         // If no search string supplied use target course short name.
         $shortnamesearch = $this->get_search();
         if (empty($shortnamesearch)) {
             $shortnamestring = strtolower($COURSE->shortname);
-
             if (strlen($shortnamestring) > 4) {
                 $shortnamehyphen = strpos($shortnamestring, '-');
-
                 // Saturn / Non Saturn courses should have a hyphen.
                 if ($shortnamehyphen !== false) {
                     $shortnamesearch = substr($shortnamestring, 0, $shortnamehyphen);
                 }
-
                 // Non saturn courses require a more specific short name.
                 if (strlen($shortnamesearch) < 4 and $shortnamehyphen) {
                     $shortnamesearch = substr($shortnamestring,0,-4);
@@ -132,16 +131,13 @@ class block_courseimport_search extends import_course_search
             $where = " WHERE (" . $DB->sql_like('c.fullname', ':fullnamesearch', false) . " OR " .
                         $DB->sql_like('c.shortname', ':shortnamesearch', false) . ") AND c.id <> :siteid";
         }
-
         $select = " SELECT c.id,c.fullname,c.shortname,c.visible,c.sortorder, ";
         $from = " FROM {course} c ";
         $orderby = " ORDER BY c.id DESC";
-
         if ($this->currentcourseid !== null && !$this->includecurrentcourse) {
             $where .= " AND c.id <> :currentcourseid";
             $params['currentcourseid'] = $this->currentcourseid;
         }
-
         return array($select . $ctxselect . $from . $ctxjoin . $where . $orderby, $params);
     }
 }

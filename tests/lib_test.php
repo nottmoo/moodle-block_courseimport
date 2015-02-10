@@ -1,5 +1,5 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of courseimport block in Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -113,19 +113,15 @@ class block_courseimport_lib_testcase extends advanced_testcase {
      */
     public function test_timecheck() {
         require_once(dirname(__DIR__).'/lib.php');
-
         $this->resetAfterTest(false);
-
         $this->assertTrue(block_courseimport_timecheck(date('G:i', strtotime('midnight')), date('G:i', strtotime('midnight'))));
         $this->assertTrue(block_courseimport_timecheck(date('G:i', strtotime('today')), date('G:i', strtotime('tomorrow -1 second'))));
         $this->assertTrue(block_courseimport_timecheck(date('G:i', strtotime('today')), date('G:i', strtotime('+1 minute'))));
         $this->assertTrue(block_courseimport_timecheck(date('G:i', strtotime('-1 minute')), date('G:i', strtotime('tomorrow'))));
-
         $this->assertFalse(block_courseimport_timecheck(date('G:i', strtotime('-2 minute')), date('G:i', strtotime('-1 minute'))));
         $this->assertFalse(block_courseimport_timecheck(date('G:i', strtotime('+1 minute')), date('G:i', strtotime('+2 minute'))));
         $now = date('G:i');
         $this->assertFalse(block_courseimport_timecheck($now, $now));
-
         // The same as saying only for the last minute of the day.
         $this->assertFalse(block_courseimport_timecheck(date('G:i', strtotime('tomorrow -1 second')), date('G:i', strtotime('today'))));
         // Same as saying time after 1 minute in the future.
@@ -134,7 +130,6 @@ class block_courseimport_lib_testcase extends advanced_testcase {
         $this->assertTrue(block_courseimport_timecheck(date('G:i', strtotime('-1 minute')), date('G:i', strtotime('-2 minute'))));
         // Same as saying not the minute that will start in one minute.
         $this->assertTrue(block_courseimport_timecheck(date('G:i', strtotime('+2 minute')), date('G:i', strtotime('+1 minute'))));
-
         $this->assertDebuggingNotCalled();
     }
 }

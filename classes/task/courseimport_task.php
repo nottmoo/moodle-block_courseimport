@@ -1,5 +1,5 @@
 <?php
-// This file is part of courseimport block in Moodle - http://moodle.org/
+// This file is part of the the courseimport block plugin for Moodle
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,19 +14,32 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Version details
- *
- * @package    block_courseimport
- * @copyright  University of Nottingham
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
+namespace block_courseimport\task;
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2015020300; // The current plugin version (Date: YYYYMMDDXX)
-$plugin->requires = 2014050800; // Requires this Moodle version
-$plugin->component = 'block_courseimport'; // Full name of the plugin (used for diagnostics).
-$plugin->dependencies = array(
-    'local_uonlib' => 2014071410,
-);
+/**
+ * Courseimport task class
+ *
+ * @package    block_courseimport
+ * @author     Yijun Xue <yijun.xue@nottingham.ac.uk>
+ * @copyright  2014 University of Nottingham
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class courseimport_task extends \core\task\scheduled_task {
+    /**
+     * Get a descriptive name for this task (shown to admins).
+     *
+     * @return string
+     */
+    public function get_name() {
+        return get_string('pluginname', 'block_courseimport');
+    }
+
+    /**
+     * Do the scheduled job.
+     */
+    public function execute() {
+        $auto = new \block_courseimport_process();
+        $auto->cron();
+    }
+}

@@ -1,5 +1,5 @@
 <?php
-// This file is part of courseimport block in Moodle - http://moodle.org/
+// This file is part of Moodle block plugin courseimport - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,18 +15,29 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details
+ * This file contains an event for when email user failed.
  *
  * @package    block_courseimport
- * @copyright  University of Nottingham
+ * @copyright  2014 University of Nottingham
+ * @author     Yijun Xue
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
+namespace block_courseimport\event;
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2015020300; // The current plugin version (Date: YYYYMMDDXX)
-$plugin->requires = 2014050800; // Requires this Moodle version
-$plugin->component = 'block_courseimport'; // Full name of the plugin (used for diagnostics).
-$plugin->dependencies = array(
-    'local_uonlib' => 2014071410,
-);
+/**
+ * Event for when send user eamil failed.
+ * @since      Moodle 2.7
+ */
+class email_failed extends \core\event\email_failed {
+
+    /**
+     * Returns description of what happened.
+     *
+     * @return string
+     */
+    public function get_description() {
+        return get_string('emailfailure', 'block_courseimport');
+    }
+
+}
