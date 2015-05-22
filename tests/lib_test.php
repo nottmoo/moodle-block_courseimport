@@ -78,7 +78,7 @@ class block_courseimport_lib_testcase extends advanced_testcase {
         $resource1 = $resourcegenerator->create_instance($record2);
         // Run the test.
         $fileinfo2 = block_courseimport_findfilesize($resource1->id);
-        $this->assertEquals(332382, $fileinfo2->fsize);
+        $this->assertEquals(332331, $fileinfo2->fsize);
         $this->assertEquals('text/plain', $fileinfo2->ftype);
 
         /* Create a resource for the large file which is 1,739,814b */
