@@ -78,7 +78,13 @@ class block_courseimport_lib_testcase extends advanced_testcase {
         $resource1 = $resourcegenerator->create_instance($record2);
         // Run the test.
         $fileinfo2 = block_courseimport_findfilesize($resource1->id);
-        $this->assertEquals(332331, $fileinfo2->fsize);
+        // Linux text file end each line with a line feed character.
+        // DOS/Windows text files end each line with a carriage return and line feed.
+        // Because of this, there is one additional character in a DOS/Windows file for each line in the file.
+        // Some file will be in different size in Linux & Windows OS, so here we check file size in range 332331 to 332382.
+
+        $this->assertGreaterThanOrEqual(332331, $fileinfo2->fsize);
+        $this->assertLessThanOrEqual(332382, $fileinfo2->fsize);
         $this->assertEquals('text/plain', $fileinfo2->ftype);
 
         /* Create a resource for the large file which is 1,739,814b */
