@@ -168,8 +168,8 @@ function block_courseimport_timecheck($start, $end) {
  */
 function block_courseimport_sendemail($subject, $message, $userid = null) {
     global $DB;
-    $courselib = new local_uonlib_courselib();
-    $campusmail = $courselib->get_campusmail("U"); // Cron send email to.
+    $campusmail = local_uonlib_courselib::get_support_email(""); // This will get default support email, which is UK support email.
+
     if ($campus = $DB->get_record('user', array('email' => $campusmail))) {
         $campussupport = $campus->id;
         if ($userid !== null) { // Email to a user, not learning-support.
