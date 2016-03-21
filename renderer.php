@@ -58,26 +58,23 @@ class block_courseimport_renderer extends core_backup_renderer
         $table = new html_table();
         $table->head = array('', get_string('shortnamecourse'), get_string('fullnamecourse'), "course ID");
         $table->data = array();
-        $shortname = strtolower($COURSE->shortname);
-        $coursecode = $shortname; // Give a defult value
-        $shortnamehyphen = strpos($shortname, '-');
-        $yearcode = substr($shortname, -4);
-        $isyearnum = is_numeric($yearcode);
-        $coursedetails = local_uonlib_courselib::get_module_details($shortname);
+        $coursedetails = local_uonlib_courselib::get_module_details($COURSE);
         $colist = null;
-
-        if ($coursedetails['modulecode']) {
-            $coursecode = strtolower($coursedetails['modulecode']);
-            if (strlen($coursecode) > 4 ) {
-                $coursecode = substr($shortname,0,-4);
+        $modulecode = null;
+        $yearcode  = null;
+        if ($coursedetails && ($coursedetails['modulecode']) && ($coursedetails['modulecode'])) {
+            $modulecode = $coursedetails['modulecode'];
+            $yearcode  = $coursedetails['yearcode'];
+            if (strlen($modulecode) > 4 ) {
+                $modulecode = substr($shortname,0,-4);
             }
-            $colist = $component->get_shortnameresults($coursecode ,$shortname);
+            $colist = $component->get_shortnameresults($modulecode, $shortname);
         }
 
         $highlightguard = true;
         $highlight = false;
 
-        if ($component->get_count() === 0) {
+        if ((!$modulecode) || (!$yearcode) || ($component->get_count() === 0)) {
             $row = new html_table_row();
             $notice = new html_table_cell($this->output->notification(get_string('nomatchingcourses', 'backup')));
             $notice->colspan = 4;
@@ -97,20 +94,22 @@ class block_courseimport_renderer extends core_backup_renderer
                 if (!$course->visible) {
                     $row->attributes['class'] .= ' dimmed';
                 }
-                $cshortname = strtolower($course->shortname);
-                $thisyearcode = substr($cshortname, -4); // A year cord for other course.
-                $isthisyearnum = is_numeric($thisyearcode);
-                $uuu = strpos($cshortname, $coursecode);
+                $thisyearcode = "";
+                $moduledetail = local_uonlib_courselib::get_module_details($course);
 
-                // Check if thisyearcode > yearcode for select.
-                if (($uuu === 0) and $isthisyearnum and $isyearnum and !$highlight) {
-                    if ((int)$thisyearcode < (int)$yearcode) { // This course is old course with same code.
-                        $highlight = true;
+                if ($coursedetails !== false) {
+                    $uuu = strpos($moduledetail['shortname'], $modulecode);
+                    $thisyearcode = $moduledetail['yearcode'];
+                    // Check if thisyearcode > yearcode for select.
+                    if (($uuu === 0) and ! $highlight) {
+                        if ($thisyearcode && ((int) $thisyearcode < (int) $yearcode)) { // This course is old course with same code.
+                            $highlight = true;
+                        }
                     }
                 }
 
                 if (($highlight === true) and ($highlightguard === true)) {
-                    $cshortname = html_writer::tag('strong', format_string($cshortname, true, array('context' => context_course::instance($cid))));
+                    $cshortname = html_writer::tag('strong', format_string($course->shortname, true, array('context' => context_course::instance($cid))));
                     $row->cells = array(
                         html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $cid, 'checked' => 'checked')),
                         $course->shortname,

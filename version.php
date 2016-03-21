@@ -24,9 +24,11 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2015020300; // The current plugin version (Date: YYYYMMDDXX)
+$plugin->version = 2015032200; // The current plugin version (Date: YYYYMMDDXX)
 $plugin->requires = 2014050800; // Requires this Moodle version
+$plugin->release = '1.0.0 (2016-03-22)';
+$plugin->maturity =  MATURITY_STABLE;
 $plugin->component = 'block_courseimport'; // Full name of the plugin (used for diagnostics).
 $plugin->dependencies = array(
-    'local_uonlib' => 2016031400,
+    'local_uonlib' => 2016031800,
 );
