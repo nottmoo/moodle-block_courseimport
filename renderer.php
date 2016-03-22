@@ -59,15 +59,13 @@ class block_courseimport_renderer extends core_backup_renderer
         $table->head = array('', get_string('shortnamecourse'), get_string('fullnamecourse'), "course ID");
         $table->data = array();
         $coursedetails = local_uonlib_courselib::get_module_details($COURSE);
+        $shortname = $COURSE->shortname;
         $colist = null;
         $modulecode = null;
         $yearcode  = null;
-        if ($coursedetails && ($coursedetails['modulecode']) && ($coursedetails['modulecode'])) {
+        if ($coursedetails && ($coursedetails['yearcode']) && ($coursedetails['modulecode'])) {
             $modulecode = $coursedetails['modulecode'];
             $yearcode  = $coursedetails['yearcode'];
-            if (strlen($modulecode) > 4 ) {
-                $modulecode = substr($shortname,0,-4);
-            }
             $colist = $component->get_shortnameresults($modulecode, $shortname);
         }
 
@@ -94,19 +92,14 @@ class block_courseimport_renderer extends core_backup_renderer
                 if (!$course->visible) {
                     $row->attributes['class'] .= ' dimmed';
                 }
-                $thisyearcode = "";
                 $moduledetail = local_uonlib_courselib::get_module_details($course);
-
-                if ($coursedetails !== false) {
-                    $uuu = strpos($moduledetail['shortname'], $modulecode);
-                    $thisyearcode = $moduledetail['yearcode'];
+                $thisyearcode = $moduledetail['yearcode'];
                     // Check if thisyearcode > yearcode for select.
-                    if (($uuu === 0) and ! $highlight) {
-                        if ($thisyearcode && ((int) $thisyearcode < (int) $yearcode)) { // This course is old course with same code.
+                    if (($moduledetail['modulecode'] === $modulecode) && (!$highlight)) {
+                        if ((int) $thisyearcode < (int) $yearcode) { // This course is old course with same code.
                             $highlight = true;
                         }
                     }
-                }
 
                 if (($highlight === true) and ($highlightguard === true)) {
                     $cshortname = html_writer::tag('strong', format_string($course->shortname, true, array('context' => context_course::instance($cid))));
