@@ -58,36 +58,21 @@ class block_courseimport_renderer extends core_backup_renderer
         $table = new html_table();
         $table->head = array('', get_string('shortnamecourse'), get_string('fullnamecourse'), "course ID");
         $table->data = array();
-
-        // Do shortname search on all courses.
-        $shortnamestring = strtolower($COURSE->shortname);
-        $shortnamehyphen = strpos($shortnamestring, '-');
-        // Default course code to short name.
-        $coursecode = $shortnamestring;
-
-        $yearcode = substr($shortnamestring, -4);
-        $isyearnum = is_numeric($yearcode);
-
+        $coursedetails = local_uonlib_courselib::get_module_details($COURSE);
+        $shortname = $COURSE->shortname;
         $colist = null;
-        // Assuming all courses in the db are in the correct format they will be over 4 characters in length.
-        // Bottle out if not to avoid doing a bad search.
-        if (strlen($shortnamestring) > 4) {
-            // Saturn / Non Saturn courses should have a hyphen.
-            if ($shortnamehyphen !== false) {
-                $colist = substr($shortnamestring, 0, $shortnamehyphen);
-            }
-
-            // Non saturn courses require a more specific course code.
-            if (strlen($coursecode) > 4 and $shortnamehyphen) {
-                $coursecode = substr($shortnamestring,0,-4);
-            }
-            $colist = $component->get_shortnameresults($coursecode ,$shortnamestring);
+        $modulecode = null;
+        $yearcode  = null;
+        if ($coursedetails && ($coursedetails['yearcode']) && ($coursedetails['modulecode'])) {
+            $modulecode = $coursedetails['modulecode'];
+            $yearcode  = $coursedetails['yearcode'];
+            $colist = $component->get_shortnameresults($modulecode, $shortname);
         }
 
         $highlightguard = true;
         $highlight = false;
 
-        if ($component->get_count() === 0) {
+        if ((!$modulecode) || (!$yearcode) || ($component->get_count() === 0)) {
             $row = new html_table_row();
             $notice = new html_table_cell($this->output->notification(get_string('nomatchingcourses', 'backup')));
             $notice->colspan = 4;
@@ -107,23 +92,20 @@ class block_courseimport_renderer extends core_backup_renderer
                 if (!$course->visible) {
                     $row->attributes['class'] .= ' dimmed';
                 }
-                $cshortname = strtolower($course->shortname);
-                $thisyearcode = substr($cshortname, -4); // A year cord for other course.
-                $isthisyearnum = is_numeric($thisyearcode);
-                $uuu = strpos($cshortname, $coursecode);
-
-                // Check if thisyearcode > yearcode for select.
-                if (($uuu === 0) and $isthisyearnum and $isyearnum and !$highlight) {
-                    if ((int)$thisyearcode < (int)$yearcode) { // This course is old course with same code.
-                        $highlight = true;
+                $moduledetail = local_uonlib_courselib::get_module_details($course);
+                $thisyearcode = $moduledetail['yearcode'];
+                    // Check if thisyearcode > yearcode for select.
+                    if (($moduledetail['modulecode'] === $modulecode) && (!$highlight)) {
+                        if ((int) $thisyearcode < (int) $yearcode) { // This course is old course with same code.
+                            $highlight = true;
+                        }
                     }
-                }
 
                 if (($highlight === true) and ($highlightguard === true)) {
-                    $cshortname = html_writer::tag('strong', format_string($cshortname, true, array('context' => context_course::instance($cid))));
+                    $cshortname = html_writer::tag('strong', format_string($course->shortname, true, array('context' => context_course::instance($cid))));
                     $row->cells = array(
                         html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $cid, 'checked' => 'checked')),
-                        $cshortname,
+                        $course->shortname,
                         html_writer::tag('strong', format_string($course->fullname, true, array('context' => context_course::instance($cid)))),
                         html_writer::tag('strong', format_string($cid, true, array('context' => context_course::instance($cid))))
                     );
@@ -132,7 +114,7 @@ class block_courseimport_renderer extends core_backup_renderer
                 } else {
                     $row->cells = array(
                         html_writer::empty_tag('input', array('type' => 'radio', 'name' => 'importid', 'value' => $cid)),
-                        format_string($cshortname, true, array('context' => context_course::instance($cid))),
+                        format_string($course->shortname, true, array('context' => context_course::instance($cid))),
                         format_string($course->fullname, true, array('context' => context_course::instance($cid))),
                         format_string($cid, true, array('context' => context_course::instance($cid)))
                     );
