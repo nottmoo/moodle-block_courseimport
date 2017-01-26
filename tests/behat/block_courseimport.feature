@@ -22,6 +22,7 @@ Background:
         | teacher1 | P12130-UK-SPR1314 | editingteacher |
 Scenario: only admin can add the plugin in Moodle
     When I log in as "admin"
+    And I am on site homepage
     And I follow "N12401-UK-SPR1415"
     And I turn editing mode on
     And I add the "Course Import" block

@@ -85,31 +85,30 @@ function block_courseimport_abandonjob($abandonjobs) {
 }
 
 /**
- * findfilesize
+ * Find file's size
  *
- * @param resource id
+ * @param resource id, also is coursemodule's instance id
  * @return fileinfo object
  */
 function block_courseimport_findfilesize($id) {
-    global $DB;
+
+    global $DB, $COURSE;
     $fileinfo = new stdClass;
     $fileinfo->fsize = "";
     $fileinfo->ftype = "";
     $context = null;
-    if (!$cm = get_coursemodule_from_id('resource', $id)) {
+
+    if (!$cm = get_coursemodule_from_instance('resource', $id)) {
         return false;
     } else {
-        $cm = get_coursemodule_from_id('resource', $id);
+        $cm = get_coursemodule_from_instance('resource', $id);
         $resource = $DB->get_record('resource', array('id' => $cm->instance), '*', MUST_EXIST);
         $context = context_module::instance($cm->id);
-
         $fs = get_file_storage();
         $files = $fs->get_area_files($context->id, 'mod_resource', 'content', 0, 'sortorder DESC, id ASC', false); // TODO: this is not very efficient!!
-
         if (count($files) < 1) {
-            resource_print_filenotfound($resource, $cm, $course);
+            resource_print_filenotfound($resource, $cm, $COURSE);
             return false;
-
         } else {
             $file = reset($files);
             unset($files);
