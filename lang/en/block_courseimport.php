@@ -41,7 +41,7 @@ Time ranges are seperated by ==  with no space in string
 
 You can define any number of time ranges.
 
-<b>The input is not valid. Moodle will ignore any input strings with errors in them.</b>.";
+<b>Moodle will ignore any input strings with errors in them.</b>.";
 $string['askroleinfo'] = "You do not have permission to import from the modules below. You should contact the module's owner to ask for the Editing Teacher role if you wish to import from one.";
 $string['videofile'] = 'Note:&nbsp;The&nbsp;above&nbsp;video&nbsp;file&nbsp;will&nbsp;not&nbsp;be&nbsp;imported.';
 $string['bigfile'] = 'Note:&nbsp;Above&nbsp;file&nbsp;size&nbsp;is&nbsp;too&nbsp;big&nbsp;to&nbsp;be&nbsp;imported.';
