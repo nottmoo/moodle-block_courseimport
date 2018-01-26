@@ -126,7 +126,7 @@ if ($backup->get_stage() === backup_ui::STAGE_SCHEMA) {
             $pos1 = strpos($setname, 'resource_');
             $pos2 = strpos($setname, '_included');
             $resourceid = '';
-            if(preg_match('/^turnitintool_[0-9]+_[a-z]+/' ,$setname)===1) {
+            if(preg_match('/^turnitintool(two)?_[0-9]+_[a-z]+/' ,$setname)===1) {
                 $setting->set_value("0");
                 $setting->make_ui(10, "<b>$tname</b>", array('disabled' => true), null);
                 $setting->set_status(7);
