@@ -40,11 +40,11 @@ Feature: Test block_courseimport function
         Then I should see "Select a course"
         And I should see "N12401-UK-SPR1314"
         Given I set the following fields to these values:
-        | search | P13140 |
+            | search | P13140 |
         And I press "Search"
         Then I should not see "P13140-UK-SPR1415"
         And I set the following fields to these values:
-        | search | P12130 |
+            | search | P12130 |
         And I press "Search"
         Then I should see "P12130-UK-SPR1314"
         Then I set the field "importid" to "1"
