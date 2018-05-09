@@ -26,7 +26,6 @@ $string['pluginname'] = 'Course Import';
 $string['importlink'] = 'Course Import';
 $string['filetype'] = 'File type';
 $string['jobdone'] = 'Your module is now queued for import';
-$string['filternotice'] = '<ul><li>To improve the experience of Moodle for students, files larger than {$a->size} MB or any video files will not be imported.</li><li>Please note, forums and Turnitin assignments on the module will not be imported.</li></ul>';
 $string['infotime'] = "Here you can set when to run the import job. For example, If you want define 3 time ranges:
 
  * 02:12-04:15
@@ -44,11 +43,9 @@ You can define any number of time ranges.
 <b>Moodle will ignore any input strings with errors in them.</b>.";
 $string['askroleinfo'] = "You do not have permission to import from the modules below. You should contact the module's owner to ask for the Editing Teacher role if you wish to import from one.";
 $string['videofile'] = 'Note:&nbsp;The&nbsp;above&nbsp;video&nbsp;file&nbsp;will&nbsp;not&nbsp;be&nbsp;imported.';
-$string['bigfile'] = 'Note:&nbsp;Above&nbsp;file&nbsp;size&nbsp;is&nbsp;too&nbsp;big&nbsp;to&nbsp;be&nbsp;imported.';
 $string['courseimport:addinstance'] = 'Add the course import block to a page';
 $string['courseimport:manage'] = 'See and change settings for the course import block';
 $string['courseimport:view'] = 'Use the course import block functionality';
-$string['max_file_size'] = 'File size limit (MB) ';
 $string['time'] = 'Cron time';
 $string['alertemailsubject'] = 'Course import error alert';
 $string['useremailsubject'] = 'Moodle course import';

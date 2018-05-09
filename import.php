@@ -113,11 +113,6 @@ $backup = new import_ui($bc, array('importid' => $importcourse->id, 'target' => 
 // Process the current stage.
 $backup->process();
 if ($backup->get_stage() === backup_ui::STAGE_SCHEMA) {
-    $setsize = '';
-    if (get_config('block_courseimport', 'filesize')) {
-        $setsize = (int)get_config('block_courseimport', 'filesize');
-    }
-    $limitsize = $setsize * 1000000;
     $tsks = $bc->get_plan()->get_tasks();
     foreach ($tsks as $task) {
         foreach ($task->get_settings() as $setting) {
@@ -126,29 +121,32 @@ if ($backup->get_stage() === backup_ui::STAGE_SCHEMA) {
             $pos1 = strpos($setname, 'resource_');
             $pos2 = strpos($setname, '_included');
             $resourceid = '';
-            if(preg_match('/^turnitintool(two)?_[0-9]+_[a-z]+/' ,$setname)===1) {
+            // We will not process Turnitin.
+            if(preg_match('/^turnitintool(two)?_[0-9]+_[a-z]+/' ,$setname) === 1) {
                 $setting->set_value("0");
-                $setting->make_ui(10, "<b>$tname</b>", array('disabled' => true), null);
-                $setting->set_status(7);
+                $setting->make_ui(
+                        base_setting::UI_HTML_CHECKBOX,
+                        "<b>$tname</b>",
+                        array('disabled' => true),
+                        null
+                );
+                $setting->set_status(base_setting::LOCKED_BY_HIERARCHY);
             }
             if (($pos1 !== false) && ($pos2 !== false)) {
                 $resourceid = str_replace("_included", "", str_replace("resource_", "", $setname));
                 $afile = block_courseimport_findfilesize($resourceid);
                 if ($afile !== false) {
-                    $ttype = $afile->ftype;
-                    $tsize = (int)$afile->fsize;
-                    if (strpos($ttype, 'video') !== false) {
+                    // Do not process video files.
+                    if (strpos($afile->ftype, 'video') !== false) {
                         $setting->set_value("0");
-                        $videofile =get_string('videofile', 'block_courseimport');
-                        $setting->make_ui(10, "$tname <b><u>$videofile</u></b>", array('disabled' => true), null);
-                        $setting->set_status(7);
-                    } else {
-                        if ($tsize >= $limitsize){
-                            $setting->set_value("0");
-                            $bigfile =get_string('bigfile', 'block_courseimport');
-                            $setting->make_ui(10, "$tname <b><u>$bigfile</u></b>", array('disabled' => true), null);
-                            $setting->set_status(7);
-                        }
+                        $videofile = get_string('videofile', 'block_courseimport');
+                        $setting->make_ui(
+                                base_setting::UI_HTML_CHECKBOX,
+                                "$tname <b><u>$videofile</u></b>",
+                                array('disabled' => true),
+                                null
+                        );
+                        $setting->set_status(base_setting::LOCKED_BY_HIERARCHY);
                     }
                 }
             }

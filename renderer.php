@@ -27,22 +27,6 @@ require_once($CFG->dirroot . '/backup/util/ui/renderer.php');
  */
 class block_courseimport_renderer extends core_backup_renderer {
     /**
-     * Renderers a progress bar for the backup or restore given the items that
-     * make it up.
-     * @param array $items An array of items
-     * @return string
-     */
-    public function progress_bar(array $items) {
-        $filefilter='';
-        $setsize = get_config('block_courseimport', 'filesize');
-        $fnotice = get_string('filternotice', 'block_courseimport', array('size' => $setsize));
-
-        $filefilter .= parent::progress_bar($items);
-        $filefilter .= $this->output->notification($fnotice, 'notifymessage');
-        return $filefilter ;
-    }
-
-    /**
      * Renders an import course search object
      *
      * @param import_course_search $component
