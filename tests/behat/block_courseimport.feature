@@ -7,8 +7,8 @@ Feature: Test block_courseimport function
     Background:
         Given the following "users" exist:
             | username | firstname | lastname | email |
-            | student1 | Stu | Stu | student1@stu1.com |
-            | teacher1 | edt1 | Edt | edt1@stu1.com |
+            | student1 | Stu | Stu | student1@example.com |
+            | teacher1 | edt1 | Edt | edt1@example.com |
         Given the following "courses" exist:
             | fullname | shortname | category |
             | N12401-UK-SPR1415 | N12401-UK-SPR1415 | 0 |
