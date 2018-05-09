@@ -91,7 +91,6 @@ function block_courseimport_abandonjob($abandonjobs) {
  * @return fileinfo object
  */
 function block_courseimport_findfilesize($id) {
-
     global $DB, $COURSE;
     $fileinfo = new stdClass;
     $fileinfo->fsize = "";
@@ -192,7 +191,6 @@ function block_courseimport_sendemail($subject, $message, $userid = null) {
     }
 }
 
-
 /**
  * block_courseimport_logemailfail
  *
@@ -202,7 +200,6 @@ function block_courseimport_sendemail($subject, $message, $userid = null) {
  * @param string $userid
  */
 function block_courseimport_logemailfail($adminuserid, $userid) {
-
     $subject = get_string('emailfailure', 'block_courseimport');
     $messagetext = $subject;
     // Trigger event for failing to send email.
@@ -216,4 +213,3 @@ function block_courseimport_logemailfail($adminuserid, $userid) {
             'message' => $messagetext)));
     $event->trigger();
 }
-

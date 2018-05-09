@@ -30,7 +30,6 @@ defined('MOODLE_INTERNAL') || die();
  * @since      Moodle 2.7
  */
 class email_failed extends \core\event\email_failed {
-
     /**
      * Returns description of what happened.
      *
@@ -39,5 +38,4 @@ class email_failed extends \core\event\email_failed {
     public function get_description() {
         return get_string('emailfailure', 'block_courseimport');
     }
-
 }

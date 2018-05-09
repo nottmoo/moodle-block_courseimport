@@ -143,12 +143,12 @@ if ($backup->get_stage() === backup_ui::STAGE_SCHEMA) {
                         $setting->make_ui(10, "$tname <b><u>$videofile</u></b>", array('disabled' => true), null);
                         $setting->set_status(7);
                     } else {
-                    if ($tsize >= $limitsize){
-                        $setting->set_value("0");
-                        $bigfile =get_string('bigfile', 'block_courseimport');
-                        $setting->make_ui(10, "$tname <b><u>$bigfile</u></b>", array('disabled' => true), null);
-                        $setting->set_status(7);
-                    }
+                        if ($tsize >= $limitsize){
+                            $setting->set_value("0");
+                            $bigfile =get_string('bigfile', 'block_courseimport');
+                            $setting->make_ui(10, "$tname <b><u>$bigfile</u></b>", array('disabled' => true), null);
+                            $setting->set_status(7);
+                        }
                     }
                 }
             }

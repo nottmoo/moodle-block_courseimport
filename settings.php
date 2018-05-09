@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-/*
+/**
  * Displays the form for the block's admin settings.
  *
  * @package    block_courseimport
@@ -39,4 +39,3 @@ if ($hassiteconfig) {
                 null));
     }
 }
-

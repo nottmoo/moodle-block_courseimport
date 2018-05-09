@@ -33,9 +33,7 @@ require_once(dirname(__FILE__) . '/lib.php');
  *  validation and processing of the form.
  *
  */
-class block_courseimport extends block_base
-{
-
+class block_courseimport extends block_base {
     /**
      * Standard block init method, defines the title
      */
@@ -75,7 +73,6 @@ class block_courseimport extends block_base
 
         // Don't display content on the Site Home page.
         if ($PAGE->category) {
-
             $this->content = new stdClass;
             $this->content->text = '';
             $coursecontext = context_course::instance($COURSE->id);

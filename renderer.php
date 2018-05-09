@@ -25,8 +25,7 @@ require_once($CFG->dirroot . '/backup/util/ui/renderer.php');
  * @author    Yijun Xue
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class block_courseimport_renderer extends core_backup_renderer
-{
+class block_courseimport_renderer extends core_backup_renderer {
     /**
      * Renderers a progress bar for the backup or restore given the items that
      * make it up.

@@ -32,8 +32,7 @@ require_once($CFG->dirroot . '/backup/util/ui/import_extensions.php');
  * @copyright   University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class block_courseimport_search extends import_course_search
-{
+class block_courseimport_search extends import_course_search {
     /**
      * The results of the search
      * @var array|null
