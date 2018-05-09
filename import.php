@@ -15,10 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Defines class for courseimport block
+ * Page for creating the import job.
  *
  * @package    block_courseimport
- * @author     Yijun Xue
+ * @author     Yijun Xue <yijun.xue@nottingham.ac.uk>
  * @copyright  University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */

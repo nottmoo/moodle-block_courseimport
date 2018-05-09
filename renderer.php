@@ -22,7 +22,7 @@ require_once($CFG->dirroot . '/backup/util/ui/renderer.php');
  *
  * @package   block_courseimport
  * @copyright University of Nottingham
- * @author    Yijun Xue
+ * @author    Yijun Xue <yijun.xue@nottingham.ac.uk>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class block_courseimport_renderer extends core_backup_renderer {

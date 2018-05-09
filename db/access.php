@@ -41,7 +41,7 @@
  *
  * @package    block
  * @subpackage courseimport
- * @author  Yijun
+ * @author  Yijun Xue <yijun.xue@nottingham.ac.uk>
  * @copyright  2013 University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */

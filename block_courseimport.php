@@ -18,7 +18,7 @@
  * Defines class for course import block
  *
  * @package block_courseimport
- * @author      Yijun Xue
+ * @author      Yijun Xue <yijun.xue@nottingham.ac.uk>
  * @copyright   University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -88,6 +88,9 @@ class block_courseimport extends block_base {
         }
     }
 
+    /**
+     * @see block_base::has_config
+     */
     public function has_config() {
         return true;
     }

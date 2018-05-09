@@ -28,9 +28,7 @@ define('BLOCK_COURSEIMPORT_STATE_PROCESSING', '666666');
 define('BLOCK_COURSEIMPORT_STATE_FAILED', '777777');
 
 /**
- * block_courseimport_changestatus
- *
- * change job status
+ * Change job status.
  *
  * @param int jobid
  * @param string status
@@ -46,9 +44,7 @@ function block_courseimport_changestatus($jobid, $status) {
 }
 
 /**
- * block_courseimport_abandonjob
- *
- * abandon job
+ * Abandon job
  *
  * @param array $abandonjobs
  */
@@ -119,11 +115,11 @@ function block_courseimport_findfilesize($id) {
 }
 
 /**
- *  timecheck function : check if time now between param start and end
+ * Check if the current time is within a time period.
  *
- * @param string start time
- * @param string start end
- * @return true/false
+ * @param string $start Start time for the period
+ * @param string $end End time of the period
+ * @return bool
  */
 function block_courseimport_timecheck($start, $end) {
     $time = date("G:i:s");
@@ -155,8 +151,6 @@ function block_courseimport_timecheck($start, $end) {
 }
 
 /**
- * block_courseimport_sendemail
- *
  * Send email to Moodle admin or to a user
  *
  * @param string $subject
@@ -192,8 +186,6 @@ function block_courseimport_sendemail($subject, $message, $userid = null) {
 }
 
 /**
- * block_courseimport_logemailfail
- *
  * Log error of moodle core function email_to_user()
  *
  * @param string $adminuserid

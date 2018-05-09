@@ -19,7 +19,7 @@
  *
  * @package    block_courseimport
  * @copyright  2014 University of Nottingham
- * @author     Yijun Xue
+ * @author     Yijun Xue <yijun.xue@nottingham.ac.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 namespace block_courseimport\event;

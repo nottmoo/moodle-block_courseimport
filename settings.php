@@ -19,7 +19,7 @@
  * Displays the form for the block's admin settings.
  *
  * @package    block_courseimport
- * @author     Yijun Xue
+ * @author     Yijun Xue <yijun.xue@nottingham.ac.uk>
  * @copyright  University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
