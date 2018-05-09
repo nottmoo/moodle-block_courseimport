@@ -24,9 +24,7 @@ Feature: Test block_courseimport function
 
     Scenario: only admin can add the plugin in Moodle
         When I log in as "admin"
-        And I am on site homepage
-        And I follow "N12401-UK-SPR1415"
-        And I turn editing mode on
+        And I am on "N12401-UK-SPR1415" course homepage with editing mode on
         And I add the "Course Import" block
         And I should see "Course Import"
         # Course Import link can also be seen in courselife block
@@ -34,7 +32,7 @@ Feature: Test block_courseimport function
         Then I log out
         #Editing teacher can see the link
         When I log in as "teacher1"
-        And I follow "N12401-UK-SPR1415"
+        And I am on "N12401-UK-SPR1415" course homepage
         Then I should see "Course Import"
         And I click on "Course Import" "link" in the "Course Import" "block"
         Then I should see "Select a course"
