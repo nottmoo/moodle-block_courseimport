@@ -65,7 +65,15 @@ class block_courseimport_process {
         $countstopjobs = $DB->count_records('block_courseimport', array('status' => BLOCK_COURSEIMPORT_STATE_BLOCK));
         // If a job still is processing status, should be abandoned.
         $abandonjobs = $DB->get_records('block_courseimport', array('status' => BLOCK_COURSEIMPORT_STATE_PROCESSING));
-        $results = $DB->get_records('block_courseimport', array('status' => BLOCK_COURSEIMPORT_STATE_WAITING), 'id');
+        $jobsql = "SELECT ci.*, tc.fullname AS targetcourse, sc.fullname AS sourcecourse
+                     FROM {block_courseimport} ci
+                     JOIN {course} tc ON ci.targetcourseid = tc.id
+                     JOIN {course} sc ON ci.courseid = sc.id
+                    WHERE ci.status = :status";
+        $jobparams = array(
+            'status' => BLOCK_COURSEIMPORT_STATE_WAITING,
+        );
+        $results = $DB->get_recordset_sql($jobsql, $jobparams);
         // Need countstopjobs to avoid execute any new added job.
         if (($countstopjobs > 0)) {
             $log->logline("Process has been blocked manually and will not run until it is unblocked."
@@ -151,8 +159,8 @@ class block_courseimport_process {
                     $rc->destroy(); // Always call these.
                     fulldelete($tempdestination);
 
-                    $importto = $DB->get_field('course', 'fullname', array('id' => $courseid));
-                    $importfrom = $DB->get_field('course', 'fullname', array('id' => $targetcourseid));
+                    $importto = $job->sourcecourse;
+                    $importfrom = $job->targetcourse;
                     $subject = get_string('useremailsubject', 'block_courseimport');
 
                     if ($message === null) {
@@ -171,5 +179,6 @@ class block_courseimport_process {
                 }
             }
         }
+        $results->close();
     }
 }
