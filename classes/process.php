@@ -76,7 +76,7 @@ class block_courseimport_process {
         $abandonjobs = $DB->get_records('block_courseimport', array('status' => BLOCK_COURSEIMPORT_STATE_PROCESSING));
         block_courseimport_abandonjob($abandonjobs);
         // Get the jobs we wish to process and run them.
-        $jobsql = "SELECT ci.*, tc.fullname AS targetcourse, sc.fullname AS sourcecourse
+        $jobsql = "SELECT ci.*, tc.fullname AS fromname, sc.fullname AS toname
                      FROM {block_courseimport} ci
                      JOIN {course} tc ON ci.targetcourseid = tc.id
                      JOIN {course} sc ON ci.courseid = sc.id
@@ -166,7 +166,7 @@ class block_courseimport_process {
                     $log->logline("Success in Jobid: $jobid. "
                             . "Import is complete.\nImport From Course ID:$targetcourseid -> Import To Course ID:$courseid.", false);
                     // Send a message.
-                    $isemail = messenger::import_success($userid, $targetcourseid, $job->targetcourse, $job->sourcecourse);
+                    $isemail = messenger::import_success($userid, $courseid, $job->toname, $job->fromname);
                 } else {
                     $subject = get_string('useremailsubject', 'block_courseimport');
                     $isemail = block_courseimport_sendemail($subject, $message); // Send error to Moodle admin.
