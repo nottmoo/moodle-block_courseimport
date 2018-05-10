@@ -1,5 +1,5 @@
 <?php
-// This file is part of courseimport block in Moodle - http://moodle.org/
+// This file is part of the courseimport block plugin for Moodle
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,20 +15,22 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details
+ * Message provider setup
  *
  * @package    block_courseimport
- * @copyright  University of Nottingham
+ * @author     Neill Magill <neill.magill@nottingham.ac.uk>
+ * @copyright  2018 University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2018050901;
-$plugin->requires = 2017110800;
-$plugin->release = '1.1.0 (2017-07-13)';
-$plugin->maturity =  MATURITY_STABLE;
-$plugin->component = 'block_courseimport';
-$plugin->dependencies = array(
-    'local_uonlib' => 2018012200,
+$messageproviders = array (
+    // Message a user when an import completes successfully.
+    'complete' => array(
+        'defaults' => array(
+            'popup' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_LOGGEDIN + MESSAGE_DEFAULT_LOGGEDOFF,
+            'email' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_LOGGEDIN + MESSAGE_DEFAULT_LOGGEDOFF,
+        ),
+    ),
 );

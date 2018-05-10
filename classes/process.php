@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+use \block_courseimport\messenger;
+
 defined('MOODLE_INTERNAL') || die;
 require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
 require_once($CFG->dirroot . '/backup/moodle2/backup_plan_builder.class.php');
@@ -36,9 +38,10 @@ class block_courseimport_process {
      *
      * @global moodle_database $DB
      * @global stdClass $CFG
+     * @return void
      */
     public function cron() {
-        global $CFG,$DB;
+        global $CFG, $DB;
         $log = new local_uonlib_cronlib();
         $timesetting = get_config('block_courseimport', 'crontime');
         if (($timesetting) and ( !empty($timesetting))) {
@@ -158,22 +161,19 @@ class block_courseimport_process {
                 $rc->destroy(); // Always call these.
                 fulldelete($tempdestination);
 
-                $importto = $job->sourcecourse;
-                $importfrom = $job->targetcourse;
-                $subject = get_string('useremailsubject', 'block_courseimport');
-
                 if ($message === null) {
                     block_courseimport_changestatus($jobid, BLOCK_COURSEIMPORT_STATE_FINISHED);
                     $log->logline("Success in Jobid: $jobid. "
                             . "Import is complete.\nImport From Course ID:$targetcourseid -> Import To Course ID:$courseid.", false);
-                    $message = get_string('useremailmessage', 'block_courseimport', array('importto' => $importto, 'importfrom' => $importfrom));
-                    $isemail = block_courseimport_sendemail($subject, $message, $userid);
+                    // Send a message.
+                    $isemail = messenger::import_success($userid, $targetcourseid, $job->targetcourse, $job->sourcecourse);
                 } else {
+                    $subject = get_string('useremailsubject', 'block_courseimport');
                     $isemail = block_courseimport_sendemail($subject, $message); // Send error to Moodle admin.
                 }
                 if (!$isemail) {
                     $log->logline("Error! Jobid: $jobid. "
-                            . "Failed to send email. Content of message below.\n$message", false);
+                            . "Failed to send email to user: $userid", false);
                 }
             }
         }
