@@ -42,7 +42,7 @@ $search = optional_param('searchcourses', false, PARAM_INT);
 // The target method for the restore (adding or deleting).
 $restoretarget = 1;
 // Load the course and context.
-$course = $DB->get_record('course', array('id' => $courseid), '*', MUST_EXIST);
+$course = get_course($courseid);
 $context = context_course::instance($courseid);
 // Must pass login.
 require_login($course);
@@ -86,7 +86,7 @@ if ($importcourseid === false || $search !== false) {
     die();
 }
 // Load the course +context to import from.
-$importcourse = $DB->get_record('course', array('id' => $importcourseid), '*', MUST_EXIST);
+$importcourse = get_course($importcourseid);
 $importcontext = context_course::instance($importcourseid);
 // Make sure the user can backup from that course.
 require_capability('moodle/backup:backuptargetimport', $importcontext);
