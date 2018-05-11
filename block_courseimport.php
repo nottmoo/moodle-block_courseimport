@@ -18,7 +18,7 @@
  * Defines class for course import block
  *
  * @package block_courseimport
- * @author      Yijun Xue
+ * @author      Yijun Xue <yijun.xue@nottingham.ac.uk>
  * @copyright   University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -33,9 +33,7 @@ require_once(dirname(__FILE__) . '/lib.php');
  *  validation and processing of the form.
  *
  */
-class block_courseimport extends block_base
-{
-
+class block_courseimport extends block_base {
     /**
      * Standard block init method, defines the title
      */
@@ -75,7 +73,6 @@ class block_courseimport extends block_base
 
         // Don't display content on the Site Home page.
         if ($PAGE->category) {
-
             $this->content = new stdClass;
             $this->content->text = '';
             $coursecontext = context_course::instance($COURSE->id);
@@ -91,6 +88,9 @@ class block_courseimport extends block_base
         }
     }
 
+    /**
+     * @see block_base::has_config
+     */
     public function has_config() {
         return true;
     }

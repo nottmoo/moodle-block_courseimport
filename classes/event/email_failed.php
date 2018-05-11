@@ -19,7 +19,7 @@
  *
  * @package    block_courseimport
  * @copyright  2014 University of Nottingham
- * @author     Yijun Xue
+ * @author     Yijun Xue <yijun.xue@nottingham.ac.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 namespace block_courseimport\event;
@@ -30,7 +30,6 @@ defined('MOODLE_INTERNAL') || die();
  * @since      Moodle 2.7
  */
 class email_failed extends \core\event\email_failed {
-
     /**
      * Returns description of what happened.
      *
@@ -39,5 +38,4 @@ class email_failed extends \core\event\email_failed {
     public function get_description() {
         return get_string('emailfailure', 'block_courseimport');
     }
-
 }

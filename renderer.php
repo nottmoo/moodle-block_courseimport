@@ -22,27 +22,10 @@ require_once($CFG->dirroot . '/backup/util/ui/renderer.php');
  *
  * @package   block_courseimport
  * @copyright University of Nottingham
- * @author    Yijun Xue
+ * @author    Yijun Xue <yijun.xue@nottingham.ac.uk>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class block_courseimport_renderer extends core_backup_renderer
-{
-    /**
-     * Renderers a progress bar for the backup or restore given the items that
-     * make it up.
-     * @param array $items An array of items
-     * @return string
-     */
-    public function progress_bar(array $items) {
-        $filefilter='';
-        $setsize = get_config('block_courseimport', 'filesize');
-        $fnotice = get_string('filternotice', 'block_courseimport', array('size' => $setsize));
-
-        $filefilter .= parent::progress_bar($items);
-        $filefilter .= $this->output->notification($fnotice, 'notifymessage');
-        return $filefilter ;
-    }
-
+class block_courseimport_renderer extends core_backup_renderer {
     /**
      * Renders an import course search object
      *
