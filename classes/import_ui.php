@@ -18,7 +18,7 @@
  * Defines class for course block_courseimport_import_ui block
  *
  * @package    block_courseimport
- * @author     Neill Magill
+ * @author     Neill Magill <neill.magill@nottingham.ac.uk>
  * @copyright  University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
