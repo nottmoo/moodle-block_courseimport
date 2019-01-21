@@ -150,6 +150,9 @@ class provider implements
      */
     public static function get_users_in_context(userlist $userlist){
         $context = $userlist->get_context();
+        if (!$context instanceof \context_user) {
+            return;
+        }
 
         $params = [
           'contextid' => $context->id,
