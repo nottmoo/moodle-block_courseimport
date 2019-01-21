@@ -182,8 +182,7 @@ class provider implements
         }
     }
 
-
-  /**
+    /**
      * Deletes only jobs that have been processed for a single user.
      *
      * We must not delete records that are being processed as that could break a running import.
