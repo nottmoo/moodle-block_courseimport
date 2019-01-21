@@ -157,96 +157,93 @@ class block_courseimport_privacy_provider_test extends \core_privacy\tests\provi
         $this->assertEquals(3, $DB->count_records('block_courseimport'));
     }
 
+    /**
+     * Test that data for users in approved userlist is deleted.
+     */
+    public function test_delete_data_for_users() {
+        global $DB, $CFG;
+        require_once($CFG->dirroot . '/blocks/courseimport/lib.php');
+        $component = 'block_courseimport';
 
+        $user1 = $this->getDataGenerator()->create_user();
+        $usercontext1 = \context_user::instance($user1->id);
+        $user2 = $this->getDataGenerator()->create_user();
+        $usercontext2 = \context_user::instance($user2->id);
 
-  /**
-   * Test that data for users in approved userlist is deleted.
-   */
-  public function test_delete_data_for_users() {
+        // Jobs for $user1 that should not be deleted.
+        $this->setUser($user1);
+        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_WAITING]);
+        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_PROCESSING]);
+        // Jobs for $user1 that should be deleted.
+        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_BLOCK]);
+        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_FAILED]);
+        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_FINISHED]);
 
-    global $DB,$CFG;
-    require_once($CFG->dirroot .'/blocks/courseimport/lib.php');
-    $component = 'block_courseimport';
+        // Jobs for $user2 all should be deleted.
+        $this->setUser($user2);
+        $this->generator->create_job(['userid' => $user2->id, 'status' => BLOCK_COURSEIMPORT_STATE_BLOCK]);
+        $this->generator->create_job(['userid' => $user2->id, 'status' => BLOCK_COURSEIMPORT_STATE_FAILED]);
+        $this->generator->create_job(['userid' => $user2->id, 'status' => BLOCK_COURSEIMPORT_STATE_FINISHED]);
 
-    $user1 = $this->getDataGenerator()->create_user();
-    $usercontext1 = \context_user::instance($user1->id);
-    $user2 = $this->getDataGenerator()->create_user();
-    $usercontext2 = \context_user::instance($user2->id);
+        $userlist1 = new \core_privacy\local\request\userlist($usercontext1, $component);
+        provider::get_users_in_context($userlist1);
+        $this->assertCount(1, $userlist1);
 
-    // Jobs for $user1 that should not be deleted.
-    $this->setUser($user1);
-    $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_WAITING]);
-    $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_PROCESSING]);
-    // Jobs for $user2 that should be deleted.
-    $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_BLOCK]);
-    $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_FAILED]);
-    $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_FINISHED]);
+        $userlist2 = new \core_privacy\local\request\userlist($usercontext2, $component);
+        provider::get_users_in_context($userlist2);
+        $this->assertCount(1, $userlist2);
 
-    // Jobs for $user2 all should be deleted.
-    $this->setUser($user2);
-    $this->generator->create_job(['userid' => $user2->id, 'status' => BLOCK_COURSEIMPORT_STATE_BLOCK]);
-    $this->generator->create_job(['userid' => $user2->id, 'status' => BLOCK_COURSEIMPORT_STATE_FAILED]);
-    $this->generator->create_job(['userid' => $user2->id, 'status' => BLOCK_COURSEIMPORT_STATE_FINISHED]);
+        // create approveduserlist for delete_data_for_users()
+        $approveduserlist1 = new approved_userlist($usercontext1, $component, $userlist1->get_userids());
+        $approveduserlist2 = new approved_userlist($usercontext2, $component, $userlist2->get_userids());
 
-    $userlist1 = new \core_privacy\local\request\userlist($usercontext1, $component);
-    provider::get_users_in_context($userlist1);
-    $this->assertCount(1, $userlist1);
+        // All user2's data should be deleted
+        provider::delete_data_for_users($approveduserlist2);
+        $this->assertEquals(0, $DB->count_records('block_courseimport', ['userid' => $user2->id]));
+        $this->assertEquals(5, $DB->count_records('block_courseimport', ['userid' => $user1->id]));
 
-    $userlist2 = new \core_privacy\local\request\userlist($usercontext2, $component);
-    provider::get_users_in_context($userlist2);
-    $this->assertCount(1, $userlist2);
+        // Only user1's 2 records left
+        provider::delete_data_for_users($approveduserlist1);
+        $this->assertEquals(2, $DB->count_records('block_courseimport', ['userid' => $user1->id]));
 
-    // create approveduserlist for delete_data_for_users()
-    $approveduserlist1 = new approved_userlist($usercontext1, $component, $userlist1->get_userids());
-    $approveduserlist2 = new approved_userlist($usercontext2, $component, $userlist2->get_userids());
+    }
 
-    // All user2's data should be deleted
-    provider::delete_data_for_users($approveduserlist2);
-    $this->assertEquals(0, $DB->count_records('block_courseimport', ['userid' => $user2->id]));
+    /**
+     * Test get users in the context
+     */
+    public function test_get_users_in_context() {
+        global $CFG;
+        require_once($CFG->dirroot . '/blocks/courseimport/lib.php');
 
-    // Only user1's 2 recodes left
-    provider::delete_data_for_users($approveduserlist1);
-    $this->assertEquals(2, $DB->count_records('block_courseimport', ['userid' => $user1->id]));
+        $user1 = self::getDataGenerator()->create_user();
+        $usercontext1 = \context_user::instance($user1->id);
 
-  }
+        $user2 = self::getDataGenerator()->create_user();
+        $usercontext2 = \context_user::instance($user2->id);
+        $component = 'block_courseimport';
 
-  /**
-   * Test get users in the context
-   */
-  public function test_get_users_in_context() {
-    global $CFG;
-    require_once($CFG->dirroot .'/blocks/courseimport/lib.php');
+        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_BLOCK]);
+        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_FAILED]);
+        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_FINISHED]);
+        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_PROCESSING]);
+        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_WAITING]);
 
-    $user1 = self::getDataGenerator()->create_user();
-    $usercontext1 = \context_user::instance($user1->id);
+        $this->generator->create_job(['userid' => $user2->id, 'status' => BLOCK_COURSEIMPORT_STATE_BLOCK]);
+        $this->generator->create_job(['userid' => $user2->id, 'status' => BLOCK_COURSEIMPORT_STATE_FAILED]);
+        $this->generator->create_job(['userid' => $user2->id, 'status' => BLOCK_COURSEIMPORT_STATE_FINISHED]);
 
-    $user2 = self::getDataGenerator()->create_user();
-    $usercontext2 = \context_user::instance($user2->id);
+        $userlist1 = new \core_privacy\local\request\userlist($usercontext1, $component);
+        provider::get_users_in_context($userlist1);
+        $this->assertCount(1, $userlist1);
+        $expected = array($user1->id);
+        $actual = $userlist1->get_userids();
+        $this->assertEquals($expected, $actual);
 
-    $component = 'block_courseimport';
-
-    $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_BLOCK]);
-    $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_FAILED]);
-    $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_FINISHED]);
-    $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_PROCESSING]);
-    $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_WAITING]);
-
-    $this->generator->create_job(['userid' => $user2->id, 'status' => BLOCK_COURSEIMPORT_STATE_BLOCK]);
-    $this->generator->create_job(['userid' => $user2->id, 'status' => BLOCK_COURSEIMPORT_STATE_FAILED]);
-    $this->generator->create_job(['userid' => $user2->id, 'status' => BLOCK_COURSEIMPORT_STATE_FINISHED]);
-
-    $userlist1 = new \core_privacy\local\request\userlist($usercontext1, $component);
-    provider::get_users_in_context($userlist1);
-    $this->assertCount(1, $userlist1);
-    $expected = array($user1->id);
-    $actual = $userlist1->get_userids();
-    $this->assertEquals($expected, $actual);
-
-    $userlist2 = new \core_privacy\local\request\userlist($usercontext2, $component);
-    provider::get_users_in_context($userlist2);
-    $this->assertCount(1, $userlist2);
-    $expected = array($user2->id);
-    $actual = $userlist2->get_userids();
-    $this->assertEquals($expected, $actual);
-  }
+        $userlist2 = new \core_privacy\local\request\userlist($usercontext2, $component);
+        provider::get_users_in_context($userlist2);
+        $this->assertCount(1, $userlist2);
+        $expected = array($user2->id);
+        $actual = $userlist2->get_userids();
+        $this->assertEquals($expected, $actual);
+    }
 }

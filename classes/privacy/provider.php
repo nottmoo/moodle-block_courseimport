@@ -39,9 +39,10 @@ require_once($CFG->dirroot . '/blocks/courseimport/lib.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provider implements
-  \core_privacy\local\metadata\provider,
-  \core_privacy\local\request\core_userlist_provider,
-  \core_privacy\local\request\plugin\provider {
+    \core_privacy\local\metadata\provider,
+    \core_privacy\local\request\core_userlist_provider,
+    \core_privacy\local\request\plugin\provider {
+
     /**
      * Returns meta data about this system.
      *
@@ -141,40 +142,42 @@ class provider implements
         static::delete_user_data($contextlist->get_user()->id);
     }
 
-  /**
-   * Get users who have data within a context.
-   *
-   * @param $userlist The userlist containing the list of users who have data in this context/plugin combination.
-   *
-   */
-  public static function get_users_in_context(userlist $userlist) {
-    $context = $userlist->get_context();
+    /**
+     * Get users who have data within a context.
+     *
+     * @param $userlist The userlist containing the list of users who have data in this context/plugin combination.
+     *
+     */
+    public static function get_users_in_context(userlist $userlist){
+        $context = $userlist->get_context();
 
-    $params = [
-      'contextid'    => $context->id,
-      'contextuser' => CONTEXT_USER,
-    ];
+        $params = [
+          'contextid' => $context->id,
+          'contextuser' => CONTEXT_USER,
+        ];
 
-    $sql = "SELECT bc.userid as userid
+        $sql = "SELECT bc.userid AS userid
                   FROM {block_courseimport} bc
-                  JOIN {context} ctx
-                       ON ctx.instanceid = bc.userid
+                  JOIN {context} ctx ON ctx.instanceid = bc.userid
                        AND ctx.contextlevel = :contextuser
                  WHERE ctx.id = :contextid";
-    $userlist->add_from_sql('userid', $sql, $params);
-  }
-
-  /**
-   * Delete multiple users within a single context.
-   *
-   * @param approved_userlist $userlist The approved context and user information to delete.
-   */
-  public static function delete_data_for_users(approved_userlist $userlist) {
-    $userids = $userlist->get_userids();
-    foreach($userids as $id){
-      static::delete_user_data($id);
+        $userlist->add_from_sql('userid', $sql, $params);
     }
-  }
+
+    /**
+     * Delete multiple users within a single context.
+     *
+     * @param approved_userlist $userlist The approved context and user information to delete.
+     */
+    public static function delete_data_for_users(approved_userlist $userlist){
+        $userids = $userlist->get_userids();
+        $context = $userlist->get_context();
+        if ($context instanceof \context_user) {
+            foreach ($userids as $id) {
+                static::delete_user_data($id);
+            }
+        }
+    }
 
 
   /**
