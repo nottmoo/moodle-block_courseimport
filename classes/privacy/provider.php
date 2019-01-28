@@ -16,12 +16,14 @@
 
 namespace block_courseimport\privacy;
 
-use core_privacy\local\metadata\collection;
-use core_privacy\local\request\approved_contextlist;
-use core_privacy\local\request\contextlist;
-use core_privacy\local\request\helper;
-use core_privacy\local\request\writer;
-use core_privacy\local\request\transform;
+use \core_privacy\local\metadata\collection;
+use \core_privacy\local\request\approved_contextlist;
+use \core_privacy\local\request\contextlist;
+use \core_privacy\local\request\helper;
+use \core_privacy\local\request\writer;
+use \core_privacy\local\request\transform;
+use \core_privacy\local\request\approved_userlist;
+use \core_privacy\local\request\userlist;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -36,7 +38,11 @@ require_once($CFG->dirroot . '/blocks/courseimport/lib.php');
  * @author     Neill Magill <neill.magill@nottingham.ac.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class provider implements \core_privacy\local\metadata\provider, \core_privacy\local\request\plugin\provider {
+class provider implements
+        \core_privacy\local\metadata\provider,
+        \core_privacy\local\request\core_userlist_provider,
+        \core_privacy\local\request\plugin\provider {
+
     /**
      * Returns meta data about this system.
      *
@@ -137,7 +143,47 @@ class provider implements \core_privacy\local\metadata\provider, \core_privacy\l
     }
 
     /**
-     * Deletes all jobs that have been processed for a single user.
+     * Get users who have data within a context.
+     *
+     * @param $userlist The userlist containing the list of users who have data in this context/plugin combination.
+     *
+     */
+    public static function get_users_in_context(userlist $userlist){
+        $context = $userlist->get_context();
+        if (!$context instanceof \context_user) {
+            return;
+        }
+
+        $params = [
+          'contextid' => $context->id,
+          'contextuser' => CONTEXT_USER,
+        ];
+
+        $sql = "SELECT bc.userid AS userid
+                  FROM {block_courseimport} bc
+                  JOIN {context} ctx ON ctx.instanceid = bc.userid
+                       AND ctx.contextlevel = :contextuser
+                 WHERE ctx.id = :contextid";
+        $userlist->add_from_sql('userid', $sql, $params);
+    }
+
+    /**
+     * Delete multiple users within a single context.
+     *
+     * @param approved_userlist $userlist The approved context and user information to delete.
+     */
+    public static function delete_data_for_users(approved_userlist $userlist){
+        $userids = $userlist->get_userids();
+        $context = $userlist->get_context();
+        if ($context instanceof \context_user) {
+            foreach ($userids as $id) {
+                static::delete_user_data($id);
+            }
+        }
+    }
+
+    /**
+     * Deletes only jobs that have been processed for a single user.
      *
      * We must not delete records that are being processed as that could break a running import.
      * We should not delete jobs until they have been processed.
@@ -149,7 +195,7 @@ class provider implements \core_privacy\local\metadata\provider, \core_privacy\l
         global $DB;
         $exclude = [BLOCK_COURSEIMPORT_STATE_PROCESSING, BLOCK_COURSEIMPORT_STATE_WAITING];
         list($sql, $params) = $DB->get_in_or_equal($exclude, SQL_PARAMS_NAMED, 'status', false);
-        $select = "status $sql";
+        $select = "status $sql AND userid = $userid";
         $DB->delete_records_select('block_courseimport', $select, $params);
     }
 
