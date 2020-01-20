@@ -118,7 +118,7 @@ class block_courseimport_process {
             }
             list($context, $course, $cm) = get_context_info_array($contextid);
             $rc = new restore_controller($backupid, $course->id, backup::INTERACTIVE_YES, backup::MODE_IMPORT, $userid, 1);
-            // Convert the backup if required.... it should NEVER happed.
+            // Convert the backup if required.... it should NEVER happen.
             if ($rc->get_status() == backup::STATUS_REQUIRE_CONV) {
                 $rc->convert();
             }
