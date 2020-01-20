@@ -160,6 +160,8 @@ if ($backup->get_stage() == backup_ui::STAGE_CONFIRMATION) {
 }
 
 if ($backup->get_stage() == backup_ui::STAGE_FINAL) { //backup_ui::STAGE_FINAL=8
+    $backup->get_controller()->finish_ui();
+
     $record = new stdClass();
     $record->courseid = $COURSE->id;
     $record->targetcourseid = $importcourseid;

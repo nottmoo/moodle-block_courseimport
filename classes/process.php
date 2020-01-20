@@ -102,10 +102,13 @@ class block_courseimport_process {
                     . "\nImport From Course ID:$targetcourseid,\nCreating backup for course ID:$targetcourseid now.", false);
 
             $bc = backup_ui::load_controller($importid);
-            $backup = new block_courseimport_import_ui($bc, array('importid' => $importid, 'target' => $restoretarget));
-            $backup->execute();
-            $backup->destroy();
-            unset($backup);
+            if ($bc->get_status() == \backup::STATUS_AWAITING && $bc->get_mode() == \backup::MODE_IMPORT) {
+                $bc->execute_plan();
+            } else {
+                block_courseimport_changestatus($jobid, BLOCK_COURSEIMPORT_STATE_FAILED);
+                $log->logline("Error! Jobid: $jobid. Backup state invalid.");
+                continue;
+            }
             $tempdestination = $CFG->tempdir . '/backup/' . $backupid;
             if (!file_exists($tempdestination) || !is_dir($tempdestination)) {
                 $log->logline("Error, could not find file in CFG->tempdir/backup folder, "
