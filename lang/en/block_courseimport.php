@@ -63,7 +63,6 @@ $string['emailfailure'] = "Course import could not send email to user";
 $string['messageprovider:complete'] = 'Confirmation that a course import has completed';
 $string['messageprovider:problem'] = 'Messages about errors with a course import';
 $string['privacy:export:jobs'] = 'Course import jobs';
-$string['privacy:export:status:block'] = 'Blocked from import';
 $string['privacy:export:status:failed'] = 'Import failed';
 $string['privacy:export:status:finished'] = 'Import completed';
 $string['privacy:export:status:processing'] = 'Importing';

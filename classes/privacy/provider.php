@@ -228,9 +228,6 @@ class provider implements
             case job::STATE_WAITING:
                 $status = get_string('privacy:export:status:waiting', 'block_courseimport');
                 break;
-            case job::STATE_BLOCK:
-                $status = get_string('privacy:export:status:block', 'block_courseimport');
-                break;
             case job::STATE_FINISHED:
                 $status = get_string('privacy:export:status:finished', 'block_courseimport');
                 break;

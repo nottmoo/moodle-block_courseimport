@@ -109,7 +109,6 @@ class block_courseimport_privacy_provider_test extends \core_privacy\tests\provi
         $job1 = $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_WAITING]);
         $job2 = $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_PROCESSING]);
         // Jobs that should be deleted.
-        $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_BLOCK]);
         $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_FAILED]);
         $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_FINISHED]);
         // Job for another user.
@@ -138,7 +137,6 @@ class block_courseimport_privacy_provider_test extends \core_privacy\tests\provi
         $job1 = $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_WAITING]);
         $job2 = $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_PROCESSING]);
         // Jobs that should be deleted.
-        $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_BLOCK]);
         $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_FAILED]);
         $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_FINISHED]);
         // Job for another user.
@@ -176,13 +174,11 @@ class block_courseimport_privacy_provider_test extends \core_privacy\tests\provi
         $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_WAITING]);
         $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_PROCESSING]);
         // Jobs for $user1 that should be deleted.
-        $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_BLOCK]);
         $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_FAILED]);
         $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_FINISHED]);
 
         // Jobs for $user2 all should be deleted.
         $this->setUser($user2);
-        $this->generator->create_job(['userid' => $user2->id, 'status' => job::STATE_BLOCK]);
         $this->generator->create_job(['userid' => $user2->id, 'status' => job::STATE_FAILED]);
         $this->generator->create_job(['userid' => $user2->id, 'status' => job::STATE_FINISHED]);
 
@@ -223,13 +219,11 @@ class block_courseimport_privacy_provider_test extends \core_privacy\tests\provi
         $usercontext2 = \context_user::instance($user2->id);
         $component = 'block_courseimport';
 
-        $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_BLOCK]);
         $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_FAILED]);
         $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_FINISHED]);
         $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_PROCESSING]);
         $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_WAITING]);
 
-        $this->generator->create_job(['userid' => $user2->id, 'status' => job::STATE_BLOCK]);
         $this->generator->create_job(['userid' => $user2->id, 'status' => job::STATE_FAILED]);
         $this->generator->create_job(['userid' => $user2->id, 'status' => job::STATE_FINISHED]);
 

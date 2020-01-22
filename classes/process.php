@@ -64,14 +64,9 @@ class block_courseimport_process {
             }
         }
         $log->logline("Current time is within operating hours. Starting process", false);
+
         // Start jobs.
-        $countstopjobs = $DB->count_records('block_courseimport', array('status' => \block_courseimport\job::STATE_BLOCK));
-        // Need countstopjobs to avoid execute any new added job.
-        if (($countstopjobs > 0)) {
-            $log->logline("Process has been blocked manually and will not run until it is unblocked."
-                    . "\nTo unblock run php var/www/blocks/courseimport/newbackup.php 1 at the command line.", false);
-            return;
-        }
+
         // If a job still is processing status, should be abandoned.
         \block_courseimport\job::abandon_running();
         // Get the jobs we wish to process and run them.

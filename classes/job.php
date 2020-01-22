@@ -45,9 +45,6 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class job {
-    /** Job blocked (Does not seem to be used) */
-    const STATE_BLOCK = '444444';
-
     /** Import failed. */
     const STATE_FAILED = '777777';
 
