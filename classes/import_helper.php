@@ -29,7 +29,6 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot . '/backup/util/settings/base_setting.class.php');
 
-
 /**
  * Helper for the import page.
  *
@@ -129,7 +128,6 @@ class import_helper {
         $files = $fs->get_area_files($context->id, 'mod_resource', 'content', 0, 'sortorder DESC, id ASC', false, 0, 0, 1);
 
         if (count($files) < 1) {
-            resource_print_filenotfound($resource, $cm, $COURSE);
             return null;
         }
 
