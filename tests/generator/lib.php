@@ -56,6 +56,10 @@ class block_courseimport_generator extends testing_block_generator {
             $target = $this->datagenerator->create_course();
             $record->targetcourseid = $target->id;
         }
+        if (is_null($record->userid)) {
+            $user = $this->datagenerator->create_user();
+            $record->userid = $user->id;
+        }
         $id = $DB->insert_record('block_courseimport', $record);
         return $DB->get_record('block_courseimport', ['id' => $id]);
     }
