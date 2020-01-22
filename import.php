@@ -25,14 +25,14 @@
 
 require_once(dirname(__FILE__) . '/../../config.php');
 
+use \block_courseimport\import_helper;
+
 // Require both the backup and restore libs
 require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
 require_once($CFG->dirroot . '/backup/moodle2/backup_plan_builder.class.php');
 require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
 require_once($CFG->dirroot . '/backup/util/ui/import_extensions.php');
 require_once($CFG->dirroot . '/blocks/courseimport/renderer.php');
-require_once($CFG->dirroot . '/blocks/courseimport/lib.php');
-require_once($CFG->dirroot . '/backup/util/settings/base_setting.class.php');
 
 // The courseid we are importing to.
 $courseid = required_param('id', PARAM_INT);
@@ -88,64 +88,28 @@ require_capability('moodle/backup:backuptargetimport', $importcontext);
 // Attempt to load the existing backup controller (backupid will be false if there isn't one).
 $backupid = optional_param('backup', false, PARAM_ALPHANUM); // Initial settings - false
 if (!($bc = backup_ui::load_controller($backupid))) {
-    $bc = new backup_controller(backup::TYPE_1COURSE, $importcourse->id, backup::FORMAT_MOODLE,
-        backup::INTERACTIVE_YES, backup::MODE_IMPORT, $USER->id);
-    $bc->get_plan()->get_setting('users')->set_status(backup_setting::LOCKED_BY_CONFIG);
-    $settings = $bc->get_plan()->get_settings();
+    $bc = new backup_controller(
+            backup::TYPE_1COURSE,
+            $importcourse->id,
+            backup::FORMAT_MOODLE,
+        backup::INTERACTIVE_YES,
+            backup::MODE_IMPORT,
+            $USER->id
+    );
+    $plan = $bc->get_plan();
+    import_helper::disbable_userdata_import($plan);
     // For the initial stage we want to hide all locked settings and if there are no visible settings move to the next stage.
-    $visiblesettings = false;
-    foreach ($settings as $setting) {
-        if ($setting->get_status() !== backup_setting::NOT_LOCKED) {
-            $setting->set_visibility(backup_setting::HIDDEN);
-        } else {
-            $visiblesettings = true;
-        }
-    }
+    $visiblesettings = import_helper::hide_locked_settings($plan);
     import_ui::skip_current_stage(!$visiblesettings);
 }
-//Prepare the import UI.
+// Prepare the import UI.
 $backup = new import_ui($bc, array('importid' => $importcourse->id, 'target' => $restoretarget));
 // Process the current stage.
 $backup->process();
 if ($backup->get_stage() === backup_ui::STAGE_SCHEMA) {
     $tsks = $bc->get_plan()->get_tasks();
     foreach ($tsks as $task) {
-        foreach ($task->get_settings() as $setting) {
-            $tname = $task->get_name();
-            $setname = $setting->get_name();
-            $pos1 = strpos($setname, 'resource_');
-            $pos2 = strpos($setname, '_included');
-            $resourceid = '';
-            // We will not process Turnitin.
-            if(preg_match('/^turnitintool(two)?_[0-9]+_[a-z]+/' ,$setname) === 1) {
-                $setting->set_value("0");
-                $setting->make_ui(
-                        base_setting::UI_HTML_CHECKBOX,
-                        "<b>$tname</b>",
-                        array('disabled' => true),
-                        null
-                );
-                $setting->set_status(base_setting::LOCKED_BY_HIERARCHY);
-            }
-            if (($pos1 !== false) && ($pos2 !== false)) {
-                $resourceid = str_replace("_included", "", str_replace("resource_", "", $setname));
-                $afile = block_courseimport_findfilesize($resourceid);
-                if ($afile !== false) {
-                    // Do not process video files.
-                    if (strpos($afile->ftype, 'video') !== false) {
-                        $setting->set_value("0");
-                        $videofile = get_string('videofile', 'block_courseimport');
-                        $setting->make_ui(
-                                base_setting::UI_HTML_CHECKBOX,
-                                "$tname <b><u>$videofile</u></b>",
-                                array('disabled' => true),
-                                null
-                        );
-                        $setting->set_status(base_setting::LOCKED_BY_HIERARCHY);
-                    }
-                }
-            }
-        }
+        import_helper::filter_task($task);
     }
 }
 
