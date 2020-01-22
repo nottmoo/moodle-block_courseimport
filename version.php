@@ -31,4 +31,5 @@ $plugin->maturity =  MATURITY_STABLE;
 $plugin->component = 'block_courseimport';
 $plugin->dependencies = array(
     'local_uonlib' => 2018012200,
+    'mod_resource' => 2018112800,
 );
