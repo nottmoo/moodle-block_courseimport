@@ -30,9 +30,26 @@
  * @return bool
  */
 function xmldb_block_courseimport_upgrade($oldversion) {
+    global $DB;
+    $dbman = $DB->get_manager();
+
     if ($oldversion < 2018050900) {
         unset_config('filesize', 'block_courseimport');
         upgrade_block_savepoint(true, 2018050900, 'courseimport');
+    }
+
+    if ($oldversion < 2020012200) {
+        // Rename database columns to something sane.
+        $table = new xmldb_table('block_courseimport');
+        $sourcefield = new xmldb_field('targetcourseid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+        $targetfield = new xmldb_field('courseid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
+        if ($dbman->field_exists($table, $sourcefield)) {
+            $dbman->rename_field($table, $sourcefield, 'source');
+        }
+        if ($dbman->field_exists($table, $targetfield)) {
+            $dbman->rename_field($table, $targetfield, 'target');
+        }
+        upgrade_block_savepoint(true, 2020012200, 'courseimport');
     }
 
     return true;

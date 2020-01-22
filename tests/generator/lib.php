@@ -37,8 +37,8 @@ class block_courseimport_generator extends testing_block_generator {
         require_once(dirname(dirname(__DIR__)) . '/lib.php');
         $now = time();
         $defaults = array(
-            'courseid' => null,
-            'targetcourseid' => null,
+            'target' => null,
+            'source' => null,
             'userid' => null,
             'backupid' => 'utterlyinvalidid',
             'status' => \block_courseimport\job::STATE_WAITING,
@@ -47,14 +47,14 @@ class block_courseimport_generator extends testing_block_generator {
         );
         $record = (object)$this->datagenerator->combine_defaults_and_record($defaults, $job);
         // Ensure there is a source course.
-        if (is_null($record->courseid)) {
+        if (is_null($record->source)) {
             $source = $this->datagenerator->create_course();
-            $record->courseid = $source->id;
+            $record->source = $source->id;
         }
         // Ensure there is a target course.
-        if (is_null($record->targetcourseid)) {
+        if (is_null($record->target)) {
             $target = $this->datagenerator->create_course();
-            $record->targetcourseid = $target->id;
+            $record->target = $target->id;
         }
         if (is_null($record->userid)) {
             $user = $this->datagenerator->create_user();
