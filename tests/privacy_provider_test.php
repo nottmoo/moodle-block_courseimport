@@ -25,6 +25,7 @@
 
 use block_courseimport\privacy\provider;
 use core_privacy\local\request\approved_userlist;
+use \block_courseimport\job;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -105,12 +106,12 @@ class block_courseimport_privacy_provider_test extends \core_privacy\tests\provi
         $usercontext = \context_user::instance($user->id);
         $otheruser = self::getDataGenerator()->create_user();
         // Jobs that should not be deleted.
-        $job1 = $this->generator->create_job(['userid' => $user->id, 'status' => BLOCK_COURSEIMPORT_STATE_WAITING]);
-        $job2 = $this->generator->create_job(['userid' => $user->id, 'status' => BLOCK_COURSEIMPORT_STATE_PROCESSING]);
+        $job1 = $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_WAITING]);
+        $job2 = $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_PROCESSING]);
         // Jobs that should be deleted.
-        $this->generator->create_job(['userid' => $user->id, 'status' => BLOCK_COURSEIMPORT_STATE_BLOCK]);
-        $this->generator->create_job(['userid' => $user->id, 'status' => BLOCK_COURSEIMPORT_STATE_FAILED]);
-        $this->generator->create_job(['userid' => $user->id, 'status' => BLOCK_COURSEIMPORT_STATE_FINISHED]);
+        $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_BLOCK]);
+        $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_FAILED]);
+        $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_FINISHED]);
         // Job for another user.
         $this->generator->create_job(['userid' => $otheruser->id]);
         // Make the call to delete.
@@ -134,12 +135,12 @@ class block_courseimport_privacy_provider_test extends \core_privacy\tests\provi
         $usercontext = \context_user::instance($user->id);
         $otheruser = self::getDataGenerator()->create_user();
         // Jobs that should not be deleted.
-        $job1 = $this->generator->create_job(['userid' => $user->id, 'status' => BLOCK_COURSEIMPORT_STATE_WAITING]);
-        $job2 = $this->generator->create_job(['userid' => $user->id, 'status' => BLOCK_COURSEIMPORT_STATE_PROCESSING]);
+        $job1 = $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_WAITING]);
+        $job2 = $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_PROCESSING]);
         // Jobs that should be deleted.
-        $this->generator->create_job(['userid' => $user->id, 'status' => BLOCK_COURSEIMPORT_STATE_BLOCK]);
-        $this->generator->create_job(['userid' => $user->id, 'status' => BLOCK_COURSEIMPORT_STATE_FAILED]);
-        $this->generator->create_job(['userid' => $user->id, 'status' => BLOCK_COURSEIMPORT_STATE_FINISHED]);
+        $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_BLOCK]);
+        $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_FAILED]);
+        $this->generator->create_job(['userid' => $user->id, 'status' => job::STATE_FINISHED]);
         // Job for another user.
         $this->generator->create_job(['userid' => $otheruser->id]);
         // Make the call to delete.
@@ -172,18 +173,18 @@ class block_courseimport_privacy_provider_test extends \core_privacy\tests\provi
 
         // Jobs for $user1 that should not be deleted.
         $this->setUser($user1);
-        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_WAITING]);
-        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_PROCESSING]);
+        $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_WAITING]);
+        $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_PROCESSING]);
         // Jobs for $user1 that should be deleted.
-        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_BLOCK]);
-        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_FAILED]);
-        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_FINISHED]);
+        $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_BLOCK]);
+        $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_FAILED]);
+        $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_FINISHED]);
 
         // Jobs for $user2 all should be deleted.
         $this->setUser($user2);
-        $this->generator->create_job(['userid' => $user2->id, 'status' => BLOCK_COURSEIMPORT_STATE_BLOCK]);
-        $this->generator->create_job(['userid' => $user2->id, 'status' => BLOCK_COURSEIMPORT_STATE_FAILED]);
-        $this->generator->create_job(['userid' => $user2->id, 'status' => BLOCK_COURSEIMPORT_STATE_FINISHED]);
+        $this->generator->create_job(['userid' => $user2->id, 'status' => job::STATE_BLOCK]);
+        $this->generator->create_job(['userid' => $user2->id, 'status' => job::STATE_FAILED]);
+        $this->generator->create_job(['userid' => $user2->id, 'status' => job::STATE_FINISHED]);
 
         $userlist1 = new \core_privacy\local\request\userlist($usercontext1, $component);
         provider::get_users_in_context($userlist1);
@@ -200,7 +201,7 @@ class block_courseimport_privacy_provider_test extends \core_privacy\tests\provi
         // All user2's data should be deleted
         provider::delete_data_for_users($approveduserlist2);
         $this->assertEquals(0, $DB->count_records('block_courseimport', ['userid' => $user2->id]));
-        $this->assertEquals(5, $DB->count_records('block_courseimport', ['userid' => $user1->id]));
+        $this->assertEquals(4, $DB->count_records('block_courseimport', ['userid' => $user1->id]));
 
         // Only user1's 2 records left
         provider::delete_data_for_users($approveduserlist1);
@@ -222,15 +223,15 @@ class block_courseimport_privacy_provider_test extends \core_privacy\tests\provi
         $usercontext2 = \context_user::instance($user2->id);
         $component = 'block_courseimport';
 
-        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_BLOCK]);
-        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_FAILED]);
-        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_FINISHED]);
-        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_PROCESSING]);
-        $this->generator->create_job(['userid' => $user1->id, 'status' => BLOCK_COURSEIMPORT_STATE_WAITING]);
+        $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_BLOCK]);
+        $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_FAILED]);
+        $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_FINISHED]);
+        $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_PROCESSING]);
+        $this->generator->create_job(['userid' => $user1->id, 'status' => job::STATE_WAITING]);
 
-        $this->generator->create_job(['userid' => $user2->id, 'status' => BLOCK_COURSEIMPORT_STATE_BLOCK]);
-        $this->generator->create_job(['userid' => $user2->id, 'status' => BLOCK_COURSEIMPORT_STATE_FAILED]);
-        $this->generator->create_job(['userid' => $user2->id, 'status' => BLOCK_COURSEIMPORT_STATE_FINISHED]);
+        $this->generator->create_job(['userid' => $user2->id, 'status' => job::STATE_BLOCK]);
+        $this->generator->create_job(['userid' => $user2->id, 'status' => job::STATE_FAILED]);
+        $this->generator->create_job(['userid' => $user2->id, 'status' => job::STATE_FINISHED]);
 
         $userlist1 = new \core_privacy\local\request\userlist($usercontext1, $component);
         provider::get_users_in_context($userlist1);

@@ -55,12 +55,13 @@ $string['useremailmessage'] = 'Your course import job had completed.
 * Imported into: {$a->importto}';
 $string['courseimport:manage'] = 'See and change settings for the course import block';
 $string['courseimport:view'] = 'Use the course import block functionality';
-$string['abandonedmessage'] = '{$a->timenow}, Job abandoned, Jobid={$a->jobid}, Userid={$a->userid}. Import To Course ID:{$a->courseid}. Import From Course ID:{$a->targetcourseid}';
-$string['precheckfail'] = '{$a->timenow} Error! In Jobid: {$a->jobid}. Prechecks for importing backupfile failed. Import From Course ID:{$a->targetcourseid} -> Import To Course ID:{$a->courseid}';
-$string['importfail'] = '{$a->timenow} Error! In Jobid: {$a->jobid}. Course import failed. Import From Course ID:{$a->targetcourseid} -> Import To Course ID:{$a->courseid}';
+$string['abandonedmessage'] = '{$a->timenow}, Job abandoned, Jobid={$a->jobid}, Userid={$a->userid}. Import To Course ID:{$a->target}. Import From Course ID:{$a->source}';
+$string['precheckfail'] = '{$a->timenow} Error! In Jobid: {$a->jobid}. Prechecks for importing backupfile failed. Import From Course ID:{$a->source} -> Import To Course ID:{$a->target}';
+$string['importfail'] = '{$a->timenow} Error! In Jobid: {$a->jobid}. Course import failed. Import From Course ID:{$a->source} -> Import To Course ID:{$a->target}';
 $string['alreadyimporting'] = 'There is an import in progress for this course. Please wait for it to complete.';
 $string['emailfailure'] = "Course import could not send email to user";
 $string['messageprovider:complete'] = 'Confirmation that a course import has completed';
+$string['messageprovider:problem'] = 'Messages about errors with a course import';
 $string['privacy:export:jobs'] = 'Course import jobs';
 $string['privacy:export:status:block'] = 'Blocked from import';
 $string['privacy:export:status:failed'] = 'Import failed';

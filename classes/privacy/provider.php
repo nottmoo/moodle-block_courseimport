@@ -24,6 +24,7 @@ use \core_privacy\local\request\writer;
 use \core_privacy\local\request\transform;
 use \core_privacy\local\request\approved_userlist;
 use \core_privacy\local\request\userlist;
+use \block_courseimport\job;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -193,7 +194,7 @@ class provider implements
      */
     protected static function delete_user_data(int $userid) {
         global $DB;
-        $exclude = [BLOCK_COURSEIMPORT_STATE_PROCESSING, BLOCK_COURSEIMPORT_STATE_WAITING];
+        $exclude = [job::STATE_PROCESSING, job::STATE_WAITING];
         list($sql, $params) = $DB->get_in_or_equal($exclude, SQL_PARAMS_NAMED, 'status', false);
         $select = "status $sql AND userid = $userid";
         $DB->delete_records_select('block_courseimport', $select, $params);
@@ -224,19 +225,19 @@ class provider implements
      */
     protected static function transform_status(string $statuscode) : string {
         switch ($statuscode) {
-            case BLOCK_COURSEIMPORT_STATE_WAITING:
+            case job::STATE_WAITING:
                 $status = get_string('privacy:export:status:waiting', 'block_courseimport');
                 break;
-            case BLOCK_COURSEIMPORT_STATE_BLOCK:
+            case job::STATE_BLOCK:
                 $status = get_string('privacy:export:status:block', 'block_courseimport');
                 break;
-            case BLOCK_COURSEIMPORT_STATE_FINISHED:
+            case job::STATE_FINISHED:
                 $status = get_string('privacy:export:status:finished', 'block_courseimport');
                 break;
-            case BLOCK_COURSEIMPORT_STATE_PROCESSING:
+            case job::STATE_PROCESSING:
                 $status = get_string('privacy:export:status:processing', 'block_courseimport');
                 break;
-            case BLOCK_COURSEIMPORT_STATE_FAILED:
+            case job::STATE_FAILED:
                 $status = get_string('privacy:export:status:failed', 'block_courseimport');
                 break;
             default:

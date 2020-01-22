@@ -38,4 +38,28 @@ class email_failed extends \core\event\email_failed {
     public function get_description() {
         return get_string('emailfailure', 'block_courseimport');
     }
+
+    /**
+     * Creates an event from the user parameters.
+     *
+     * @param int $adminuserid
+     * @param int $userid
+     * @throws \coding_exception
+     * @throws \dml_exception
+     */
+    public static function create_from_users(int $adminuserid, int $userid) {
+        $subject = get_string('emailfailure', 'block_courseimport');
+        $params = [
+            'context' => \context_system::instance(),
+            'userid' => $adminuserid,
+            'relateduserid' => $userid,
+            'other' => [
+                'subject' => $subject,
+                'errorinfo' => $subject,
+                'message' => $subject,
+            ],
+        ];
+        $event = static::create($params);
+        $event->trigger();
+    }
 }

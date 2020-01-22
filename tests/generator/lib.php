@@ -41,7 +41,7 @@ class block_courseimport_generator extends testing_block_generator {
             'targetcourseid' => null,
             'userid' => null,
             'backupid' => 'utterlyinvalidid',
-            'status' => BLOCK_COURSEIMPORT_STATE_WAITING,
+            'status' => \block_courseimport\job::STATE_WAITING,
             'timecreated' => $now,
             'timemodified' => $now,
         );
