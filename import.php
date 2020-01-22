@@ -107,8 +107,8 @@ $backup = new import_ui($bc, array('importid' => $importcourse->id, 'target' => 
 // Process the current stage.
 $backup->process();
 if ($backup->get_stage() === backup_ui::STAGE_SCHEMA) {
-    $tsks = $bc->get_plan()->get_tasks();
-    foreach ($tsks as $task) {
+    $tasks = $bc->get_plan()->get_tasks();
+    foreach ($tasks as $task) {
         import_helper::filter_task($task);
     }
 }
