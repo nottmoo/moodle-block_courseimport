@@ -14,6 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace block_courseimport\output;
+
+use block_courseimport_search;
+use context_course;
+use html_writer;
+use html_table;
+use html_table_cell;
+use html_table_row;
+use local_uonlib_courselib;
+
+defined('MOODLE_INTERNAL') || die;
+
 require_once($CFG->dirroot . '/backup/util/ui/renderer.php');
 
 /**
@@ -24,7 +36,7 @@ require_once($CFG->dirroot . '/backup/util/ui/renderer.php');
  * @author    Yijun Xue <yijun.xue@nottingham.ac.uk>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class block_courseimport_renderer extends core_backup_renderer {
+class renderer extends \core_backup_renderer {
     /**
      * Renders an import course search object
      *
