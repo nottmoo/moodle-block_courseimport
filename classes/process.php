@@ -22,7 +22,6 @@ require_once($CFG->dirroot . '/backup/moodle2/backup_plan_builder.class.php');
 require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
 require_once($CFG->dirroot . '/backup/util/ui/import_extensions.php');
 require_once($CFG->dirroot . '/blocks/courseimport/lib.php');
-require_once($CFG->dirroot . '/local/uonlib/classes/cronlib.php');
 
 /**
  * Courseimport process class
