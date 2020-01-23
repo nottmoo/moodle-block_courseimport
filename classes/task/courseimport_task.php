@@ -90,6 +90,7 @@ class courseimport_task extends \core\task\scheduled_task {
      */
     protected function backup(job $job) {
         $bc = \backup_ui::load_controller($job->bid);
+        $bc->set_progress(new \core\progress\db_updater($job->id, 'block_courseimport', 'backupprogress'));
         if ($bc->get_status() == \backup::STATUS_AWAITING && $bc->get_mode() == \backup::MODE_IMPORT) {
             $bc->execute_plan();
         } else {
@@ -121,6 +122,7 @@ class courseimport_task extends \core\task\scheduled_task {
         }
 
         $rc = new \restore_controller($job->bid, $job->target, \backup::INTERACTIVE_YES, \backup::MODE_IMPORT, $job->user, \backup::TARGET_CURRENT_ADDING);
+        $rc->set_progress(new \core\progress\db_updater($job->id, 'block_courseimport', 'restoreprogress'));
         $this->prepare_for_restore($rc, $job);
 
         // Execute the restore.

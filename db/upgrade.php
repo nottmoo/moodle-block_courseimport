@@ -57,5 +57,19 @@ function xmldb_block_courseimport_upgrade($oldversion) {
         upgrade_block_savepoint(true, 2020012300, 'courseimport');
     }
 
+    if ($oldversion < 2020012301) {
+        // Add the database fields to store backuup and restore progress.
+        $table = new xmldb_table('block_courseimport');
+        $backupfield = new xmldb_field('backupprogress', XMLDB_TYPE_NUMBER, '15,14', null, XMLDB_NOTNULL, null, '0');
+        $restorefield = new xmldb_field('restoreprogress', XMLDB_TYPE_NUMBER, '15,14', null, XMLDB_NOTNULL, null, '0');
+        if (!$dbman->field_exists($table, $backupfield)) {
+            $dbman->add_field($table, $backupfield);
+        }
+        if (!$dbman->field_exists($table, $restorefield)) {
+            $dbman->add_field($table, $restorefield);
+        }
+        upgrade_block_savepoint(true, 2020012301, 'courseimport');
+    }
+
     return true;
 }
