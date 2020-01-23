@@ -21,7 +21,6 @@ require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
 require_once($CFG->dirroot . '/backup/moodle2/backup_plan_builder.class.php');
 require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
 require_once($CFG->dirroot . '/backup/util/ui/import_extensions.php');
-require_once($CFG->dirroot . '/blocks/courseimport/lib.php');
 
 /**
  * Courseimport process class
@@ -42,29 +41,6 @@ class block_courseimport_process {
     public function cron() {
         global $CFG, $DB;
         $log = new local_uonlib_cronlib();
-        $timesetting = get_config('block_courseimport', 'crontime');
-        if (($timesetting) and ( !empty($timesetting))) {
-            $log->logline("Time ranges setting " . $timesetting, false);
-            $ranges = explode("==", $timesetting);
-            $checkresult = false;
-            foreach ($ranges as $range) {
-                if (preg_match('/^(([0-1][0-9]|[2][0-3]):([0-5][0-9])-([0-1][0-9]|[2][0-3]):([0-5][0-9]))/', $range) === 1) {
-                    // User defined time range should like this 02:12-04:15.
-                    $timelist = explode("-", $range);
-                    $checkresult += block_courseimport_timecheck($timelist[0], $timelist[1]);
-                } else {
-                    $log->logline("Process stopped as time range setting ( $range ) is not in right format", false);
-                    return;
-                }
-            }
-            if ($checkresult == 0) {
-                $log->logline("Current time outside of operating hours. Operating hours are: ( $timesetting ). Process stopped.", false);
-                return;
-            }
-        }
-        $log->logline("Current time is within operating hours. Starting process", false);
-
-        // Start jobs.
 
         // If a job still is processing status, should be abandoned.
         \block_courseimport\job::abandon_running();

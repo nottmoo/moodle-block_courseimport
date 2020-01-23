@@ -127,8 +127,7 @@ class block_courseimport_privacy_provider_test extends \core_privacy\tests\provi
      * Test that we delete the resolved jobs for the user.
      */
     public function test_delete_data_for_user() {
-        global $DB,$CFG;
-        require_once($CFG->dirroot .'/blocks/courseimport/lib.php');
+        global $DB;
 
         $user = self::getDataGenerator()->create_user();
         $usercontext = \context_user::instance($user->id);
@@ -160,8 +159,7 @@ class block_courseimport_privacy_provider_test extends \core_privacy\tests\provi
      * Test that data for users in approved userlist is deleted.
      */
     public function test_delete_data_for_users() {
-        global $DB, $CFG;
-        require_once($CFG->dirroot . '/blocks/courseimport/lib.php');
+        global $DB;
         $component = 'block_courseimport';
 
         $user1 = $this->getDataGenerator()->create_user();
@@ -209,9 +207,6 @@ class block_courseimport_privacy_provider_test extends \core_privacy\tests\provi
      * Test get users in the context
      */
     public function test_get_users_in_context() {
-        global $CFG;
-        require_once($CFG->dirroot . '/blocks/courseimport/lib.php');
-
         $user1 = self::getDataGenerator()->create_user();
         $usercontext1 = \context_user::instance($user1->id);
 
