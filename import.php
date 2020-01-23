@@ -36,7 +36,7 @@ require_once($CFG->dirroot . '/backup/util/settings/base_setting.class.php');
 
 // The courseid we are importing to.
 $courseid = required_param('id', PARAM_INT);
-// The id of the course we are importing FROM (will only be set if past first stage.
+// The id of the course we are exporting FROM (will only be set if past first stage).
 $importcourseid = optional_param('importid', false, PARAM_INT);
 $search = optional_param('searchcourses', false, PARAM_INT);
 // The target method for the restore (adding or deleting).
@@ -56,24 +56,19 @@ $PAGE->set_heading($heading);
 $PAGE->set_url(new moodle_url('/blocks/courseimport/import.php', array('id' => $courseid)));
 $PAGE->set_context($context);
 $PAGE->set_pagelayout('incourse');
-$shortname = $COURSE->shortname;
+$shortname = $course->shortname;
 $coursecode = substr($shortname, 0, strpos($shortname, '-'));
 $renderer = $PAGE->get_renderer('block_courseimport');
+
 // Before we do anything else check that there are no imports for this course in the queue.
-$alreadyqueued = $DB->record_exists_select('block_courseimport',
-    "courseid = $courseid AND (status = :status1 OR status = :status2)",
-    array(
-        'courseid' => $courseid,
-        'status1' => BLOCK_COURSEIMPORT_STATE_WAITING,
-        'status2' => BLOCK_COURSEIMPORT_STATE_PROCESSING,
-    ));
-if ($alreadyqueued) {
+if (\block_courseimport\job::job_queued($courseid)) {
     echo $OUTPUT->header();
     echo $OUTPUT->notification(get_string('alreadyimporting', 'block_courseimport'), 'notifyproblem');
     echo $OUTPUT->continue_button(new moodle_url('/course/view.php', array('id' => $course->id)));
     echo $OUTPUT->footer();
     die();
 }
+
 // Check if we already have a import course id.
 if ($importcourseid === false || $search !== false) {
     $url = new moodle_url('/blocks/courseimport/import.php', array('id' => $courseid));
@@ -162,15 +157,9 @@ if ($backup->get_stage() == backup_ui::STAGE_CONFIRMATION) {
 if ($backup->get_stage() == backup_ui::STAGE_FINAL) { //backup_ui::STAGE_FINAL=8
     $backup->get_controller()->finish_ui();
 
-    $record = new stdClass();
-    $record->courseid = $COURSE->id;
-    $record->targetcourseid = $importcourseid;
-    $record->userid = $USER->id;
-    $record->backupid = $backupid;
-    $record->status = BLOCK_COURSEIMPORT_STATE_WAITING; // This means job is waiting to be done.
-    $record->timecreated = time();
-    $record->timemodified = time();
-    $DB->insert_record('block_courseimport', $record);
+    $job = new \block_courseimport\job($importcourseid, $course->id, $backupid, $USER->id);
+    $job->save();
+
     $jobdone = get_string('jobdone', 'block_courseimport');
     echo $OUTPUT->header();
     echo $OUTPUT->notification($jobdone, 'notifysuccess');

@@ -41,7 +41,7 @@ class block_courseimport_generator extends testing_block_generator {
             'targetcourseid' => null,
             'userid' => null,
             'backupid' => 'utterlyinvalidid',
-            'status' => BLOCK_COURSEIMPORT_STATE_WAITING,
+            'status' => \block_courseimport\job::STATE_WAITING,
             'timecreated' => $now,
             'timemodified' => $now,
         );
@@ -55,6 +55,10 @@ class block_courseimport_generator extends testing_block_generator {
         if (is_null($record->targetcourseid)) {
             $target = $this->datagenerator->create_course();
             $record->targetcourseid = $target->id;
+        }
+        if (is_null($record->userid)) {
+            $user = $this->datagenerator->create_user();
+            $record->userid = $user->id;
         }
         $id = $DB->insert_record('block_courseimport', $record);
         return $DB->get_record('block_courseimport', ['id' => $id]);

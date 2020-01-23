@@ -64,60 +64,36 @@ class block_courseimport_process {
             }
         }
         $log->logline("Current time is within operating hours. Starting process", false);
-        // Start jobs.
-        $countstopjobs = $DB->count_records('block_courseimport', array('status' => BLOCK_COURSEIMPORT_STATE_BLOCK));
-        // Need countstopjobs to avoid execute any new added job.
-        if (($countstopjobs > 0)) {
-            $log->logline("Process has been blocked manually and will not run until it is unblocked."
-                    . "\nTo unblock run php var/www/blocks/courseimport/newbackup.php 1 at the command line.", false);
-            return;
-        }
-        // If a job still is processing status, should be abandoned.
-        $abandonjobs = $DB->get_records('block_courseimport', array('status' => BLOCK_COURSEIMPORT_STATE_PROCESSING));
-        block_courseimport_abandonjob($abandonjobs);
-        // Get the jobs we wish to process and run them.
-        $jobsql = "SELECT ci.*, tc.fullname AS fromname, sc.fullname AS toname
-                     FROM {block_courseimport} ci
-                     JOIN {course} tc ON ci.targetcourseid = tc.id
-                     JOIN {course} sc ON ci.courseid = sc.id
-                    WHERE ci.status = :status";
-        $jobparams = array(
-            'status' => BLOCK_COURSEIMPORT_STATE_WAITING,
-        );
-        $results = $DB->get_recordset_sql($jobsql, $jobparams);
-        foreach ($results as $job) {
-            $jobid = $job->id;
-            $courseid = $job->courseid;
-            $coursecontext = context_course::instance($courseid);
-            $contextid = $coursecontext->id;
-            $importid = $job->backupid;
-            $targetcourseid = $job->targetcourseid;
-            $backupid = $importid;
-            // The target method for the restore (adding or deleting).
-            $restoretarget = 1;
-            $userid = $job->userid;
-            // Start processing, successfully will change to 555555, otherwise abandon and email admin.
-            block_courseimport_changestatus($jobid, BLOCK_COURSEIMPORT_STATE_PROCESSING);
-            $log->logline("Jobid:$jobid--Userid:$userid\nImport To Course ID:$courseid"
-                    . "\nImport From Course ID:$targetcourseid,\nCreating backup for course ID:$targetcourseid now.", false);
 
-            $bc = backup_ui::load_controller($importid);
+        // Start jobs.
+
+        // If a job still is processing status, should be abandoned.
+        \block_courseimport\job::abandon_running();
+        // Get the jobs we wish to process and run them.
+        $results = \block_courseimport\job::get_queued_jobs();
+        foreach ($results as $result) {
+            $job = \block_courseimport\job::create_from_record($result);
+            // Start processing, successfully will change to 555555, otherwise abandon and email admin.
+            $job->set_status(\block_courseimport\job::STATE_PROCESSING);
+            $log->logline("Jobid:{$job->id}--Userid:{$job->user}\nImport To Course ID:{$job->target}"
+                    . "\nImport From Course ID:{$job->source},\nCreating backup for course ID:{$job->source} now.", false);
+
+            $bc = backup_ui::load_controller($job->bid);
             if ($bc->get_status() == \backup::STATUS_AWAITING && $bc->get_mode() == \backup::MODE_IMPORT) {
                 $bc->execute_plan();
             } else {
-                block_courseimport_changestatus($jobid, BLOCK_COURSEIMPORT_STATE_FAILED);
-                $log->logline("Error! Jobid: $jobid. Backup state invalid.");
+                $job->set_status(\block_courseimport\job::STATE_FAILED);
+                $log->logline("Error! Jobid: {$job->id}. Backup state invalid.");
                 continue;
             }
-            $tempdestination = $CFG->tempdir . '/backup/' . $backupid;
+            $tempdestination = $CFG->tempdir . '/backup/' . $job->bid;
             if (!file_exists($tempdestination) || !is_dir($tempdestination)) {
                 $log->logline("Error, could not find file in CFG->tempdir/backup folder, "
-                        . "Userid:$userid--ImportToCourseid:$courseid ---ImportFromCourseid:$targetcourseid", false);
+                        . "Userid:{$job->user}--ImportToCourseid:{$job->target} ---ImportFromCourseid:{$job->target}", false);
                 $log->logline(get_string('unknownbackupexporterror', 'error'), false); // Shouldn't happen ever.
                 return;
             }
-            list($context, $course, $cm) = get_context_info_array($contextid);
-            $rc = new restore_controller($backupid, $course->id, backup::INTERACTIVE_YES, backup::MODE_IMPORT, $userid, 1);
+            $rc = new restore_controller($job->bid, $job->target, backup::INTERACTIVE_YES, backup::MODE_IMPORT, $job->user, backup::TARGET_CURRENT_ADDING);
             // Convert the backup if required.... it should NEVER happen.
             if ($rc->get_status() == backup::STATUS_REQUIRE_CONV) {
                 $rc->convert();
@@ -130,16 +106,16 @@ class block_courseimport_process {
                 if (is_array($precheckresults) && !empty($precheckresults['errors'])) {
                     $message = get_string('precheckfail', 'block_courseimport', array(
                         'timenow' => date('Y-m-d H:i:s'),
-                        'jobid' => $jobid,
-                        'targetcourseid' => $targetcourseid,
-                        'courseid' => $courseid
+                        'jobid' => $job->id,
+                        'target' => $job->target,
+                        'source' => $job->source,
                     ));
                     $log->logline($message, false);
                     // Send email to Moodle admin.
                     $subject = get_string('alteremailsubject', 'block_courseimport');
-                    $isemail = block_courseimport_sendemail($subject, $message);
+                    $isemail = messenger::failure($subject, $message, $job->target);
                     if (!$isemail) {
-                        $log->logline("Error! Jobid: $jobid. "
+                        $log->logline("Error! Jobid: {$job->id}. "
                                 . "Failed to send email to admin. Content of message below.\n$message", false);
                     }
                 }
@@ -150,33 +126,32 @@ class block_courseimport_process {
                     $rc->execute_plan();
                 } catch (Exception $e) {
                     // need to abandon this job.
-                    block_courseimport_changestatus($jobid, BLOCK_COURSEIMPORT_STATE_FAILED);
+                    $job->set_status(\block_courseimport\job::STATE_FAILED);
                     $message = $e->getMessage();
                     $message .= get_string('importfail', 'block_courseimport', array(
                         'timenow' => date('Y-m-d H:i:s'),
-                        'jobid' => $jobid,
-                        'targetcourseid' => $targetcourseid,
-                        'courseid' => $courseid
+                        'jobid' => $job->id,
+                        'source' => $job->source,
+                        'target' => $job->target,
                     ));
-                    $log->logline("Error! Jobid: $jobid " . "\n$message", false);
+                    $log->logline("Error! Jobid: {$job->id} " . "\n$message", false);
                 }
 
                 $rc->destroy(); // Always call these.
                 fulldelete($tempdestination);
 
                 if ($message === null) {
-                    block_courseimport_changestatus($jobid, BLOCK_COURSEIMPORT_STATE_FINISHED);
-                    $log->logline("Success in Jobid: $jobid. "
-                            . "Import is complete.\nImport From Course ID:$targetcourseid -> Import To Course ID:$courseid.", false);
+                    $job->set_status(\block_courseimport\job::STATE_FINISHED);
+                    $log->logline("Success in Jobid: {$job->id}. "
+                            . "Import is complete.\nImport From Course ID:{$job->source} -> Import To Course ID:{$job->target}.", false);
                     // Send a message.
-                    $isemail = messenger::import_success($userid, $courseid, $job->toname, $job->fromname);
+                    $isemail = messenger::import_success($job->user, $job->target, $job->targetname, $job->sourcename);
                 } else {
                     $subject = get_string('useremailsubject', 'block_courseimport');
-                    $isemail = block_courseimport_sendemail($subject, $message); // Send error to Moodle admin.
+                    $isemail = messenger::failure($subject, $message, $job->target); // Send error to Moodle admin.
                 }
                 if (!$isemail) {
-                    $log->logline("Error! Jobid: $jobid. "
-                            . "Failed to send email to user: $userid", false);
+                    $log->logline("Error! Jobid: {$job->id}. Failed to send email to user: {$job->user}", false);
                 }
             }
         }

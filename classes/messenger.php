@@ -66,4 +66,53 @@ class messenger {
         $message->courseid = $targetcourseid;
         return message_send($message);
     }
+
+    /**
+     * Sends a message about a failure.
+     *
+     * @param string $subject
+     * @param string $message
+     * @param int $courseid The course that was being imported into
+     * @param int|null $userid
+     */
+    public static function failure(string $subject, string $message, int $courseid, ?int $userid = null): bool {
+        global $DB;
+        $campusmail = \local_uonlib_courselib::get_support_email(""); // This will get default support email, which is UK support email.
+        $campus = $DB->get_record('user', ['email' => $campusmail]);
+        if (!$campus) {
+            // No support email user.
+            return false;
+        }
+
+        $context = \context_course::instance($courseid);
+
+        $msg = new message();
+        $msg->component = 'block_courseimport';
+        $msg->name = 'problem';
+        $msg->userfrom = $campus;
+        $msg->subject = $subject;
+        $msg->fullmessage = $message;
+        $msg->fullmessageformat = FORMAT_MARKDOWN;
+        $msg->fullmessagehtml = format_text($message, FORMAT_MARKDOWN);
+        $msg->smallmessage = '';
+        $msg->notification = 1;
+        $msg->contexturl = $context->get_url();
+        $msg->contexturlname = $context->get_context_name(false);
+        $msg->courseid = $courseid;
+
+        if ($userid !== null) {
+            // Send e-mail to user.
+            $msg->userto = $userid;
+        } else {
+            // Send e-mail to Campus support.
+            $msg->userto = $campus->id;
+        }
+
+        // Send the message.
+        if ($mailsent = message_send($msg)) {
+            return true;
+        }
+        \block_courseimport\event\email_failed::create_from_users($campus->id, $msg->userto);
+        return false;
+    }
 }
