@@ -39,7 +39,7 @@ class courseimport_task extends \core\task\scheduled_task {
      * Do the scheduled job.
      */
     public function execute() {
-        $auto = new \block_courseimport_process();
+        $auto = new \block_courseimport\process();
         $auto->cron();
     }
 }

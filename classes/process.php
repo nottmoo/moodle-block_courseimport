@@ -14,7 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-use \block_courseimport\messenger;
+namespace block_courseimport;
+
+use block_courseimport\job;
+use block_courseimport\job_failed;
+use block_courseimport\messenger;
 
 defined('MOODLE_INTERNAL') || die;
 require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
@@ -30,7 +34,7 @@ require_once($CFG->dirroot . '/backup/util/ui/import_extensions.php');
  * @author     2012 Yijun Xue <yijun.xue@nottingham.ac.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class block_courseimport_process {
+class process {
     /**
      * Cron job for courseimport.
      *
@@ -39,97 +43,136 @@ class block_courseimport_process {
      * @return void
      */
     public function cron() {
-        global $CFG, $DB;
-        $log = new local_uonlib_cronlib();
-
         // If a job still is processing status, should be abandoned.
-        \block_courseimport\job::abandon_running();
+        job::abandon_running();
+
         // Get the jobs we wish to process and run them.
-        $results = \block_courseimport\job::get_queued_jobs();
+        $results = job::get_queued_jobs();
         foreach ($results as $result) {
-            $job = \block_courseimport\job::create_from_record($result);
-            // Start processing, successfully will change to 555555, otherwise abandon and email admin.
-            $job->set_status(\block_courseimport\job::STATE_PROCESSING);
-            $log->logline("Jobid:{$job->id}--Userid:{$job->user}\nImport To Course ID:{$job->target}"
-                    . "\nImport From Course ID:{$job->source},\nCreating backup for course ID:{$job->source} now.", false);
-
-            $bc = backup_ui::load_controller($job->bid);
-            if ($bc->get_status() == \backup::STATUS_AWAITING && $bc->get_mode() == \backup::MODE_IMPORT) {
-                $bc->execute_plan();
-            } else {
-                $job->set_status(\block_courseimport\job::STATE_FAILED);
-                $log->logline("Error! Jobid: {$job->id}. Backup state invalid.");
-                continue;
-            }
-            $tempdestination = $CFG->tempdir . '/backup/' . $job->bid;
-            if (!file_exists($tempdestination) || !is_dir($tempdestination)) {
-                $log->logline("Error, could not find file in CFG->tempdir/backup folder, "
-                        . "Userid:{$job->user}--ImportToCourseid:{$job->target} ---ImportFromCourseid:{$job->target}", false);
-                $log->logline(get_string('unknownbackupexporterror', 'error'), false); // Shouldn't happen ever.
-                return;
-            }
-            $rc = new restore_controller($job->bid, $job->target, backup::INTERACTIVE_YES, backup::MODE_IMPORT, $job->user, backup::TARGET_CURRENT_ADDING);
-            // Convert the backup if required.... it should NEVER happen.
-            if ($rc->get_status() == backup::STATUS_REQUIRE_CONV) {
-                $rc->convert();
-            }
-            // Mark the UI finished.
-            $rc->finish_ui();
-            // Execute prechecks.
-            if (!$rc->execute_precheck()) {
-                $precheckresults = $rc->get_precheck_results();
-                if (is_array($precheckresults) && !empty($precheckresults['errors'])) {
-                    $message = get_string('precheckfail', 'block_courseimport', array(
-                        'timenow' => date('Y-m-d H:i:s'),
-                        'jobid' => $job->id,
-                        'target' => $job->target,
-                        'source' => $job->source,
-                    ));
-                    $log->logline($message, false);
-                    // Send email to Moodle admin.
-                    $subject = get_string('alteremailsubject', 'block_courseimport');
-                    $isemail = messenger::failure($subject, $message, $job->target);
-                    if (!$isemail) {
-                        $log->logline("Error! Jobid: {$job->id}. "
-                                . "Failed to send email to admin. Content of message below.\n$message", false);
-                    }
-                }
-            } else {
-                $message = null;
-                // Execute the restore.
-                try {
-                    $rc->execute_plan();
-                } catch (Exception $e) {
-                    // need to abandon this job.
-                    $job->set_status(\block_courseimport\job::STATE_FAILED);
-                    $message = $e->getMessage();
-                    $message .= get_string('importfail', 'block_courseimport', array(
-                        'timenow' => date('Y-m-d H:i:s'),
-                        'jobid' => $job->id,
-                        'source' => $job->source,
-                        'target' => $job->target,
-                    ));
-                    $log->logline("Error! Jobid: {$job->id} " . "\n$message", false);
-                }
-
-                $rc->destroy(); // Always call these.
-                fulldelete($tempdestination);
-
-                if ($message === null) {
-                    $job->set_status(\block_courseimport\job::STATE_FINISHED);
-                    $log->logline("Success in Jobid: {$job->id}. "
-                            . "Import is complete.\nImport From Course ID:{$job->source} -> Import To Course ID:{$job->target}.", false);
-                    // Send a message.
-                    $isemail = messenger::import_success($job->user, $job->target, $job->targetname, $job->sourcename);
-                } else {
-                    $subject = get_string('useremailsubject', 'block_courseimport');
-                    $isemail = messenger::failure($subject, $message, $job->target); // Send error to Moodle admin.
-                }
-                if (!$isemail) {
-                    $log->logline("Error! Jobid: {$job->id}. Failed to send email to user: {$job->user}", false);
-                }
-            }
+            $job = job::create_from_record($result);
+            $this->process_job($job);
         }
         $results->close();
+    }
+
+    /**
+     * Imports content from the source course into the target course.
+     *
+     * @param \block_courseimport\job $job
+     */
+    protected function process_job(job $job) {
+        // Start processing, successfully will change to 555555, otherwise abandon and email admin.
+        $job->set_status(job::STATE_PROCESSING);
+        mtrace("Jobid: {$job->id}, Userid: {$job->user}, Import course: {$job->target}, Export course:{$job->source}");
+        mtrace("Creating backup for course ID:{$job->source}");
+        try {
+            $this->backup($job);
+            $this->restore($job);
+        } catch (job_failed $e) {
+            $job->set_status(job::STATE_FAILED);
+            if (messenger::failure($e->subject, $e->getMessage(), $job->target)) {
+                mtrace("Error! Jobid: {$job->id}. Failed to send email to admin.");
+            }
+        }
+    }
+
+    /**
+     * Finishes the backup of the source course.
+     *
+     * @param \block_courseimport\job $job
+     * @throws \block_courseimport\job_failed
+     */
+    protected function backup(job $job) {
+        $bc = \backup_ui::load_controller($job->bid);
+        if ($bc->get_status() == \backup::STATUS_AWAITING && $bc->get_mode() == \backup::MODE_IMPORT) {
+            $bc->execute_plan();
+        } else {
+            $message = "Error! Jobid: {$job->id}. Backup state invalid.";
+            mtrace($message);
+            throw new job_failed($message);
+        }
+    }
+
+    /**
+     * Restores the backup into the target course.
+     *
+     * @param \block_courseimport\job $job
+     * @throws \block_courseimport\job_failed
+     * @throws \coding_exception
+     * @throws \dml_exception
+     * @throws \restore_controller_exception
+     */
+    protected function restore(job $job) {
+        global $CFG;
+
+        // Check the backup file is there.
+        $tempdestination = $CFG->tempdir . '/backup/' . $job->bid;
+        if (!file_exists($tempdestination) || !is_dir($tempdestination)) {
+            $message = "Error: Job ({$job->id}) could not find backup file $tempdestination.";
+            mtrace($message);
+            mtrace(get_string('unknownbackupexporterror', 'error')); // Shouldn't happen ever.
+            throw new job_failed($message);
+        }
+
+        $rc = new \restore_controller($job->bid, $job->target, \backup::INTERACTIVE_YES, \backup::MODE_IMPORT, $job->user, \backup::TARGET_CURRENT_ADDING);
+        $this->prepare_for_restore($rc, $job);
+
+        // Execute the restore.
+        try {
+            $rc->execute_plan();
+        } catch (\Exception $e) {
+            // need to abandon this job.
+            $job->set_status(job::STATE_FAILED);
+            $message = $e->getMessage();
+            $message .= get_string('importfail', 'block_courseimport', array(
+                    'timenow' => date('Y-m-d H:i:s'),
+                    'jobid' => $job->id,
+                    'source' => $job->source,
+                    'target' => $job->target,
+            ));
+            mtrace("Error! Jobid: {$job->id} " . "\n$message");
+            $subject = get_string('useremailsubject', 'block_courseimport');
+            throw new job_failed($message, $subject);
+        } finally {
+            $rc->destroy();
+            fulldelete($tempdestination);
+        }
+
+        $job->set_status(job::STATE_FINISHED);
+        mtrace("Success in Jobid: {$job->id}. Import from course {$job->source} to course {$job->target} completed.");
+
+        // Send a message.
+        if (!messenger::import_success($job->user, $job->target, $job->targetname, $job->sourcename)) {
+            mtrace("Error! Jobid: {$job->id}. Failed to send email to user: {$job->user}");
+        }
+    }
+
+    /**
+     * Ensures that the restore controller is in the correct state to be executed.
+     *
+     * @param \restore_controller $rc
+     * @param \block_courseimport\job $job
+     * @throws \block_courseimport\job_failed
+     */
+    protected function prepare_for_restore(\restore_controller $rc, job $job) {
+        // Convert the backup if required.... it should NEVER happen.
+        if ($rc->get_status() == \backup::STATUS_REQUIRE_CONV) {
+            $rc->convert();
+        }
+
+        // Mark the UI finished.
+        $rc->finish_ui();
+
+        // Execute prechecks.
+        if (!$rc->execute_precheck()) {
+            $message = get_string('precheckfail', 'block_courseimport', array(
+                    'timenow' => date('Y-m-d H:i:s'),
+                    'jobid' => $job->id,
+                    'target' => $job->target,
+                    'source' => $job->source,
+            ));
+            mtrace($message);
+            throw new job_failed($message);
+        }
     }
 }
