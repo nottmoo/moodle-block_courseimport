@@ -56,8 +56,6 @@ $PAGE->set_heading($heading);
 $PAGE->set_url(new moodle_url('/blocks/courseimport/import.php', array('id' => $courseid)));
 $PAGE->set_context($context);
 $PAGE->set_pagelayout('incourse');
-$shortname = $course->shortname;
-$coursecode = substr($shortname, 0, strpos($shortname, '-'));
 $renderer = $PAGE->get_renderer('block_courseimport');
 
 // Before we do anything else check that there are no imports for this course in the queue.

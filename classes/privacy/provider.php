@@ -28,8 +28,6 @@ use \block_courseimport\job;
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->dirroot . '/blocks/courseimport/lib.php');
-
 /**
  * Privacy provider for the course import block.
  *

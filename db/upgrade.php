@@ -52,5 +52,10 @@ function xmldb_block_courseimport_upgrade($oldversion) {
         upgrade_block_savepoint(true, 2020012200, 'courseimport');
     }
 
+    if ($oldversion < 2020012300) {
+        unset_config('crontime', 'block_courseimport');
+        upgrade_block_savepoint(true, 2020012300, 'courseimport');
+    }
+
     return true;
 }

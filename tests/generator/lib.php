@@ -34,7 +34,6 @@ class block_courseimport_generator extends testing_block_generator {
      */
     public function create_job($job) : stdClass {
         global $DB;
-        require_once(dirname(dirname(__DIR__)) . '/lib.php');
         $now = time();
         $defaults = array(
             'target' => null,
