@@ -31,6 +31,7 @@ defined('MOODLE_INTERNAL') || die();
  *
  * @property-read int $id The database id of the job.
  * @property-read int $source The id of the course we are exporting from.
+ * @property-read string $bid The backup id for the job.
  * @property-read \course_context $sourcecontext The context of the course we are exporting from.
  * @property-read string $sourcename The name of the course we are exporting from.
  * @property-read string $status The status of the export job.
@@ -151,7 +152,7 @@ class job {
      * @return job
      */
     public static function create_from_record(\stdClass $record): job {
-        $job = new job($record->targetcourseid, $record->courseid, $record->backupid, $record->userid);
+        $job = new job($record->source, $record->target, $record->backupid, $record->userid);
         $job->id = $record->id;
         $job->status = $record->status;
         if (isset($record->fromname)) {
@@ -173,7 +174,7 @@ class job {
     public static function job_queued(int $courseid): bool {
         global $DB;
         $table = 'block_courseimport';
-        $conditions = "courseid = :courseid AND (status = :status1 OR status = :status2)";
+        $conditions = "target = :courseid AND (status = :status1 OR status = :status2)";
         $params = [
             'courseid' => $courseid,
             'status1' => static::STATE_WAITING,
@@ -234,8 +235,8 @@ class job {
         global $DB;
         $sql = "SELECT ci.*, tc.fullname AS fromname, sc.fullname AS toname
                   FROM {block_courseimport} ci
-                  JOIN {course} tc ON ci.targetcourseid = tc.id
-                  JOIN {course} sc ON ci.courseid = sc.id
+                  JOIN {course} tc ON ci.source = tc.id
+                  JOIN {course} sc ON ci.target = sc.id
                  WHERE ci.status = :status";
         $params = ['status' => self::STATE_WAITING];
         return $DB->get_recordset_sql($sql, $params);
@@ -285,8 +286,8 @@ class job {
         global $DB;
         $time = time();
         $record = (object)[
-            'courseid' => $this->target,
-            'targetcourseid' => $this->source,
+            'target' => $this->target,
+            'source' => $this->source,
             'userid' => $this->user,
             'backupid' => $this->bid,
             'status' => $this->status,
@@ -305,8 +306,8 @@ class job {
         global $DB;
         $record = (object)[
             'id' => $this->id,
-            'courseid' => $this->target,
-            'targetcourseid' => $this->source,
+            'target' => $this->target,
+            'source' => $this->source,
             'userid' => $this->user,
             'backupid' => $this->bid,
             'status' => $this->status,

@@ -112,8 +112,8 @@ class block_courseimport_job_testcase extends advanced_testcase  {
         $generator->create_job(['status' => job::STATE_FAILED]);
         // Create a job that should be found.
         $jobparams = [
-            'courseid' => $target->id,
-            'targetcourseid' => $source->id, // Because the database is insane, this is the source course.
+            'target' => $target->id,
+            'source' => $source->id,
             'status' => job::STATE_WAITING,
         ];
         $job = $generator->create_job($jobparams);
@@ -158,8 +158,8 @@ class block_courseimport_job_testcase extends advanced_testcase  {
         // Create a job.
         $generator = self::getDataGenerator()->get_plugin_generator('block_courseimport');
         $jobparams = [
-            'courseid' => $target->id,
-            'targetcourseid' => $source->id, // Because the database is insane, this is the source course.
+            'target' => $target->id,
+            'source' => $source->id,
             'status' => $status,
         ];
         $generator->create_job($jobparams);
@@ -233,8 +233,8 @@ class block_courseimport_job_testcase extends advanced_testcase  {
         $job->save();
         self::assertNotNull($job->id);
         $record = $DB->get_record('block_courseimport', ['id' => $job->id], '*', MUST_EXIST);
-        self::assertEquals($job->source, $record->targetcourseid);
-        self::assertEquals($job->target, $record->courseid);
+        self::assertEquals($job->source, $record->source);
+        self::assertEquals($job->target, $record->target);
         self::assertEquals($job->bid, $record->backupid);
         self::assertEquals($job->user, $record->userid);
         self::assertEquals(job::STATE_WAITING, $record->status);

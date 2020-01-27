@@ -55,8 +55,8 @@ class provider implements
         $collection->add_subsystem_link('core_backup', [], 'privacy:metadata:core_backup');
         // Personal data stored in the database.
         $jobs = array(
-            'courseid' => 'privacy:metadata:block_courseimport:courseid',
-            'targetcourseid' => 'privacy:metadata:block_courseimport:targetcourseid',
+            'source' => 'privacy:metadata:block_courseimport:source',
+            'target' => 'privacy:metadata:block_courseimport:target',
             'userid' => 'privacy:metadata:block_courseimport:userid',
             'backupid' => 'privacy:metadata:block_courseimport:backupid',
             'status' => 'privacy:metadata:block_courseimport:status',
@@ -100,10 +100,10 @@ class provider implements
             return;
         }
         $user = $contextlist->get_user();
-        $sql = "SELECT ci.*, sc.fullname AS source, tc.fullname AS target
+        $sql = "SELECT ci.*, sc.fullname AS sourcename, tc.fullname AS targetname
                   FROM {block_courseimport} ci
-             LEFT JOIN {course} sc ON sc.id = ci.courseid
-             LEFT JOIN {course} tc ON tc.id = ci.targetcourseid
+             LEFT JOIN {course} sc ON sc.id = ci.source
+             LEFT JOIN {course} tc ON tc.id = ci.target
                  WHERE ci.userid = :userid";
         $params = ['userid' => $user->id];
         $records = $DB->get_records_sql($sql, $params);
@@ -208,8 +208,8 @@ class provider implements
      */
     protected static function transform_job(\stdClass $record) : array {
         return [
-            'sourcecourse' => "$record->courseid : $record->source",
-            'targetcourse' => "$record->targetcourseid : $record->target",
+            'sourcecourse' => "$record->source : $record->sourcename",
+            'targetcourse' => "$record->target : $record->targetname",
             'backupid' => $record->backupid,
             'status' => static::transform_status($record->status),
             'timecreated' => transform::datetime($record->timecreated),
