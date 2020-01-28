@@ -32,6 +32,7 @@ defined('MOODLE_INTERNAL') || die();
  * @property-read int $id The database id of the job.
  * @property-read int $source The id of the course we are exporting from.
  * @property-read string $bid The backup id for the job.
+ * @property-read float $progress The progress of the import.
  * @property-read \course_context $sourcecontext The context of the course we are exporting from.
  * @property-read string $sourcename The name of the course we are exporting from.
  * @property-read string $status The status of the export job.
@@ -63,6 +64,9 @@ class job {
 
     /** @var int The id of the import job. */
     protected $id;
+
+    /** @var float The progress of the import. 0.0 is no progress, 1.0 is complete. */
+    protected $progress = 0.0;
 
     /** @var int The id of the course we are exporting from. */
     protected $source;
@@ -161,7 +165,22 @@ class job {
         if (isset($record->toname)) {
             $job->targetname = $record->toname;
         }
+        // Backup and import progress are stored separately, so we need to combine them.
+        $job->progress = (($record->backupprogress + $record->restoreprogress) / 2);
         return $job;
+    }
+
+    /**
+     * Gets a specific job.
+     *
+     * @param int $id The database id of the job record.
+     * @return \block_courseimport\job
+     * @throws \dml_exception when the job does not exist.
+     */
+    public static function instance(int $id): job {
+        global $DB;
+        $record = $DB->get_record('block_courseimport', ['id' => $id], '*', MUST_EXIST);
+        return static::create_from_record($record);
     }
 
     /**
@@ -173,14 +192,39 @@ class job {
      */
     public static function job_queued(int $courseid): bool {
         global $DB;
+        list($table, $conditions, $params) = static::job_for_course_sql($courseid);
+        return $DB->record_exists_select($table, $conditions, $params);
+    }
+
+    /**
+     * Gets the queued job for the course.
+     *
+     * @param int $courseid
+     * @return job
+     * @throws \dml_exception
+     */
+    public static function get_queued_job(int $courseid): job {
+        global $DB;
+        list($table, $conditions, $params) = static::job_for_course_sql($courseid);
+        $record = $DB->get_record_select($table, $conditions, $params);
+        return static::create_from_record($record);
+    }
+
+    /**
+     * Gets the SQL fragments needed to get an active job for a course.
+     *
+     * @param int $courseid
+     * @return array
+     */
+    protected static function job_for_course_sql(int $courseid): array {
         $table = 'block_courseimport';
         $conditions = "target = :courseid AND (status = :status1 OR status = :status2)";
         $params = [
-            'courseid' => $courseid,
-            'status1' => static::STATE_WAITING,
-            'status2' => static::STATE_PROCESSING,
+                'courseid' => $courseid,
+                'status1' => static::STATE_WAITING,
+                'status2' => static::STATE_PROCESSING,
         ];
-        return $DB->record_exists_select($table, $conditions, $params);
+        return [$table, $conditions, $params];
     }
 
     /**

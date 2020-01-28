@@ -23,6 +23,7 @@ use html_table;
 use html_table_cell;
 use html_table_row;
 use local_uonlib_courselib;
+use block_courseimport\job;
 
 defined('MOODLE_INTERNAL') || die;
 
@@ -155,5 +156,26 @@ class renderer extends \core_backup_renderer {
         $output .= html_writer::end_div();
         $output .= html_writer::end_div();
         return $output;
+    }
+
+    /**
+     * Renders a progress object.
+     *
+     * @param \block_courseimport\output\progress $progress
+     * @return string
+     * @throws \moodle_exception
+     */
+    public function render_progress(progress $progress): string {
+        $data = $progress->export_for_template($this);
+        return $this->render_from_template('block_courseimport/import_status', $data);
+    }
+
+    public function display_import_progress(job $job, int $courseid): string {
+        $courseurl = new \moodle_url('/course/view.php', ['id' => $courseid]);
+        $progresssetup = [
+                'backupid' => $job->id,
+                'courseurl' => $courseurl->out(),
+        ];
+        return $this->render_from_template('block_courseimport/import_status', $progresssetup);
     }
 }
