@@ -41,6 +41,8 @@ class block_courseimport_generator extends testing_block_generator {
             'userid' => null,
             'backupid' => 'utterlyinvalidid',
             'status' => \block_courseimport\job::STATE_WAITING,
+            'backupprogress' => 0.0,
+            'restoreprogress' => 0.0,
             'timecreated' => $now,
             'timemodified' => $now,
         );

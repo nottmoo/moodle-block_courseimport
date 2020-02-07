@@ -1,0 +1,53 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template block_courseimport/import_status.
+
+    Course import backup status template.
+
+    The purpose of this template is to render status
+    updates during an  the import process..
+
+    Classes required for JS:
+    * none
+
+    Data attributes required for JS:
+    * none
+
+    Context variables required for this template:
+    * backupid
+    * courseurl
+
+    Example context (json):
+    {
+        "backupid": "76",
+        "courseurl": "/course/view.php?id=6",
+        "width": "500"
+    }
+}}
+<div class="progressbar_container" id="{{backupid}}">
+    <h3 id="{{backupid}}_status">{{# str }} importpending, block_courseimport {{/ str }}</h3>
+    {{> core/async_backup_progress }}
+    <p id="{{backupid}}_detail">{{# str }} asyncnowait, backup {{/ str }}</p>
+    <a id="{{backupid}}_button" href="{{courseurl}}" class="btn btn-primary">{{# str }} asyncreturn, backup {{/ str }}</a>
+</div>
+
+{{#js}}
+    require(['block_courseimport/async'], function(Async) {
+        Async.init("{{backupid}}");
+    });
+{{/js}}

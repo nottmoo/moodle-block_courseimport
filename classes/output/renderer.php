@@ -14,6 +14,19 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace block_courseimport\output;
+
+use block_courseimport_search;
+use context_course;
+use html_writer;
+use html_table;
+use html_table_cell;
+use html_table_row;
+use local_uonlib_courselib;
+use block_courseimport\job;
+
+defined('MOODLE_INTERNAL') || die;
+
 require_once($CFG->dirroot . '/backup/util/ui/renderer.php');
 
 /**
@@ -24,7 +37,7 @@ require_once($CFG->dirroot . '/backup/util/ui/renderer.php');
  * @author    Yijun Xue <yijun.xue@nottingham.ac.uk>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class block_courseimport_renderer extends core_backup_renderer {
+class renderer extends \core_backup_renderer {
     /**
      * Renders an import course search object
      *
@@ -143,5 +156,26 @@ class block_courseimport_renderer extends core_backup_renderer {
         $output .= html_writer::end_div();
         $output .= html_writer::end_div();
         return $output;
+    }
+
+    /**
+     * Renders a progress object.
+     *
+     * @param \block_courseimport\output\progress $progress
+     * @return string
+     * @throws \moodle_exception
+     */
+    public function render_progress(progress $progress): string {
+        $data = $progress->export_for_template($this);
+        return $this->render_from_template('block_courseimport/import_status', $data);
+    }
+
+    public function display_import_progress(job $job, int $courseid): string {
+        $courseurl = new \moodle_url('/course/view.php', ['id' => $courseid]);
+        $progresssetup = [
+                'backupid' => $job->id,
+                'courseurl' => $courseurl->out(),
+        ];
+        return $this->render_from_template('block_courseimport/import_status', $progresssetup);
     }
 }

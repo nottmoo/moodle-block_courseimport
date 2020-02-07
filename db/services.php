@@ -15,20 +15,20 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details
+ * The file defines the external services for the plugin.
  *
  * @package    block_courseimport
- * @copyright  University of Nottingham
+ * @author     Neill Magill <neill.magill@nottingham.ac.uk>
+ * @copyright  2020 University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
-
-$plugin->version = 2020012801;
-$plugin->requires = 2018112800;
-$plugin->release = '1.2.0 (2020-01-28)';
-$plugin->maturity =  MATURITY_STABLE;
-$plugin->component = 'block_courseimport';
-$plugin->dependencies = array(
-    'local_uonlib' => 2018012200,
-);
+$functions = [
+    'block_courseimport_get_job_progress' => [
+        'classname' => '\block_courseimport\external\jobs',
+        'methodname' => 'progress',
+        'classpath' => '/blocks/courseimport/classes/external/jobs.php',
+        'description' => 'Gets the progress an import job',
+        'type' => 'read',
+        'ajax' => true,
+    ],
+];

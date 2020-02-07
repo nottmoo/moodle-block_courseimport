@@ -32,7 +32,6 @@ require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
 require_once($CFG->dirroot . '/backup/moodle2/backup_plan_builder.class.php');
 require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
 require_once($CFG->dirroot . '/backup/util/ui/import_extensions.php');
-require_once($CFG->dirroot . '/blocks/courseimport/renderer.php');
 
 // The courseid we are importing to.
 $courseid = required_param('id', PARAM_INT);
@@ -60,9 +59,9 @@ $renderer = $PAGE->get_renderer('block_courseimport');
 
 // Before we do anything else check that there are no imports for this course in the queue.
 if (\block_courseimport\job::job_queued($courseid)) {
+    $job = \block_courseimport\job::get_queued_job($courseid);
     echo $OUTPUT->header();
-    echo $OUTPUT->notification(get_string('alreadyimporting', 'block_courseimport'), 'notifyproblem');
-    echo $OUTPUT->continue_button(new moodle_url('/course/view.php', array('id' => $course->id)));
+    echo $renderer->display_import_progress($job, $courseid);
     echo $OUTPUT->footer();
     die();
 }
@@ -122,10 +121,8 @@ if ($backup->get_stage() == backup_ui::STAGE_FINAL) { //backup_ui::STAGE_FINAL=8
     $job = new \block_courseimport\job($importcourseid, $course->id, $backupid, $USER->id);
     $job->save();
 
-    $jobdone = get_string('jobdone', 'block_courseimport');
     echo $OUTPUT->header();
-    echo $OUTPUT->notification($jobdone, 'notifysuccess');
-    echo $OUTPUT->continue_button(new moodle_url('/course/view.php', array('id' => $course->id)));
+    echo $renderer->display_import_progress($job, $course->id);
     echo $OUTPUT->footer();
     die();
 } else {

@@ -25,22 +25,7 @@
 $string['pluginname'] = 'Course Import';
 $string['importlink'] = 'Course Import';
 $string['filetype'] = 'File type';
-$string['jobdone'] = 'Your module is now queued for import';
-$string['infotime'] = "Here you can set when to run the import job. For example, If you want define 3 time ranges:
-
- * 02:12-04:15
- * 10:10-14:15
- * 21:30-06:45
-
-then input string should be:
-
- * 02:12-04:15==10:10-14:15==21:30-06:45
-
-Time ranges are seperated by ==  with no space in string
-
-You can define any number of time ranges.
-
-<b>Moodle will ignore any input strings with errors in them.</b>.";
+$string['importpending'] = 'Content queued for import';
 $string['askroleinfo'] = "You do not have permission to import from the modules below. You should contact the module's owner to ask for the Editing Teacher role if you wish to import from one.";
 $string['videofile'] = 'Note:&nbsp;The&nbsp;above&nbsp;video&nbsp;file&nbsp;will&nbsp;not&nbsp;be&nbsp;imported.';
 $string['courseimport:addinstance'] = 'Add the course import block to a page';
@@ -77,3 +62,6 @@ $string['privacy:metadata:block_courseimport:timecreated'] = 'The time the impor
 $string['privacy:metadata:block_courseimport:timemodified'] = 'The last time the job was updated.';
 $string['privacy:metadata:block_courseimport:userid'] = 'The user who created the job.';
 $string['privacy:metadata:core_backup'] = 'Creates backups of course information to transfer it into another Moodle course.';
+$string['inprogress'] = 'Importing content...';
+$string['finished'] = 'Import complete';
+$string['failed'] = 'Import failed';
