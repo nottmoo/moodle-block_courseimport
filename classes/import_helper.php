@@ -108,21 +108,11 @@ class import_helper {
     /**
      * Finds the size of the first file in a resource.
      *
-     * @param int $id
+     * @param int $id The course module id for a resource.
      * @return \fileinfo|null
      */
     public static function get_resource_filesize(int $id): ?\stdClass {
-        global $DB, $COURSE;
-
-        $cm = get_coursemodule_from_instance('resource', $id);
-
-        if (!$cm) {
-            // There was no resource with that id.
-            return null;
-        }
-
-        $resource = $DB->get_record('resource', array('id' => $cm->instance), '*', MUST_EXIST);
-        $context = \context_module::instance($cm->id);
+        $context = \context_module::instance($id);
         $fs = get_file_storage();
         // Get only the first record.
         $files = $fs->get_area_files($context->id, 'mod_resource', 'content', 0, 'sortorder DESC, id ASC', false, 0, 0, 1);

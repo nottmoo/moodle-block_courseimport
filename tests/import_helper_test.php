@@ -76,7 +76,7 @@ class block_courseimport_import_helper_testcase extends advanced_testcase  {
         $resource = $generator->create_instance(['course' => $course->id, 'files' => $draftid]);
 
         // Run the test.
-        $fileinfo = import_helper::get_resource_filesize($resource->id);
+        $fileinfo = import_helper::get_resource_filesize($resource->cmid);
 
         // Linux text file end each line with a line feed character.
         // DOS/Windows text files end each line with a carriage return and line feed.
