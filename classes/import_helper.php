@@ -75,13 +75,11 @@ class import_helper {
      */
     public static function filter_task(\base_task $task) {
         foreach ($task->get_settings() as $setting) {
-            $taskname = $task->get_name();
             $settingname = $setting->get_name();
 
             // We will not import Turnitin activities.
             if(preg_match('/^turnitintool(two)?_[0-9]+_[a-z]+/', $settingname) === 1) {
-                $label = "<b>$taskname</b>";
-                static::disable_setting($setting, $label);
+                static::disable_setting($setting);
                 // We are done here.
                 return;
             }
@@ -95,9 +93,7 @@ class import_helper {
                 $file = self::get_resource_filesize($resourceid);
                 if (!is_null($file) && strpos($file->type, 'video') !== false) {
                     // Do not process video files.
-                    $warning = get_string('videofile', 'block_courseimport');
-                    $label = "$taskname <b><u>$warning</u></b>";
-                    static::disable_setting($setting, $label);
+                    static::disable_setting($setting);
                 }
                 // We are done.
                 return;
@@ -108,21 +104,11 @@ class import_helper {
     /**
      * Finds the size of the first file in a resource.
      *
-     * @param int $id
+     * @param int $id The course module id for a resource.
      * @return \fileinfo|null
      */
     public static function get_resource_filesize(int $id): ?\stdClass {
-        global $DB, $COURSE;
-
-        $cm = get_coursemodule_from_instance('resource', $id);
-
-        if (!$cm) {
-            // There was no resource with that id.
-            return null;
-        }
-
-        $resource = $DB->get_record('resource', array('id' => $cm->instance), '*', MUST_EXIST);
-        $context = \context_module::instance($cm->id);
+        $context = \context_module::instance($id);
         $fs = get_file_storage();
         // Get only the first record.
         $files = $fs->get_area_files($context->id, 'mod_resource', 'content', 0, 'sortorder DESC, id ASC', false, 0, 0, 1);
@@ -144,16 +130,9 @@ class import_helper {
      * Disabled a setting in the backup options.
      *
      * @param \base_setting $setting The setting to be disabled.
-     * @param string $label The new label for the setting.
      */
-    protected static function disable_setting(\base_setting $setting, string $label) {
-        $setting->set_value('0');
-        $setting->make_ui(
-                \base_setting::UI_HTML_CHECKBOX,
-                $label,
-                ['disabled' => true],
-                null
-        );
-        $setting->set_status(\base_setting::LOCKED_BY_HIERARCHY);
+    protected static function disable_setting(\base_setting $setting) {
+        $setting->set_value(false);
+        $setting->set_status(\base_setting::LOCKED_BY_CONFIG);
     }
 }

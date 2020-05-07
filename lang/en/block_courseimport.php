@@ -27,7 +27,6 @@ $string['importlink'] = 'Course Import';
 $string['filetype'] = 'File type';
 $string['importpending'] = 'Content queued for import';
 $string['askroleinfo'] = "You do not have permission to import from the modules below. You should contact the module's owner to ask for the Editing Teacher role if you wish to import from one.";
-$string['videofile'] = 'Note:&nbsp;The&nbsp;above&nbsp;video&nbsp;file&nbsp;will&nbsp;not&nbsp;be&nbsp;imported.';
 $string['courseimport:addinstance'] = 'Add the course import block to a page';
 $string['courseimport:manage'] = 'See and change settings for the course import block';
 $string['courseimport:view'] = 'Use the course import block functionality';
