@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $plugin->version = 2020050700;
 $plugin->requires = 2018112800;
-$plugin->release = '1.2.1 (2020-05-07)';
+$plugin->release = '1.2.2 (2020-06-23)';
 $plugin->maturity =  MATURITY_STABLE;
 $plugin->component = 'block_courseimport';
 $plugin->dependencies = array(

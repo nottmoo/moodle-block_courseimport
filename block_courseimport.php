@@ -91,6 +91,6 @@ class block_courseimport extends block_base {
      * @see block_base::has_config
      */
     public function has_config() {
-        return true;
+        return false;
     }
 }
