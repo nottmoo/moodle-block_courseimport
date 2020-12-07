@@ -46,7 +46,7 @@ class block_courseimport_privacy_provider_test extends \core_privacy\tests\provi
     /**
      * Setup for each test.
      */
-    public function setUp() {
+    public function setUp(): void {
         parent::setUp();
         $this->generator = self::getDataGenerator()->get_plugin_generator('block_courseimport');
         $this->resetAfterTest(true);
@@ -55,7 +55,7 @@ class block_courseimport_privacy_provider_test extends \core_privacy\tests\provi
     /**
      * Run at the end of each test.
      */
-    public function tearDown() {
+    public function tearDown(): void {
         $this->assertDebuggingNotCalled();
         parent::tearDown();
     }
