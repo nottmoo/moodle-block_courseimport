@@ -23,9 +23,13 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use block_courseimport\privacy\provider;
+namespace block_courseimport\privacy;
+
+use block_courseimport\job;
+use core_privacy\tests\request\approved_contextlist;
 use core_privacy\local\request\approved_userlist;
-use \block_courseimport\job;
+use core_privacy\local\request\userlist;
+use core_privacy\local\request\writer;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -39,8 +43,8 @@ defined('MOODLE_INTERNAL') || die();
  * @group block_courseimport
  * @group uon
  */
-class block_courseimport_privacy_provider_test extends \core_privacy\tests\provider_testcase {
-    /** @var block_courseimport_generator The course import block data generator. */
+class provider_test extends \core_privacy\tests\provider_testcase {
+    /** @var \block_courseimport_generator The course import block data generator. */
     protected $generator;
 
     /**
@@ -91,7 +95,7 @@ class block_courseimport_privacy_provider_test extends \core_privacy\tests\provi
 
         // Test export.
         $this->export_context_data_for_user($user->id, $context, 'block_courseimport');
-        $writer = \core_privacy\local\request\writer::with_context($context);
+        $writer = writer::with_context($context);
         $this->assertTrue($writer->has_any_data());
         $subcontext = get_string('privacy:export:jobs', 'block_courseimport');
         $this->assertTrue($writer->has_any_data([$subcontext]));
@@ -141,7 +145,7 @@ class block_courseimport_privacy_provider_test extends \core_privacy\tests\provi
         // Job for another user.
         $this->generator->create_job(['userid' => $otheruser->id]);
         // Make the call to delete.
-        $approvedcontextlist = new \core_privacy\tests\request\approved_contextlist(
+        $approvedcontextlist = new approved_contextlist(
             \core_user::get_user($user->id),
             'block_courseimport',
             [$usercontext->id]
@@ -180,11 +184,11 @@ class block_courseimport_privacy_provider_test extends \core_privacy\tests\provi
         $this->generator->create_job(['userid' => $user2->id, 'status' => job::STATE_FAILED]);
         $this->generator->create_job(['userid' => $user2->id, 'status' => job::STATE_FINISHED]);
 
-        $userlist1 = new \core_privacy\local\request\userlist($usercontext1, $component);
+        $userlist1 = new userlist($usercontext1, $component);
         provider::get_users_in_context($userlist1);
         $this->assertCount(1, $userlist1);
 
-        $userlist2 = new \core_privacy\local\request\userlist($usercontext2, $component);
+        $userlist2 = new userlist($usercontext2, $component);
         provider::get_users_in_context($userlist2);
         $this->assertCount(1, $userlist2);
 
@@ -222,14 +226,14 @@ class block_courseimport_privacy_provider_test extends \core_privacy\tests\provi
         $this->generator->create_job(['userid' => $user2->id, 'status' => job::STATE_FAILED]);
         $this->generator->create_job(['userid' => $user2->id, 'status' => job::STATE_FINISHED]);
 
-        $userlist1 = new \core_privacy\local\request\userlist($usercontext1, $component);
+        $userlist1 = new userlist($usercontext1, $component);
         provider::get_users_in_context($userlist1);
         $this->assertCount(1, $userlist1);
         $expected = array($user1->id);
         $actual = $userlist1->get_userids();
         $this->assertEquals($expected, $actual);
 
-        $userlist2 = new \core_privacy\local\request\userlist($usercontext2, $component);
+        $userlist2 = new userlist($usercontext2, $component);
         provider::get_users_in_context($userlist2);
         $this->assertCount(1, $userlist2);
         $expected = array($user2->id);
