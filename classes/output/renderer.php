@@ -51,7 +51,7 @@ class renderer extends \core_backup_renderer {
         $output .= html_writer::div(get_string('totalcoursesearchresults', 'backup', $component->get_count()));
         $output .= html_writer::start_div('ics-results');
         $table = new html_table();
-        $table->head = array('', get_string('shortnamecourse'), get_string('fullnamecourse'), "course ID");
+        $table->head = array('', get_string('shortnamecourse'), get_string('fullnamecourse'), get_string('courseid', 'block_courseimport'));
         $table->data = array();
         $coursedetails = local_uonlib_courselib::get_module_details($COURSE);
         $shortname = $COURSE->shortname;

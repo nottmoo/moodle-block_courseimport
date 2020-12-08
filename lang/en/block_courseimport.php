@@ -27,6 +27,7 @@ $string['abandonedmessage'] = '{$a->timenow}, Job abandoned, Jobid={$a->jobid}, 
 $string['alertemailsubject'] = 'Course import error alert';
 $string['alreadyimporting'] = 'There is an import in progress for this course. Please wait for it to complete.';
 $string['askroleinfo'] = "You do not have permission to import from the modules below. You should contact the module's owner to ask for the Editing Teacher role if you wish to import from one.";
+$string['courseid'] = 'Course id';
 $string['courseimport:addinstance'] = 'Add the course import block to a page';
 $string['courseimport:manage'] = 'See and change settings for the course import block';
 $string['courseimport:view'] = 'Use the course import block functionality';
