@@ -85,8 +85,8 @@
             <thead>
                 <tr>
                     <th></th>
-                    <th>{{#str}} shortnamecourse {{/str}}</th>
                     <th>{{#str}} fullnamecourse {{/str}}</th>
+                    <th>{{#str}} shortnamecourse {{/str}}</th>
                     <th>{{#str}} courseid, block_courseimport {{/str}}</th>
                 </tr>
             </thead>
@@ -96,8 +96,8 @@
                 </tr>{{/nomatching}}
                 {{#courses}}<tr class="ics-course{{^visible}} dimmed{{/visible}}{{#highlight}} bold{{/highlight}}">
                     <td><input type="radio" id="importid-{{id}}" name="importid" value="{{id}}" {{#highlight}}checked="checked"{{/highlight}}/></td>
+                    <td><label for="importid-{{id}}">{{fullname}}</label></td>
                     <td>{{shortname}}</td>
-                    <td>{{fullname}}</td>
                     <td>{{id}}</td>
                 </tr>{{/courses}}
                 {{#hasinaccesibile}}<tr>
@@ -105,8 +105,8 @@
                 </tr>{{/hasinaccesibile}}
                 {{#othercourses}}<tr class="ics-course{{^visible}} dimmed{{/visible}}">
                     <td></td>
-                    <td>{{shortname}}</td>
                     <td>{{fullname}}</td>
+                    <td>{{shortname}}</td>
                     <td>{{id}}</td>
                 </tr>{{/othercourses}}
             </tbody>
