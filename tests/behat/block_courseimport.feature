@@ -49,7 +49,7 @@ Feature: Test block_courseimport function
     And I am on "N12401-UK-SPR1415" course homepage
     And I click on "Course Import" "link" in the "Course Import" "block"
     When I set the following fields to these values:
-      | search | P13140 |
+      | Search courses | P13140 |
     And I press "Search"
     Then I should not see "P13140-UK-SPR1415"
 
@@ -58,7 +58,7 @@ Feature: Test block_courseimport function
     And I am on "N12401-UK-SPR1415" course homepage
     And I click on "Course Import" "link" in the "Course Import" "block"
     When I set the following fields to these values:
-      | search | P12130 |
+      | Search courses | P12130 |
     And I press "Search"
     Then I should see "P12130-UK-SPR1314"
     And the field "P12130-UK-SPR1314" matches value "0"

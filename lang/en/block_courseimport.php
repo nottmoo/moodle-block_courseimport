@@ -58,6 +58,7 @@ $string['privacy:metadata:block_courseimport:timecreated'] = 'The time the impor
 $string['privacy:metadata:block_courseimport:timemodified'] = 'The last time the job was updated.';
 $string['privacy:metadata:block_courseimport:userid'] = 'The user who created the job.';
 $string['privacy:metadata:core_backup'] = 'Creates backups of course information to transfer it into another Moodle course.';
+$string['searchcourses'] = 'Search courses';
 $string['time'] = 'Cron time';
 $string['useremailsubject'] = 'Moodle course import';
 $string['useremailmessage'] = 'Your course import job had completed.

@@ -113,7 +113,8 @@
         </table>
     </div>
     <div class="ics-search">
-        <input type="text" name="{{searchname}}" value="{{searchvalue}}" />
+        <label for="searchcoursesinput" class="sr-only">{{#str}} searchcourses, block_courseimport {{/str}}</label>
+        <input type="text" id="searchcoursesinput" name="{{searchname}}" value="{{searchvalue}}" autocomplete="off" />
         <input type="submit" name="searchcourses" value="{{#str}} search {{/str}}" />
     </div>
 </div>
