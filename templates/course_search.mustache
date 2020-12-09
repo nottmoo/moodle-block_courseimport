@@ -112,9 +112,19 @@
             </tbody>
         </table>
     </div>
-    <div class="ics-search">
+    <div class="ics-search input-group">
         <label for="searchcoursesinput" class="sr-only">{{#str}} searchcourses, block_courseimport {{/str}}</label>
-        <input type="text" id="searchcoursesinput" name="{{searchname}}" value="{{searchvalue}}" autocomplete="off" />
-        <input type="submit" name="searchcourses" value="{{#str}} search {{/str}}" />
+        <input
+            type="text"
+            id="searchcoursesinput"
+            name="{{searchname}}"
+            value="{{searchvalue}}"
+            placeholder="{{#str}} searchcourses, block_courseimport {{/str}}"
+            autocomplete="off"
+            class="form-control"
+        />
+        <div class="input-group-append">
+            <input type="submit" name="searchcourses" value="{{#str}} search {{/str}}" class="btn btn-secondary" />
+        </div>
     </div>
 </div>
