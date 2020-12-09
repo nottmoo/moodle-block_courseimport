@@ -23,7 +23,7 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use block_courseimport\job;
+namespace block_courseimport;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -38,7 +38,7 @@ defined('MOODLE_INTERNAL') || die();
  * @group block_courseimport
  * @group uon
  */
-class block_courseimport_job_testcase extends advanced_testcase  {
+class job_test extends \advanced_testcase  {
     /**
      * Creates a UK help user.
      */
@@ -51,7 +51,7 @@ class block_courseimport_job_testcase extends advanced_testcase  {
     /**
      * Converts a recordset into an array indexed by the first value of the record.
      *
-     * @param moodle_recordset $recordset
+     * @param \moodle_recordset $recordset
      * @return array
      */
     protected function recordset_to_array(\moodle_recordset $recordset): array {

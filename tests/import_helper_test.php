@@ -23,7 +23,9 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use block_courseimport\import_helper;
+namespace block_courseimport;
+
+use context_user;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -38,7 +40,7 @@ defined('MOODLE_INTERNAL') || die();
  * @group block_courseimport
  * @group uon
  */
-class block_courseimport_import_helper_testcase extends advanced_testcase  {
+class import_helper_test extends \advanced_testcase  {
     /**
      * Tests that we can detect the size of files in a resource correctly.
      *

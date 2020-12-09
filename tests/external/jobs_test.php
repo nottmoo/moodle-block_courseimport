@@ -23,7 +23,8 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use block_courseimport\external\jobs;
+namespace block_courseimport\external;
+
 use block_courseimport\job;
 
 defined('MOODLE_INTERNAL') || die();
@@ -39,7 +40,7 @@ defined('MOODLE_INTERNAL') || die();
  * @group block_courseimport
  * @group uon
  */
-class block_courseimport_external_jobs_testcase extends advanced_testcase  {
+class jobs_test extends \advanced_testcase  {
     /**
      * Tests that the progress is calculated correctly.
      *

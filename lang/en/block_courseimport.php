@@ -22,30 +22,26 @@
  * @author Yijun Xue <yijun.xue@nottingham.ac.uk>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-$string['pluginname'] = 'Course Import';
-$string['importlink'] = 'Course Import';
-$string['filetype'] = 'File type';
-$string['importpending'] = 'Content queued for import';
+
+$string['abandonedmessage'] = '{$a->timenow}, Job abandoned, Jobid={$a->jobid}, Userid={$a->userid}. Import To Course ID:{$a->target}. Import From Course ID:{$a->source}';
+$string['alertemailsubject'] = 'Course import error alert';
+$string['alreadyimporting'] = 'There is an import in progress for this course. Please wait for it to complete.';
 $string['askroleinfo'] = "You do not have permission to import from the modules below. You should contact the module's owner to ask for the Editing Teacher role if you wish to import from one.";
 $string['courseimport:addinstance'] = 'Add the course import block to a page';
 $string['courseimport:manage'] = 'See and change settings for the course import block';
 $string['courseimport:view'] = 'Use the course import block functionality';
-$string['time'] = 'Cron time';
-$string['alertemailsubject'] = 'Course import error alert';
-$string['useremailsubject'] = 'Moodle course import';
-$string['useremailmessage'] = 'Your course import job had completed.
-
-* Imported from: {$a->importfrom}
-* Imported into: {$a->importto}';
-$string['courseimport:manage'] = 'See and change settings for the course import block';
-$string['courseimport:view'] = 'Use the course import block functionality';
-$string['abandonedmessage'] = '{$a->timenow}, Job abandoned, Jobid={$a->jobid}, Userid={$a->userid}. Import To Course ID:{$a->target}. Import From Course ID:{$a->source}';
-$string['precheckfail'] = '{$a->timenow} Error! In Jobid: {$a->jobid}. Prechecks for importing backupfile failed. Import From Course ID:{$a->source} -> Import To Course ID:{$a->target}';
-$string['importfail'] = '{$a->timenow} Error! In Jobid: {$a->jobid}. Course import failed. Import From Course ID:{$a->source} -> Import To Course ID:{$a->target}';
-$string['alreadyimporting'] = 'There is an import in progress for this course. Please wait for it to complete.';
 $string['emailfailure'] = "Course import could not send email to user";
+$string['failed'] = 'Import failed';
+$string['filetype'] = 'File type';
+$string['finished'] = 'Import complete';
+$string['importfail'] = '{$a->timenow} Error! In Jobid: {$a->jobid}. Course import failed. Import From Course ID:{$a->source} -> Import To Course ID:{$a->target}';
+$string['importlink'] = 'Course Import';
+$string['importpending'] = 'Content queued for import';
+$string['inprogress'] = 'Importing content...';
 $string['messageprovider:complete'] = 'Confirmation that a course import has completed';
 $string['messageprovider:problem'] = 'Messages about errors with a course import';
+$string['pluginname'] = 'Course Import';
+$string['precheckfail'] = '{$a->timenow} Error! In Jobid: {$a->jobid}. Prechecks for importing backupfile failed. Import From Course ID:{$a->source} -> Import To Course ID:{$a->target}';
 $string['privacy:export:jobs'] = 'Course import jobs';
 $string['privacy:export:status:failed'] = 'Import failed';
 $string['privacy:export:status:finished'] = 'Import completed';
@@ -61,6 +57,9 @@ $string['privacy:metadata:block_courseimport:timecreated'] = 'The time the impor
 $string['privacy:metadata:block_courseimport:timemodified'] = 'The last time the job was updated.';
 $string['privacy:metadata:block_courseimport:userid'] = 'The user who created the job.';
 $string['privacy:metadata:core_backup'] = 'Creates backups of course information to transfer it into another Moodle course.';
-$string['inprogress'] = 'Importing content...';
-$string['finished'] = 'Import complete';
-$string['failed'] = 'Import failed';
+$string['time'] = 'Cron time';
+$string['useremailsubject'] = 'Moodle course import';
+$string['useremailmessage'] = 'Your course import job had completed.
+
+* Imported from: {$a->importfrom}
+* Imported into: {$a->importto}';
