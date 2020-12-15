@@ -1,0 +1,40 @@
+@block @uon @block_courseimport
+Feature: Adding course import block to a course
+  In order to control display of the block
+  As a admin
+  I need to be able to add the block to a course
+
+  Background:
+    Given the following "course" exists:
+      | fullname  | Test course       |
+      | shortname | N12401-UK-SPR1415 |
+      | category  | 0                 |
+
+  Scenario: Admins should be able to add the block
+    Given I log in as "admin"
+    And I am on "Test course" course homepage with editing mode on
+    And I should not see "Course Import"
+    When I add the "Course Import" block
+    Then I should see "Course Import"
+
+  Scenario Outline: Other users should not be able to add the block
+    Given the following "user" exists:
+      | username  | user1            |
+      | firstname | Testing          |
+      | lastname  | User             |
+      | email     | test@example.com |
+    And the following "course enrolment" exists:
+      | user   | user1             |
+      | course | N12401-UK-SPR1415 |
+      | role   | <role>            |
+    And I log in as "user1"
+    And I am on "Test course" course homepage with editing mode on
+    When I click on "Add a block" "link_or_button"
+    Then I should not see "Course Import"
+
+    Examples:
+      | role           |
+      | manager        |
+      | editingteacher |
+
+
