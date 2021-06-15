@@ -97,6 +97,7 @@ if (!($bc = backup_ui::load_controller($backupid))) {
     import_helper::disbable_userdata_import($plan);
     // For the initial stage we want to hide all locked settings and if there are no visible settings move to the next stage.
     $visiblesettings = import_helper::hide_locked_settings($plan);
+    import_helper::disbable_userdata_import($plan);
     import_ui::skip_current_stage(!$visiblesettings);
 }
 // Prepare the import UI.
