@@ -77,8 +77,7 @@ class import_helper {
      * @param string $instanceid Id of a forum
      * @return void
      */
-    public static function unselect_announcement(\base_setting $setting, string $instanceid)
-    {
+    public static function unselect_announcement(\base_setting $setting, string $instanceid) {
         global $DB;
         // Check if the forum is an announcement, which type is news
         $params = array('instanceid' => $instanceid);
@@ -102,8 +101,7 @@ class import_helper {
      * @param string $instanceid Id of a activity
      * @return void
      */
-    public static function unselect_activity(\base_setting $setting)
-    {
+    public static function unselect_activity(\base_setting $setting) {
         if ($setting->get_ui_type() == backup_setting::UI_HTML_CHECKBOX) {
             $setting->set_status(\base_setting::NOT_LOCKED);
             $setting->set_value(0);
