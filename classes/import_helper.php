@@ -77,19 +77,20 @@ class import_helper {
      * @param string $instanceid Id of a forum
      * @return void
      */
-    public static function unselect_announcement (\base_setting $setting, string $instanceid) {
+    public static function unselect_announcement(\base_setting $setting, string $instanceid)
+    {
         global $DB;
-
-            // Check if the forum is an announcement, which type is news
-            $sql = 'SELECT IF (fo.type = "news", 1, 0) as news
-                        FROM {forum} fo 
-                        JOIN {course_modules} cm 
-                        WHERE (fo.id = cm.instance) AND (cm.id = :instanceid)';
-            $announcement = $DB->get_record_sql($sql, array('instanceid' => $instanceid), $strictness=IGNORE_MISSING);
-            if($announcement->news === "1" ) {
-                if($setting->get_ui_type() == backup_setting::UI_HTML_CHECKBOX){
-                    $setting->set_status(\base_setting::NOT_LOCKED);
-                    $setting->set_value(0);
+        // Check if the forum is an announcement, which type is news
+        $params = array('instanceid' => $instanceid);
+        $sql = 'SELECT * 
+                    FROM {forum} fo 
+                    JOIN {course_modules} cm 
+                    ON (fo.id = cm.instance)
+                    WHERE (cm.id = :instanceid) AND (fo.type = "news")';
+        if ($DB->record_exists_sql($sql, $params)) {
+            if ($setting->get_ui_type() == backup_setting::UI_HTML_CHECKBOX) {
+                $setting->set_status(\base_setting::NOT_LOCKED);
+                $setting->set_value(0);
             }
         }
     }
@@ -101,8 +102,9 @@ class import_helper {
      * @param string $instanceid Id of a activity
      * @return void
      */
-    public static function unselect_activity ( \base_setting $setting, string $instanceid) {
-        if($setting->get_ui_type() == backup_setting::UI_HTML_CHECKBOX){
+    public static function unselect_activity(\base_setting $setting)
+    {
+        if ($setting->get_ui_type() == backup_setting::UI_HTML_CHECKBOX) {
             $setting->set_status(\base_setting::NOT_LOCKED);
             $setting->set_value(0);
         }
@@ -120,19 +122,17 @@ class import_helper {
             $settingname = $setting->get_name();
 
             // Unselect announcement forum activities.
-            if(preg_match('/^(forum_)\K[0-9]+(?=_included)/', $settingname, $instanceid) === 1)
-            {
+            if (preg_match('/^(forum_)\K[0-9]+(?=_included)/', $settingname, $instanceid) === 1) {
                 self::unselect_announcement($setting, $instanceid[0]);
             }
 
-            // Unselect moodle assignment and  choice activities. setting_activity_assign_19_included
-            if(preg_match('/^((assign|choice)_)\K[0-9]+(?=_included)/', $settingname, $instanceid) === 1)
-            {
-                self::unselect_activity($setting, $instanceid[0]);
+            // Unselect moodle assignment and  choice activities.
+            if (preg_match('/^((assign|choice)_)\K[0-9]+(?=_included)/', $settingname, $instanceid) === 1) {
+                self::unselect_activity($setting);
             }
 
             // We will not import Turnitin activities.
-            if(preg_match('/^turnitintool(two)?_[0-9]+_[a-z]+/', $settingname) === 1) {
+            if (preg_match('/^turnitintool(two)?_[0-9]+_[a-z]+/', $settingname) === 1) {
                 static::disable_setting($setting);
                 // We are done here.
                 return;
