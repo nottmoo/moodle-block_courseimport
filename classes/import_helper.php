@@ -80,12 +80,12 @@ class import_helper {
     public static function unselect_announcement(\base_setting $setting, string $instanceid) {
         global $DB;
         // Check if the forum is an announcement, which type is news
-        $params = array('instanceid' => $instanceid);
+        $params = array('instanceid' => $instanceid, 'type' => "news");
         $sql = 'SELECT * 
-                    FROM {forum} fo 
-                    JOIN {course_modules} cm 
+                  FROM {forum} fo 
+                  JOIN {course_modules} cm 
                     ON (fo.id = cm.instance)
-                    WHERE (cm.id = :instanceid) AND (fo.type = "news")';
+                 WHERE (cm.id = :instanceid) AND (fo.type = :type)';
         if ($DB->record_exists_sql($sql, $params)) {
             if ($setting->get_ui_type() == backup_setting::UI_HTML_CHECKBOX) {
                 $setting->set_status(\base_setting::NOT_LOCKED);
@@ -98,7 +98,6 @@ class import_helper {
      * Unselect moodle activity for import
      *
      * @param base_setting $setting An activity's setting
-     * @param string $instanceid Id of a activity
      * @return void
      */
     public static function unselect_activity(\base_setting $setting) {
@@ -125,7 +124,7 @@ class import_helper {
             }
 
             // Unselect moodle assignment and  choice activities.
-            if (preg_match('/^((assign|choice)_)\K[0-9]+(?=_included)/', $settingname, $instanceid) === 1) {
+            if (preg_match('/^((assign|choice)_)\K[0-9]+(?=_included)/', $settingname) === 1) {
                 self::unselect_activity($setting);
             }
 
