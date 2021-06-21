@@ -25,10 +25,13 @@
 
 namespace block_courseimport;
 
+use backup_setting;
+use base_setting;
+
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot . '/backup/util/settings/base_setting.class.php');
-
+require_once($CFG->dirroot . '/backup/moodle2/backup_settingslib.php');
 /**
  * Helper for the import page.
  *
@@ -68,6 +71,44 @@ class import_helper {
     }
 
     /**
+     * Unselect announcement activity
+     *
+     * @param base_setting $setting An announcement activity's settings
+     * @param string $instanceid Id of a forum
+     * @return void
+     */
+    public static function unselect_announcement(\base_setting $setting, string $instanceid) {
+        global $DB;
+        // Check if the forum is an announcement, which type is news
+        $params = array('instanceid' => $instanceid, 'type' => "news");
+        $sql = 'SELECT * 
+                  FROM {forum} fo 
+                  JOIN {course_modules} cm 
+                    ON (fo.id = cm.instance)
+                 WHERE (cm.id = :instanceid) AND (fo.type = :type)';
+        if ($DB->record_exists_sql($sql, $params)) {
+            if ($setting->get_ui_type() == backup_setting::UI_HTML_CHECKBOX) {
+                $setting->set_status(\base_setting::NOT_LOCKED);
+                $setting->set_value(0);
+            }
+        }
+    }
+
+    /**
+     * Unselect moodle activity for import
+     *
+     * @param base_setting $setting An activity's setting
+     * @return void
+     */
+    public static function unselect_activity(\base_setting $setting) {
+        if ($setting->get_ui_type() == backup_setting::UI_HTML_CHECKBOX) {
+            $setting->set_status(\base_setting::NOT_LOCKED);
+            $setting->set_value(0);
+        }
+    }
+
+
+    /**
      * Disables the import of selected activities.
      *
      * @param \base_task $task
@@ -77,8 +118,18 @@ class import_helper {
         foreach ($task->get_settings() as $setting) {
             $settingname = $setting->get_name();
 
+            // Unselect announcement forum activities.
+            if (preg_match('/^(forum_)\K[0-9]+(?=_included)/', $settingname, $instanceid) === 1) {
+                self::unselect_announcement($setting, $instanceid[0]);
+            }
+
+            // Unselect moodle assignment and  choice activities.
+            if (preg_match('/^((assign|choice)_)\K[0-9]+(?=_included)/', $settingname) === 1) {
+                self::unselect_activity($setting);
+            }
+
             // We will not import Turnitin activities.
-            if(preg_match('/^turnitintool(two)?_[0-9]+_[a-z]+/', $settingname) === 1) {
+            if (preg_match('/^turnitintool(two)?_[0-9]+_[a-z]+/', $settingname) === 1) {
                 static::disable_setting($setting);
                 // We are done here.
                 return;
