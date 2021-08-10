@@ -124,7 +124,7 @@ class import_helper {
             }
 
             // Unselect moodle assignment and  choice activities.
-            if (preg_match('/^((assign|choice)_)\K[0-9]+(?=_included)/', $settingname) === 1) {
+            if (preg_match('/^((assign|tutorialbooking)_)\K[0-9]+(?=_included)/', $settingname) === 1) {
                 self::unselect_activity($setting);
             }
 
