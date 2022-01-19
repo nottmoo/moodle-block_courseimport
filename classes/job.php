@@ -140,7 +140,7 @@ class job {
                 'target' => $job->target,
                 'source' => $job->source,
             ];
-            $message = get_string('abandonedmessage', 'block_courseimport', $params);
+            $message = get_string('abandonedjobmessage', 'block_courseimport', $params);
             $subject = get_string('alertemailsubject', 'block_courseimport');
             $isemail = \block_courseimport\messenger::failure($subject, $message, $job->target);
             if (!$isemail) {
