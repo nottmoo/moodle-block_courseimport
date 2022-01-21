@@ -122,8 +122,8 @@ class search extends \import_course_search {
                     $shortnamesearch = substr($shortnamestring,0,-4);
                 }
             } else {
-                // Should not get here if course names in the db are in the right format
-                // If we do bottle out as we dont want to do a bad query
+                // Should not get here if the course names in the db are in the right format
+                // If we do bottle out as we don't want to do a bad query
                 $params = array();
                 $select = "SELECT NULL from {course} where FALSE";
                 return array($select, $params);
