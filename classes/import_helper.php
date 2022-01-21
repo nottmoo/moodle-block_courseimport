@@ -187,7 +187,10 @@ class import_helper {
      * @param \base_setting $setting The setting to be disabled.
      */
     protected static function disable_setting(\base_setting $setting) {
-        $setting->set_value(false);
+        if ($setting->get_value() !== false) {
+            $setting->set_status(\base_setting::NOT_LOCKED);
+            $setting->set_value(false);
+        }
         $setting->set_status(\base_setting::LOCKED_BY_CONFIG);
     }
 }
