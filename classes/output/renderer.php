@@ -16,12 +16,8 @@
 
 namespace block_courseimport\output;
 
-use block_courseimport_search;
+use block_courseimport\search;
 use context_course;
-use html_writer;
-use html_table;
-use html_table_cell;
-use html_table_row;
 use local_uonlib_courselib;
 use block_courseimport\job;
 
@@ -41,10 +37,10 @@ class renderer extends \core_backup_renderer {
     /**
      * Renders an import course search object
      *
-     * @param import_course_search $component
+     * @param \block_courseimport\search $component
      * @return string
      */
-    public function render_block_courseimport_search(block_courseimport_search $component) {
+    public function render_search(search $component) {
         global $COURSE;
 
         $data = new \stdClass();
@@ -52,7 +48,7 @@ class renderer extends \core_backup_renderer {
         $data->resultcount = $component->get_count();
         $data->hasinaccesibile = false;
         $data->othercourses = [];
-        $data->searchname = block_courseimport_search::$VAR_SEARCH;
+        $data->searchname = search::$VAR_SEARCH;
         $data->searchvalue = $component->get_search();
 
         $coursedetails = local_uonlib_courselib::get_module_details($COURSE);

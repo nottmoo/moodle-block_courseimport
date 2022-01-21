@@ -14,6 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace block_courseimport;
+
+use context_helper;
+
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot . "/backup/util/interfaces/checksumable.class.php");
@@ -34,7 +38,7 @@ require_once($CFG->dirroot . '/backup/util/ui/import_extensions.php');
  * @copyright   University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class block_courseimport_search extends import_course_search {
+class search extends \import_course_search {
     /**
      * The results of the search
      * @var array|null
@@ -59,7 +63,7 @@ class block_courseimport_search extends import_course_search {
     /**
      * Case insensative search for courses with similar shortname but same code.
      *
-     * @global moodle_database $DB
+     * @global \moodle_database $DB
      * @param string $coursecode - fragment of a shortname to match.
      * @param string $shortnamestr - the short name of a course that should not be returned.
      * @return int - the number of results found.
@@ -92,7 +96,7 @@ class block_courseimport_search extends import_course_search {
     /**
      * Create search SQL
      *
-     * @global moodle_database $DB
+     * @global \moodle_database $DB
      * @return array sql and parameters
      */
     protected function get_searchsql() {

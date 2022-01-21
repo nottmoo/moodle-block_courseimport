@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace block_courseimport;
+
 defined('MOODLE_INTERNAL') || die();
 
 /**
@@ -26,12 +28,12 @@ defined('MOODLE_INTERNAL') || die();
  * @group block_courseimport
  * @group uon
  */
-class block_courseimport_search_testcase extends advanced_testcase {
+class search_test extends \advanced_testcase {
     /**
      * Tests that the block_courseimport_search::searchshortname method works correctly.
      *
-     * @covers block_courseimport_search::searchshortname
-     * @covers block_courseimport_search::get_shortnameresults
+     * @covers \block_courseimport\search::searchshortname
+     * @covers \block_courseimport\search::get_shortnameresults
      * @group block_courseimport
      * @group uon
      */
@@ -53,7 +55,7 @@ class block_courseimport_search_testcase extends advanced_testcase {
         $course0g3 = self::getDataGenerator()->create_course(array('shortname' => 'XX3L12-UK-FYR1413'));
         $course0g3 = self::getDataGenerator()->create_course(array('shortname' => 'G53NMD-UK-AUT-G53NMD-MY-AUT-1314'));
         $course0g3 = self::getDataGenerator()->create_course(array('shortname' => 'PA-HS-INDUCT-UK'));
-        $search = new block_courseimport_search();
+        $search = new search();
 
         $results0 = $search->searchshortname('XX3L11', 'XX3L11-UK-FYR1112');
         $this->assertEquals(4, $results0);
@@ -61,7 +63,7 @@ class block_courseimport_search_testcase extends advanced_testcase {
         $results1 = $search->searchshortname('ggg', '');
         $this->assertNotEquals($results1, $results0);
 
-        $search = new block_courseimport_search();
+        $search = new search();
         $results0 = $search->get_shortnameresults('XX3L11', 'XX3L11-UK-FYR1112');
         $this->assertArrayHasKey($course1g1->id, $results0);
         $this->assertArrayHasKey($course2g1->id, $results0);
