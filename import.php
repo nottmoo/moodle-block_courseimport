@@ -26,6 +26,7 @@
 require_once(dirname(__FILE__) . '/../../config.php');
 
 use \block_courseimport\import_helper;
+use block_courseimport\search;
 
 // Require both the backup and restore libs
 require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
@@ -69,7 +70,7 @@ if (\block_courseimport\job::job_queued($courseid)) {
 // Check if we already have a import course id.
 if ($importcourseid === false || $search !== false) {
     $url = new moodle_url('/blocks/courseimport/import.php', array('id' => $courseid));
-    $search = new block_courseimport_search(array('url' => $url), $courseid);
+    $search = new search(array('url' => $url), $courseid);
     // Show the course selector.
     echo $OUTPUT->header();
     //Here find and list the user's course.

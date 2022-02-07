@@ -23,7 +23,7 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$string['abandonedmessage'] = '{$a->timenow}, Job abandoned, Jobid={$a->jobid}, Userid={$a->userid}. Import To Course ID:{$a->target}. Import From Course ID:{$a->source}';
+$string['abandonedjobmessage'] = '{$a->timenow}, Job abandoned, Jobid={$a->jobid}, Userid={$a->userid}. Import To Course ID:{$a->target}. Import From Course ID:{$a->source}';
 $string['alertemailsubject'] = 'Course import error alert';
 $string['alreadyimporting'] = 'There is an import in progress for this course. Please wait for it to complete.';
 $string['askroleinfo'] = "You do not have permission to import from the modules below. You should contact the module's owner to ask for the Editing Teacher role if you wish to import from one.";

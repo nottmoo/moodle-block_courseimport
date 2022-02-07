@@ -49,8 +49,7 @@ class jobs extends \external_api {
      * @throws \required_capability_exception
      */
     public static function progress($id): array {
-        $params = self::validate_parameters(self::progress_parameters(), array('id' => $id));
-        $progress = progress::get_for_job($params['id']);
+        $progress = progress::get_for_job($id);
         // Verify that the user has the capability to import into the course.
         $context = \context_course::instance($progress->courseid);
         require_capability('moodle/restore:restoretargetimport', $context);

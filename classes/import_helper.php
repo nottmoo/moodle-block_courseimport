@@ -88,8 +88,10 @@ class import_helper {
                  WHERE (cm.id = :instanceid) AND (fo.type = :type)';
         if ($DB->record_exists_sql($sql, $params)) {
             if ($setting->get_ui_type() == backup_setting::UI_HTML_CHECKBOX) {
+                $originalsetting = $setting->get_status();
                 $setting->set_status(\base_setting::NOT_LOCKED);
                 $setting->set_value(0);
+                $setting->set_status($originalsetting);
             }
         }
     }
@@ -102,8 +104,10 @@ class import_helper {
      */
     public static function unselect_activity(\base_setting $setting) {
         if ($setting->get_ui_type() == backup_setting::UI_HTML_CHECKBOX) {
+            $originalsetting = $setting->get_status();
             $setting->set_status(\base_setting::NOT_LOCKED);
             $setting->set_value(0);
+            $setting->set_status($originalsetting);
         }
     }
 
@@ -183,7 +187,10 @@ class import_helper {
      * @param \base_setting $setting The setting to be disabled.
      */
     protected static function disable_setting(\base_setting $setting) {
-        $setting->set_value(false);
+        if ($setting->get_value() !== false) {
+            $setting->set_status(\base_setting::NOT_LOCKED);
+            $setting->set_value(false);
+        }
         $setting->set_status(\base_setting::LOCKED_BY_CONFIG);
     }
 }

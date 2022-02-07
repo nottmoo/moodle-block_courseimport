@@ -26,6 +26,7 @@
 namespace block_courseimport\external;
 
 use block_courseimport\job;
+use external_api;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -50,12 +51,23 @@ class jobs_test extends \advanced_testcase  {
      * @dataProvider data_progress
      */
     public function test_progress(float $backup, float $import, float $expected) {
+        global $USER;
         $this->resetAfterTest(true);
         $generator = self::getDataGenerator()->get_plugin_generator('block_courseimport');
         $job = $generator->create_job(['backupprogress' => $backup, 'restoreprogress' => $import]);
+
+        require_once(dirname(dirname(dirname(dirname(__DIR__)))) . '/lib/externallib.php');
+
         $this->setAdminUser();
-        $result = jobs::progress($job->id);
-        self::assertEquals($expected, $result['progress']);
+        // Do not require a session key via POST, so that the calls will not error.
+        $USER->ignoresesskey = true;
+
+        $args = [
+            'id' => $job->id
+        ];
+        $result = external_api::call_external_function('block_courseimport_get_job_progress', $args);
+        $this->assertFalse($result['error']);
+        $this->assertEquals($expected, $result['data']['progress']);
     }
 
     /**
@@ -83,14 +95,25 @@ class jobs_test extends \advanced_testcase  {
      * @dataProvider data_progress_status
      */
     public function test_progress_status(string $status, bool $started, bool $finished, bool $failed) {
+        global $USER;
         $this->resetAfterTest(true);
         $generator = self::getDataGenerator()->get_plugin_generator('block_courseimport');
         $job = $generator->create_job(['status' => $status]);
+
+        require_once(dirname(dirname(dirname(dirname(__DIR__)))) . '/lib/externallib.php');
+
         $this->setAdminUser();
-        $result = jobs::progress($job->id);
-        self::assertEquals($started, $result['started']);
-        self::assertEquals($finished, $result['finished']);
-        self::assertEquals($failed, $result['failed']);
+        // Do not require a session key via POST, so that the calls will not error.
+        $USER->ignoresesskey = true;
+
+        $args = [
+            'id' => $job->id
+        ];
+        $result = external_api::call_external_function('block_courseimport_get_job_progress', $args);
+        $this->assertFalse($result['error']);
+        $this->assertEquals($started, $result['data']['started']);
+        $this->assertEquals($finished, $result['data']['finished']);
+        $this->assertEquals($failed, $result['data']['failed']);
     }
 
     /**
