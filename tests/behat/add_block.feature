@@ -13,8 +13,8 @@ Feature: Adding course import block to a course
   Scenario: Admins should be able to add the block
     Given I am on the "N12401-UK-SPR1415" "course" page logged in as "admin"
     And I turn editing mode on
-    When I add the "Course Import" block
-    Then I should see "Course Import" in the "Course Import" "block"
+    When I add the "Course import" block
+    Then I should see "Course import" in the "Course import" "block"
 
   Scenario Outline: Other users should not be able to add the block
     Given the following "user" exists:
@@ -29,7 +29,7 @@ Feature: Adding course import block to a course
     Given I am on the "N12401-UK-SPR1415" "course" page logged in as "user1"
     And I turn editing mode on
     When I click on "Add a block" "link_or_button"
-    Then I should not see "Course Import" in the "Add a block" "dialogue"
+    Then I should not see "Course import" in the "Add a block" "dialogue"
 
     Examples:
       | role           |

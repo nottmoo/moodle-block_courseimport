@@ -28,7 +28,7 @@ Feature: Test block_courseimport function
 
   Scenario: Previous year's course is not accessible
     Given I am on the "N12401-UK-SPR1415" "course" page logged in as "teacher1"
-    When I click on "Course Import" "link" in the "Course Import" "block"
+    When I click on "Course import" "link" in the "Course import" "block"
     Then I should see "You do not have permission to import from the modules below."
     And I should see "You should contact the module's owner to ask for the Editing Teacher role if you wish to import from one."
     And I should see "N12401-UK-SPR1314"
@@ -39,12 +39,12 @@ Feature: Test block_courseimport function
       | course | N12401-UK-SPR1314 |
       | role   | editingteacher    |
     And I am on the "N12401-UK-SPR1415" "course" page logged in as "teacher1"
-    When I click on "Course Import" "link" in the "Course Import" "block"
+    When I click on "Course import" "link" in the "Course import" "block"
     Then the field "N12401-UK-SPR1314" matches value "1"
 
   Scenario: Searching does not return courses the user cannot access
     Given I am on the "N12401-UK-SPR1415" "course" page logged in as "teacher1"
-    And I click on "Course Import" "link" in the "Course Import" "block"
+    And I click on "Course import" "link" in the "Course import" "block"
     When I set the following fields to these values:
       | Search courses | P13140 |
     And I press "Search"
@@ -52,7 +52,7 @@ Feature: Test block_courseimport function
 
   Scenario: Searching returns courses the user can access
     Given I am on the "N12401-UK-SPR1415" "course" page logged in as "teacher1"
-    And I click on "Course Import" "link" in the "Course Import" "block"
+    And I click on "Course import" "link" in the "Course import" "block"
     When I set the following fields to these values:
       | Search courses | P12130 |
     And I press "Search"
@@ -65,7 +65,7 @@ Feature: Test block_courseimport function
       | course | N12401-UK-SPR1314 |
       | role   | editingteacher    |
     And I am on the "N12401-UK-SPR1415" "course" page logged in as "teacher1"
-    And I select "Course Import" from secondary navigation
+    And I select "Course import" from secondary navigation
     When I press "Continue"
     And I set the following fields to these values:
       | Include activities and resources | 1 |
@@ -76,5 +76,5 @@ Feature: Test block_courseimport function
     Then I should see "Content queued for import"
     And I click on "Return to course" "link_or_button"
     # Verify that going back still shows things as queued.
-    And I click on "Course Import" "link" in the "Course Import" "block"
+    And I click on "Course import" "link" in the "Course import" "block"
     And I should see "Content queued for import"
