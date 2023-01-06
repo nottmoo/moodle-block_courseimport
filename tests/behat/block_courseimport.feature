@@ -27,8 +27,7 @@ Feature: Test block_courseimport function
       | defaultregion   | site-pre          |
 
   Scenario: Previous year's course is not accessible
-    Given I log in as "teacher1"
-    And I am on "N12401-UK-SPR1415" course homepage
+    Given I am on the "N12401-UK-SPR1415" "course" page logged in as "teacher1"
     When I click on "Course Import" "link" in the "Course Import" "block"
     Then I should see "You do not have permission to import from the modules below."
     And I should see "You should contact the module's owner to ask for the Editing Teacher role if you wish to import from one."
@@ -39,14 +38,12 @@ Feature: Test block_courseimport function
       | user   | teacher1          |
       | course | N12401-UK-SPR1314 |
       | role   | editingteacher    |
-    And I log in as "teacher1"
-    And I am on "N12401-UK-SPR1415" course homepage
+    And I am on the "N12401-UK-SPR1415" "course" page logged in as "teacher1"
     When I click on "Course Import" "link" in the "Course Import" "block"
     Then the field "N12401-UK-SPR1314" matches value "1"
 
   Scenario: Searching does not return courses the user cannot access
-    Given I log in as "teacher1"
-    And I am on "N12401-UK-SPR1415" course homepage
+    Given I am on the "N12401-UK-SPR1415" "course" page logged in as "teacher1"
     And I click on "Course Import" "link" in the "Course Import" "block"
     When I set the following fields to these values:
       | Search courses | P13140 |
@@ -54,8 +51,7 @@ Feature: Test block_courseimport function
     Then I should not see "P13140-UK-SPR1415"
 
   Scenario: Searching returns courses the user can access
-    Given I log in as "teacher1"
-    And I am on "N12401-UK-SPR1415" course homepage
+    Given I am on the "N12401-UK-SPR1415" "course" page logged in as "teacher1"
     And I click on "Course Import" "link" in the "Course Import" "block"
     When I set the following fields to these values:
       | Search courses | P12130 |
@@ -68,9 +64,8 @@ Feature: Test block_courseimport function
       | user   | teacher1          |
       | course | N12401-UK-SPR1314 |
       | role   | editingteacher    |
-    And I log in as "teacher1"
-    And I am on "N12401-UK-SPR1415" course homepage
-    And I click on "Course Import" "link" in the "Course Import" "block"
+    And I am on the "N12401-UK-SPR1415" "course" page logged in as "teacher1"
+    And I select "Course Import" from secondary navigation
     When I press "Continue"
     And I set the following fields to these values:
       | Include activities and resources | 1 |
