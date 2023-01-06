@@ -16,6 +16,7 @@
 
 namespace block_courseimport;
 use \core\message\message;
+use local_uonlib\course_utils;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -40,7 +41,7 @@ class messenger {
      */
     public static function import_success($userid, $targetcourseid, $targetcourse, $sourcecourse) {
         global $DB;
-        $campusmail = \local_uonlib_courselib::get_support_email("");
+        $campusmail = course_utils::get_support_email("");
         $fromuser = $DB->get_record('user', array('email' => $campusmail));
         if (!$fromuser) {
             return;
@@ -77,7 +78,7 @@ class messenger {
      */
     public static function failure(string $subject, string $message, int $courseid, ?int $userid = null): bool {
         global $DB;
-        $campusmail = \local_uonlib_courselib::get_support_email(""); // This will get default support email, which is UK support email.
+        $campusmail = course_utils::get_support_email(""); // This will get default support email, which is UK support email.
         $campus = $DB->get_record('user', ['email' => $campusmail]);
         if (!$campus) {
             // No support email user.

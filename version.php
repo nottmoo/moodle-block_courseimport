@@ -30,5 +30,5 @@ $plugin->release = '1.4.0 (2022-01-21)';
 $plugin->maturity =  MATURITY_STABLE;
 $plugin->component = 'block_courseimport';
 $plugin->dependencies = array(
-    'local_uonlib' => 2018012200,
+    'local_uonlib' => 2023010500,
 );

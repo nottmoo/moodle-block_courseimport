@@ -18,7 +18,7 @@ namespace block_courseimport\output;
 
 use block_courseimport\search;
 use context_course;
-use local_uonlib_courselib;
+use local_uonlib\course_utils;
 use block_courseimport\job;
 
 defined('MOODLE_INTERNAL') || die;
@@ -51,7 +51,7 @@ class renderer extends \core_backup_renderer {
         $data->searchname = search::$VAR_SEARCH;
         $data->searchvalue = $component->get_search();
 
-        $coursedetails = local_uonlib_courselib::get_module_details($COURSE);
+        $coursedetails = course_utils::get_module_details($COURSE);
 
         if ($coursedetails && ($coursedetails['yearcode']) && ($coursedetails['modulecode'])) {
             $modulecode = $coursedetails['modulecode'];
@@ -88,7 +88,7 @@ class renderer extends \core_backup_renderer {
                     continue;
                 }
 
-                $moduledetail = local_uonlib_courselib::get_module_details($course);
+                $moduledetail = course_utils::get_module_details($course);
                 $thisyearcode = $moduledetail['yearcode'];
 
                 if (!$highlight && $moduledetail['modulecode'] === $modulecode && (int) $thisyearcode < (int) $yearcode) {
