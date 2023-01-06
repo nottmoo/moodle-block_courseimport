@@ -53,7 +53,7 @@ class renderer extends \core_backup_renderer {
 
         $coursedetails = course_utils::get_module_details($COURSE);
 
-        if ($coursedetails && ($coursedetails['yearcode']) && ($coursedetails['modulecode'])) {
+        if ($coursedetails && $coursedetails['modulecode']) {
             $modulecode = $coursedetails['modulecode'];
             $yearcode  = $coursedetails['yearcode'];
             $colist = $component->get_shortnameresults($modulecode, $COURSE->shortname);
@@ -65,7 +65,7 @@ class renderer extends \core_backup_renderer {
 
         $highlight = false;
 
-        $data->nomatching = (!$modulecode || !$yearcode || $component->get_count() === 0);
+        $data->nomatching = ($component->get_count() === 0);
 
         if (!$data->nomatching) {
             foreach ($component->get_results() as $course) {
@@ -106,9 +106,10 @@ class renderer extends \core_backup_renderer {
 
         $searchstr = trim(optional_param('search', '', PARAM_TEXT));
 
-        // Course list for shortname search is not treat as original course list.
+        // Course list for shortname search is not treated as original course list.
         if ((!is_null($colist)) and (count($colist) > 0) and ($searchstr === "")) {
             $data->hasinaccesibile = true;
+            $data->resultcount += count($colist);
 
             foreach ($colist as $course) {
                 $context = context_course::instance($course->id);
