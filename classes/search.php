@@ -79,7 +79,7 @@ class search extends \import_course_search {
             'shortnamestr' => strtolower($shortnamestr),
             'siteid' => SITEID,
             'coursecode' => strtolower($coursecode).'%',
-            );
+        );
 
         $likesql = $DB->sql_like('LOWER(c.shortname)', ':coursecode');
         $searchsql = 'SELECT c.id, c.fullname, c.shortname, c.visible, c.sortorder,
@@ -118,7 +118,7 @@ class search extends \import_course_search {
                     $shortnamesearch = substr($shortnamestring, 0, $shortnamehyphen);
                 }
                 // Non saturn courses require a more specific short name.
-                if (strlen($shortnamesearch) < 4 and $shortnamehyphen) {
+                if (strlen($shortnamesearch) <= 4 and $shortnamehyphen) {
                     $shortnamesearch = substr($shortnamestring,0,-4);
                 }
             } else {

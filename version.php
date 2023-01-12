@@ -24,11 +24,11 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2022012100;
-$plugin->requires = 2021051700;
-$plugin->release = '1.4.0 (2022-01-21)';
+$plugin->version = 2023010600;
+$plugin->requires = 2022111800;
+$plugin->release = '1.5.0 (2023-01-06)';
 $plugin->maturity =  MATURITY_STABLE;
 $plugin->component = 'block_courseimport';
 $plugin->dependencies = array(
-    'local_uonlib' => 2018012200,
+    'local_uonlib' => 2023010500,
 );

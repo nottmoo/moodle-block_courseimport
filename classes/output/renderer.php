@@ -18,7 +18,7 @@ namespace block_courseimport\output;
 
 use block_courseimport\search;
 use context_course;
-use local_uonlib_courselib;
+use local_uonlib\course_utils;
 use block_courseimport\job;
 
 defined('MOODLE_INTERNAL') || die;
@@ -51,9 +51,9 @@ class renderer extends \core_backup_renderer {
         $data->searchname = search::$VAR_SEARCH;
         $data->searchvalue = $component->get_search();
 
-        $coursedetails = local_uonlib_courselib::get_module_details($COURSE);
+        $coursedetails = course_utils::get_module_details($COURSE);
 
-        if ($coursedetails && ($coursedetails['yearcode']) && ($coursedetails['modulecode'])) {
+        if ($coursedetails && $coursedetails['modulecode']) {
             $modulecode = $coursedetails['modulecode'];
             $yearcode  = $coursedetails['yearcode'];
             $colist = $component->get_shortnameresults($modulecode, $COURSE->shortname);
@@ -65,7 +65,7 @@ class renderer extends \core_backup_renderer {
 
         $highlight = false;
 
-        $data->nomatching = (!$modulecode || !$yearcode || $component->get_count() === 0);
+        $data->nomatching = ($component->get_count() === 0);
 
         if (!$data->nomatching) {
             foreach ($component->get_results() as $course) {
@@ -88,7 +88,7 @@ class renderer extends \core_backup_renderer {
                     continue;
                 }
 
-                $moduledetail = local_uonlib_courselib::get_module_details($course);
+                $moduledetail = course_utils::get_module_details($course);
                 $thisyearcode = $moduledetail['yearcode'];
 
                 if (!$highlight && $moduledetail['modulecode'] === $modulecode && (int) $thisyearcode < (int) $yearcode) {
@@ -106,9 +106,10 @@ class renderer extends \core_backup_renderer {
 
         $searchstr = trim(optional_param('search', '', PARAM_TEXT));
 
-        // Course list for shortname search is not treat as original course list.
+        // Course list for shortname search is not treated as original course list.
         if ((!is_null($colist)) and (count($colist) > 0) and ($searchstr === "")) {
             $data->hasinaccesibile = true;
+            $data->resultcount += count($colist);
 
             foreach ($colist as $course) {
                 $context = context_course::instance($course->id);
