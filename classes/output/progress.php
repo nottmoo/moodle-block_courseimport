@@ -14,20 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Output element for progress of a job.
- *
- * @package    block_courseimport
- * @author     Neill Magill <neill.magill@nottingham.ac.uk>
- * @copyright  2020 University of Nottingham
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace block_courseimport\output;
 
 use block_courseimport\job;
-
-require_once($CFG->libdir . '/externallib.php');
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Progress output component.
@@ -91,18 +82,18 @@ class progress implements \renderable, \templatable {
     /**
      * Defines the structure of data that will be returned for an external function.
      *
-     * @return \external_single_structure
+     * @return \core_external\external_single_structure
      */
-    public static function external_export_definition(): \external_single_structure {
+    public static function external_export_definition(): external_single_structure {
         $params = [
-            'backupid' => new \external_value(PARAM_INT, 'The id of the job', VALUE_REQUIRED),
-            'courseurl' => new \external_value(PARAM_LOCALURL, 'URL for the import course', VALUE_REQUIRED),
-            'failed' => new \external_value(PARAM_BOOL, 'Flags if the job has failed', VALUE_REQUIRED),
-            'finished' => new \external_value(PARAM_BOOL, 'Flags if the job has finished', VALUE_REQUIRED),
-            'started' => new \external_value(PARAM_BOOL, 'Flags if the job has started', VALUE_REQUIRED),
-            'progress' => new \external_value(PARAM_FLOAT, 'The progress of the job', VALUE_REQUIRED),
+            'backupid' => new external_value(PARAM_INT, 'The id of the job', VALUE_REQUIRED),
+            'courseurl' => new external_value(PARAM_LOCALURL, 'URL for the import course', VALUE_REQUIRED),
+            'failed' => new external_value(PARAM_BOOL, 'Flags if the job has failed', VALUE_REQUIRED),
+            'finished' => new external_value(PARAM_BOOL, 'Flags if the job has finished', VALUE_REQUIRED),
+            'started' => new external_value(PARAM_BOOL, 'Flags if the job has started', VALUE_REQUIRED),
+            'progress' => new external_value(PARAM_FLOAT, 'The progress of the job', VALUE_REQUIRED),
         ];
-        return new \external_single_structure($params);
+        return new external_single_structure($params);
     }
 
     /**
