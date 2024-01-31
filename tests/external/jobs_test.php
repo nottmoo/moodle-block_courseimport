@@ -39,6 +39,7 @@ defined('MOODLE_INTERNAL') || die();
  * @author      Neill Magill <neill.magill@nottingham.ac.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @runInSeparateProcess
+ * @covers \block_courseimport\external\jobs
  * @group block_courseimport
  * @group uon
  */
