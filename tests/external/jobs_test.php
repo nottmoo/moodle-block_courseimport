@@ -26,7 +26,7 @@
 namespace block_courseimport\external;
 
 use block_courseimport\job;
-use external_api;
+use core_external\external_api;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -38,6 +38,8 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright   University of Nottingham, 2020
  * @author      Neill Magill <neill.magill@nottingham.ac.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @runInSeparateProcess
+ * @covers \block_courseimport\external\jobs
  * @group block_courseimport
  * @group uon
  */
@@ -55,8 +57,6 @@ class jobs_test extends \advanced_testcase  {
         $this->resetAfterTest(true);
         $generator = self::getDataGenerator()->get_plugin_generator('block_courseimport');
         $job = $generator->create_job(['backupprogress' => $backup, 'restoreprogress' => $import]);
-
-        require_once(dirname(dirname(dirname(dirname(__DIR__)))) . '/lib/externallib.php');
 
         $this->setAdminUser();
         // Do not require a session key via POST, so that the calls will not error.
@@ -99,8 +99,6 @@ class jobs_test extends \advanced_testcase  {
         $this->resetAfterTest(true);
         $generator = self::getDataGenerator()->get_plugin_generator('block_courseimport');
         $job = $generator->create_job(['status' => $status]);
-
-        require_once(dirname(dirname(dirname(dirname(__DIR__)))) . '/lib/externallib.php');
 
         $this->setAdminUser();
         // Do not require a session key via POST, so that the calls will not error.

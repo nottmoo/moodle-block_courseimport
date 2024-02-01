@@ -14,22 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * External functions for the plugin.
- *
- * @package    block_courseimport
- * @author     Neill Magill <neill.magill@nottingham.ac.uk>
- * @copyright  2020 University of Nottingham
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace block_courseimport\external;
 
 use block_courseimport\output\progress;
-
-defined('MOODLE_INTERNAL') || die();
-
-require_once($CFG->libdir . '/externallib.php');
+use core_external\external_function_parameters;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Class that contains the external functions for the plugin.
@@ -39,7 +29,7 @@ require_once($CFG->libdir . '/externallib.php');
  * @copyright  2020 University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class jobs extends \external_api {
+class jobs extends \core_external\external_api {
     /**
      * Gets the progress of a job.
      *
@@ -60,21 +50,21 @@ class jobs extends \external_api {
     /**
      * Defines the inputs for the progress web service method.
      *
-     * @return \external_function_parameters
+     * @return \core_external\external_function_parameters
      */
-    public static function progress_parameters(): \external_function_parameters {
+    public static function progress_parameters(): external_function_parameters {
         $params = [
-            'id' => new \external_value(PARAM_INT, 'The id of a job', VALUE_REQUIRED),
+            'id' => new external_value(PARAM_INT, 'The id of a job', VALUE_REQUIRED),
         ];
-        return new \external_function_parameters($params);
+        return new external_function_parameters($params);
     }
 
     /**
      * Defines the output of the progress web service.
      *
-     * @return \external_single_structure
+     * @return \core_external\external_single_structure
      */
-    public static function progress_returns(): \external_single_structure {
+    public static function progress_returns(): external_single_structure {
         return progress::external_export_definition();
     }
 }
