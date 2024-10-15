@@ -78,7 +78,7 @@ class renderer extends \core_backup_renderer {
                     'shortname' => format_string($course->shortname, true, ['context' => $context]),
                 ];
 
-                if ((!is_null($colist)) and (array_key_exists($course->id, $colist))) {
+                if (!is_null($colist) && array_key_exists($course->id, $colist)) {
                     // Remove the course from the found course.
                     unset($colist[$course->id]);
                 }
@@ -107,7 +107,7 @@ class renderer extends \core_backup_renderer {
         $searchstr = trim(optional_param('search', '', PARAM_TEXT));
 
         // Course list for shortname search is not treated as original course list.
-        if ((!is_null($colist)) and (count($colist) > 0) and ($searchstr === "")) {
+        if (!is_null($colist) && count($colist) > 0 && $searchstr === "") {
             $data->hasinaccesibile = true;
             $data->resultcount += count($colist);
 
