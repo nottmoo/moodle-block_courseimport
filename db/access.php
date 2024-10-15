@@ -39,8 +39,7 @@
  *
  * The variable name for the capability definitions array is $capabilities
  *
- * @package    block
- * @subpackage courseimport
+ * @package    block_courseimport
  * @author  Yijun Xue <yijun.xue@nottingham.ac.uk>
  * @copyright  2013 University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later

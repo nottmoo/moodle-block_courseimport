@@ -31,7 +31,6 @@ use context_user;
  * Tests the import_helper class of the course import block.
  *
  * @package     block_courseimport
- * @category    testing
  * @copyright   University of Nottingham, 2020
  * @author      Neill Magill <neill.magill@nottingham.ac.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later

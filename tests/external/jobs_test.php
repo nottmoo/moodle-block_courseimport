@@ -32,7 +32,6 @@ use core_external\external_api;
  * Tests the enternal methods of the jobs class.
  *
  * @package     block_courseimport
- * @category    testing
  * @copyright   University of Nottingham, 2020
  * @author      Neill Magill <neill.magill@nottingham.ac.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
