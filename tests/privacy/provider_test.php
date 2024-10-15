@@ -227,14 +227,14 @@ class provider_test extends \core_privacy\tests\provider_testcase {
         $userlist1 = new userlist($usercontext1, $component);
         provider::get_users_in_context($userlist1);
         $this->assertCount(1, $userlist1);
-        $expected = array($user1->id);
+        $expected = [$user1->id];
         $actual = $userlist1->get_userids();
         $this->assertEquals($expected, $actual);
 
         $userlist2 = new userlist($usercontext2, $component);
         provider::get_users_in_context($userlist2);
         $this->assertCount(1, $userlist2);
-        $expected = array($user2->id);
+        $expected = [$user2->id];
         $actual = $userlist2->get_userids();
         $this->assertEquals($expected, $actual);
     }

@@ -50,7 +50,7 @@ class provider implements
         // Sub systems used.
         $collection->add_subsystem_link('core_backup', [], 'privacy:metadata:core_backup');
         // Personal data stored in the database.
-        $jobs = array(
+        $jobs = [
             'source' => 'privacy:metadata:block_courseimport:source',
             'target' => 'privacy:metadata:block_courseimport:target',
             'userid' => 'privacy:metadata:block_courseimport:userid',
@@ -58,7 +58,7 @@ class provider implements
             'status' => 'privacy:metadata:block_courseimport:status',
             'timecreated' => 'privacy:metadata:block_courseimport:timecreated',
             'timemodified' => 'privacy:metadata:block_courseimport:timemodified',
-        );
+        ];
         $collection->add_database_table('block_courseimport', $jobs, 'privacy:metadata:block_courseimport');
         // Does not export data from Moodle to another system.
         // Does not store any user preferences.

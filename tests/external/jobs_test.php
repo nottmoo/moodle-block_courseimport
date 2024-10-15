@@ -61,7 +61,7 @@ class jobs_test extends \advanced_testcase  {
         $USER->ignoresesskey = true;
 
         $args = [
-            'id' => $job->id
+            'id' => $job->id,
         ];
         $result = external_api::call_external_function('block_courseimport_get_job_progress', $args);
         $this->assertFalse($result['error']);
@@ -103,7 +103,7 @@ class jobs_test extends \advanced_testcase  {
         $USER->ignoresesskey = true;
 
         $args = [
-            'id' => $job->id
+            'id' => $job->id,
         ];
         $result = external_api::call_external_function('block_courseimport_get_job_progress', $args);
         $this->assertFalse($result['error']);

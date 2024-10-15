@@ -45,8 +45,13 @@ class block_courseimport extends block_base {
      * @return array
      */
     public function applicable_formats() {
-        return array('all' => true, 'mod' => false, 'my' => false, 'admin' => false,
-            'tag' => false);
+        return [
+            'all' => true,
+            'mod' => false,
+            'my' => false,
+            'admin' => false,
+            'tag' => false,
+        ];
     }
 
     /**
@@ -77,7 +82,7 @@ class block_courseimport extends block_base {
             if (has_capability('block/courseimport:view', $coursecontext)
                 && has_capability('moodle/course:update', $coursecontext)
             ) {
-                $importpageurl = new moodle_url('/blocks/courseimport/import.php', array('id' => $COURSE->id));
+                $importpageurl = new moodle_url('/blocks/courseimport/import.php', ['id' => $COURSE->id]);
                 $this->content->text .= html_writer::link($importpageurl, get_string('importlink', 'block_courseimport'));
 
                 return $this->content;

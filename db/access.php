@@ -47,33 +47,33 @@
  */
 defined('MOODLE_INTERNAL') || die();
 
-$capabilities = array(
+$capabilities = [
     // Capability to allow an editing teacher or admin to view the course import block.
-    'block/courseimport:view' => array(
+    'block/courseimport:view' => [
 
         'riskbitmask' => RISK_DATALOSS,
         'captype' => 'read',
         'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => array(
+        'archetypes' => [
             'editingteacher' => CAP_ALLOW,
-            'manager' => CAP_ALLOW
-        )
-    ),
+            'manager' => CAP_ALLOW,
+        ],
+    ],
     // Capability to allow an admin to manage settings.
-    'block/courseimport:manage' => array(
+    'block/courseimport:manage' => [
 
         'riskbitmask' => RISK_DATALOSS,
         'captype' => 'write',
         'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes' => array(
-            'manager' => CAP_ALLOW
-        )
-    ),
+        'archetypes' => [
+            'manager' => CAP_ALLOW,
+        ],
+    ],
     // Capability to allow a user to add the block to a page.
-    'block/courseimport:addinstance' => array(
+    'block/courseimport:addinstance' => [
         'captype' => 'write',
         'contextlevel' => CONTEXT_BLOCK,
-        'archetypes' => array(
-        ),
-    ),
-);
+        'archetypes' => [
+        ],
+    ],
+];

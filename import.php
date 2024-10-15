@@ -53,7 +53,7 @@ $heading = get_string('import');
 // Set up the page.
 $PAGE->set_title($heading);
 $PAGE->set_heading($heading);
-$PAGE->set_url(new moodle_url('/blocks/courseimport/import.php', array('id' => $courseid)));
+$PAGE->set_url(new moodle_url('/blocks/courseimport/import.php', ['id' => $courseid]));
 $PAGE->set_context($context);
 $PAGE->set_pagelayout('incourse');
 $renderer = $PAGE->get_renderer('block_courseimport');
@@ -69,8 +69,8 @@ if (\block_courseimport\job::job_queued($courseid)) {
 
 // Check if we already have a import course id.
 if ($importcourseid === false || $search !== false) {
-    $url = new moodle_url('/blocks/courseimport/import.php', array('id' => $courseid));
-    $search = new search(array('url' => $url), $courseid);
+    $url = new moodle_url('/blocks/courseimport/import.php', ['id' => $courseid]);
+    $search = new search(['url' => $url], $courseid);
     // Show the course selector.
     echo $OUTPUT->header();
     //Here find and list the user's course.
@@ -101,7 +101,7 @@ if (!($bc = backup_ui::load_controller($backupid))) {
     import_ui::skip_current_stage(!$visiblesettings);
 }
 // Prepare the import UI.
-$backup = new import_ui($bc, array('importid' => $importcourse->id, 'target' => $restoretarget));
+$backup = new import_ui($bc, ['importid' => $importcourse->id, 'target' => $restoretarget]);
 // Process the current stage.
 $backup->process();
 if ($backup->get_stage() === backup_ui::STAGE_SCHEMA) {

@@ -40,19 +40,19 @@ class search_test extends \advanced_testcase {
 
         // First create some courses.
         // This group should all match each other.
-        $course0g1 = self::getDataGenerator()->create_course(array('shortname' => 'XX3L11-UK-FYR1112'));
-        $course1g1 = self::getDataGenerator()->create_course(array('shortname' => 'XX3L11-UK-FYR1213'));
-        $course2g1 = self::getDataGenerator()->create_course(array('shortname' => 'XX3L11-UK-FYR1314'));
-        $course3g1 = self::getDataGenerator()->create_course(array('shortname' => 'XX3L11-MY-FYR1314'));
-        $course4g1 = self::getDataGenerator()->create_course(array('shortname' => 'XX3L11-CN-FYR1314'));
+        $course0g1 = self::getDataGenerator()->create_course(['shortname' => 'XX3L11-UK-FYR1112']);
+        $course1g1 = self::getDataGenerator()->create_course(['shortname' => 'XX3L11-UK-FYR1213']);
+        $course2g1 = self::getDataGenerator()->create_course(['shortname' => 'XX3L11-UK-FYR1314']);
+        $course3g1 = self::getDataGenerator()->create_course(['shortname' => 'XX3L11-MY-FYR1314']);
+        $course4g1 = self::getDataGenerator()->create_course(['shortname' => 'XX3L11-CN-FYR1314']);
         // The UK codes in this group group should also match each other.
-        $course0g2 = self::getDataGenerator()->create_course(array('shortname' => 'LE-CAREERS-ECON-UK-1213'));
-        $course1g2 = self::getDataGenerator()->create_course(array('shortname' => 'LE-CAREERS-ECON-UK-1314'));
-        $course2g2 = self::getDataGenerator()->create_course(array('shortname' => 'LE-CAREERS-ECON-CN-1314'));
+        $course0g2 = self::getDataGenerator()->create_course(['shortname' => 'LE-CAREERS-ECON-UK-1213']);
+        $course1g2 = self::getDataGenerator()->create_course(['shortname' => 'LE-CAREERS-ECON-UK-1314']);
+        $course2g2 = self::getDataGenerator()->create_course(['shortname' => 'LE-CAREERS-ECON-CN-1314']);
         // Some random courses.
-        $course0g3 = self::getDataGenerator()->create_course(array('shortname' => 'XX3L12-UK-FYR1413'));
-        $course0g3 = self::getDataGenerator()->create_course(array('shortname' => 'G53NMD-UK-AUT-G53NMD-MY-AUT-1314'));
-        $course0g3 = self::getDataGenerator()->create_course(array('shortname' => 'PA-HS-INDUCT-UK'));
+        $course0g3 = self::getDataGenerator()->create_course(['shortname' => 'XX3L12-UK-FYR1413']);
+        $course0g3 = self::getDataGenerator()->create_course(['shortname' => 'G53NMD-UK-AUT-G53NMD-MY-AUT-1314']);
+        $course0g3 = self::getDataGenerator()->create_course(['shortname' => 'PA-HS-INDUCT-UK']);
         $search = new search();
 
         $results0 = $search->searchshortname('XX3L11', 'XX3L11-UK-FYR1112');

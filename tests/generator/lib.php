@@ -33,7 +33,7 @@ class block_courseimport_generator extends testing_block_generator {
     public function create_job($job) : stdClass {
         global $DB;
         $now = time();
-        $defaults = array(
+        $defaults = [
             'target' => null,
             'source' => null,
             'userid' => null,
@@ -43,7 +43,7 @@ class block_courseimport_generator extends testing_block_generator {
             'restoreprogress' => 0.0,
             'timecreated' => $now,
             'timemodified' => $now,
-        );
+        ];
         $record = (object)$this->datagenerator->combine_defaults_and_record($defaults, $job);
         // Ensure there is a source course.
         if (is_null($record->source)) {

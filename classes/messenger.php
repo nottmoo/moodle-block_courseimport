@@ -40,13 +40,13 @@ class messenger {
     public static function import_success($userid, $targetcourseid, $targetcourse, $sourcecourse) {
         global $DB;
         $campusmail = course_utils::get_support_email("");
-        $fromuser = $DB->get_record('user', array('email' => $campusmail));
+        $fromuser = $DB->get_record('user', ['email' => $campusmail]);
         if (!$fromuser) {
             return;
         }
         $context = \context_course::instance($targetcourseid);
 
-        $textparams = array('importto' => $targetcourse, 'importfrom' => $sourcecourse);
+        $textparams = ['importto' => $targetcourse, 'importfrom' => $sourcecourse];
         $text = get_string('useremailmessage', 'block_courseimport', $textparams);
 
         $message = new message();

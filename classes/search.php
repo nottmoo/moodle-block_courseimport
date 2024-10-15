@@ -74,12 +74,12 @@ class search extends \import_course_search {
         if ((isset($this->shortnameresults[$queryhash]))) {
             return count($this->shortnameresults[$queryhash]);
         }
-        $this->shortnameresults = array();
-        $params = array(
+        $this->shortnameresults = [];
+        $params = [
             'shortnamestr' => strtolower($shortnamestr),
             'siteid' => SITEID,
             'coursecode' => strtolower($coursecode).'%',
-        );
+        ];
 
         $likesql = $DB->sql_like('LOWER(c.shortname)', ':coursecode');
         $searchsql = 'SELECT c.id, c.fullname, c.shortname, c.visible, c.sortorder,
@@ -103,10 +103,10 @@ class search extends \import_course_search {
         global $DB, $COURSE;
         $ctxselect = context_helper::get_preload_record_columns_sql('ctx');
         $ctxjoin = "LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = :contextlevel)";
-        $params = array(
+        $params = [
             'siteid' => SITEID,
-            'contextlevel' => CONTEXT_COURSE
-        );
+            'contextlevel' => CONTEXT_COURSE,
+        ];
         // If no search string supplied use target course short name.
         $shortnamesearch = $this->get_search();
         if (empty($shortnamesearch)) {
@@ -124,9 +124,9 @@ class search extends \import_course_search {
             } else {
                 // Should not get here if the course names in the db are in the right format
                 // If we do bottle out as we don't want to do a bad query
-                $params = array();
+                $params = [];
                 $select = "SELECT NULL from {course} where FALSE";
-                return array($select, $params);
+                return [$select, $params];
             }
             $params['shortnamesearch'] = $shortnamesearch . '%';
             $where = " WHERE (" . $DB->sql_like('c.shortname', ':shortnamesearch', false) . ") AND c.id <> :siteid";
@@ -143,6 +143,6 @@ class search extends \import_course_search {
             $where .= " AND c.id <> :currentcourseid";
             $params['currentcourseid'] = $this->currentcourseid;
         }
-        return array($select . $ctxselect . $from . $ctxjoin . $where . $orderby, $params);
+        return [$select . $ctxselect . $from . $ctxjoin . $where . $orderby, $params];
     }
 }
