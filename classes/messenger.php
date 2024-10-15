@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace block_courseimport;
-use \core\message\message;
+use core\message\message;
 use local_uonlib\course_utils;
 
 /**

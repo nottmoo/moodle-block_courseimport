@@ -25,7 +25,7 @@
 
 require_once(dirname(__FILE__) . '/../../config.php');
 
-use \block_courseimport\import_helper;
+use block_courseimport\import_helper;
 use block_courseimport\search;
 
 // Require both the backup and restore libs.
