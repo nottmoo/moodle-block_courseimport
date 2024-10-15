@@ -26,8 +26,6 @@ use \core_privacy\local\request\approved_userlist;
 use \core_privacy\local\request\userlist;
 use \block_courseimport\job;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Privacy provider for the course import block.
  *

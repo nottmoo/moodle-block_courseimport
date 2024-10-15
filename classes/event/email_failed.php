@@ -23,7 +23,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 namespace block_courseimport\event;
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * Event for when send user eamil failed.

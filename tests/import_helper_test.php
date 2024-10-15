@@ -27,8 +27,6 @@ namespace block_courseimport;
 
 use context_user;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests the import_helper class of the course import block.
  *

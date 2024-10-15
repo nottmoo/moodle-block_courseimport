@@ -28,8 +28,6 @@ namespace block_courseimport\external;
 use block_courseimport\job;
 use core_external\external_api;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests the enternal methods of the jobs class.
  *

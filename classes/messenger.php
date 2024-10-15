@@ -18,8 +18,6 @@ namespace block_courseimport;
 use \core\message\message;
 use local_uonlib\course_utils;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Class for sending messages.
  *

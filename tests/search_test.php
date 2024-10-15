@@ -16,8 +16,6 @@
 
 namespace block_courseimport;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests the block_courseimport_search class.
  *

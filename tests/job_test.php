@@ -25,8 +25,6 @@
 
 namespace block_courseimport;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests the job class of the course import block.
  *
