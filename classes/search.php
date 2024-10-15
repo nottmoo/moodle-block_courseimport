@@ -63,7 +63,6 @@ class search extends \import_course_search {
     /**
      * Case insensative search for courses with similar shortname but same code.
      *
-     * @global \moodle_database $DB
      * @param string $coursecode - fragment of a shortname to match.
      * @param string $shortnamestr - the short name of a course that should not be returned.
      * @return int - the number of results found.
@@ -96,7 +95,6 @@ class search extends \import_course_search {
     /**
      * Create search SQL
      *
-     * @global \moodle_database $DB
      * @return array sql and parameters
      */
     protected function get_searchsql() {

@@ -26,7 +26,6 @@ class block_courseimport_generator extends testing_block_generator {
     /**
      * Creates a job in the import queue.
      *
-     * @global moodle_database $DB
      * @param array|stdClass $job
      * @return stdClass
      */

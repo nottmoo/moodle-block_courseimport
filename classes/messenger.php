@@ -30,7 +30,6 @@ class messenger {
     /**
      * Sends a message that an import job completed successfully.
      *
-     * @global \moodle_database $DB
      * @param int $userid The id of the user the message is to.
      * @param int $targetcourseid The id of the course that content was imported into.
      * @param string $targetcourse The name of the course content was imported into.

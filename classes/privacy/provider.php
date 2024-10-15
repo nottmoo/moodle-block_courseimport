@@ -68,7 +68,6 @@ class provider implements
     /**
      * Get the list of contexts that contain user information for the specified user.
      *
-     * @global \moodle_database $DB
      * @param int $userid The user to search.
      * @return contextlist $contextlist The contextlist containing the list of contexts used in this plugin.
      */
