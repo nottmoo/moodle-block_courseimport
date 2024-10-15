@@ -125,7 +125,7 @@ class job_test extends \advanced_testcase  {
 
         // We will now test that we can use the record to create a job object.
         $record = clone $records[$job->id];
-        // change the course names so that we can test they are cached (and not getting the courses real names.
+        // Change the course names so that we can test they are cached (and not getting the courses real names.
         $record->fromname = 'C3';
         $record->toname = 'C4';
         $instance = job::create_from_record($record);

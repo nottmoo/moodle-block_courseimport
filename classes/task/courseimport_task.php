@@ -129,7 +129,7 @@ class courseimport_task extends \core\task\scheduled_task {
         try {
             $rc->execute_plan();
         } catch (\Exception $e) {
-            // need to abandon this job.
+            // We need to abandon this job.
             $job->set_status(job::STATE_FAILED);
             $message = $e->getMessage();
             $params = [

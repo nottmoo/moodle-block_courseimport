@@ -123,7 +123,7 @@ class search extends \import_course_search {
                 }
             } else {
                 // Should not get here if the course names in the db are in the right format
-                // If we do bottle out as we don't want to do a bad query
+                // If we do bottle out as we don't want to do a bad query.
                 $params = [];
                 $select = "SELECT NULL from {course} where FALSE";
                 return [$select, $params];

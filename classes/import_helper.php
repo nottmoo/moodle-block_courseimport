@@ -79,7 +79,7 @@ class import_helper {
      */
     public static function unselect_announcement(\base_setting $setting, string $instanceid) {
         global $DB;
-        // Check if the forum is an announcement, which type is news
+        // Check if the forum is an announcement, which type is news.
         $params = ['instanceid' => $instanceid, 'type' => "news"];
         $sql = 'SELECT *
                   FROM {forum} fo

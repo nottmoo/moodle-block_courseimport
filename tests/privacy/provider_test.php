@@ -190,16 +190,16 @@ class provider_test extends \core_privacy\tests\provider_testcase {
         provider::get_users_in_context($userlist2);
         $this->assertCount(1, $userlist2);
 
-        // create approveduserlist for delete_data_for_users()
+        // Create approveduserlist for delete_data_for_users().
         $approveduserlist1 = new approved_userlist($usercontext1, $component, $userlist1->get_userids());
         $approveduserlist2 = new approved_userlist($usercontext2, $component, $userlist2->get_userids());
 
-        // All user2's data should be deleted
+        // All user2's data should be deleted.
         provider::delete_data_for_users($approveduserlist2);
         $this->assertEquals(0, $DB->count_records('block_courseimport', ['userid' => $user2->id]));
         $this->assertEquals(4, $DB->count_records('block_courseimport', ['userid' => $user1->id]));
 
-        // Only user1's 2 records left
+        // Only user1's 2 records left.
         provider::delete_data_for_users($approveduserlist1);
         $this->assertEquals(2, $DB->count_records('block_courseimport', ['userid' => $user1->id]));
 
