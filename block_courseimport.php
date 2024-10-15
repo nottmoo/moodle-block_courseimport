@@ -65,13 +65,13 @@ class block_courseimport extends block_base {
      * Checks that the user has permission to use the block
      */
     public function get_content() {
-        global $COURSE, $PAGE;
+        global $COURSE;
         if ($this->content !== null) {
             return $this->content;
         }
 
         // Don't display content on the Site Home page.
-        if ($PAGE->category) {
+        if ($this->page->category) {
             $this->content = new stdClass;
             $this->content->text = '';
             $coursecontext = context_course::instance($COURSE->id);
