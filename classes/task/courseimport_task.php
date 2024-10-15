@@ -121,7 +121,14 @@ class courseimport_task extends \core\task\scheduled_task {
             throw new job_failed($message);
         }
 
-        $rc = new \restore_controller($job->bid, $job->target, \backup::INTERACTIVE_YES, \backup::MODE_IMPORT, $job->user, \backup::TARGET_CURRENT_ADDING);
+        $rc = new \restore_controller(
+            $job->bid,
+            $job->target,
+            \backup::INTERACTIVE_YES,
+            \backup::MODE_IMPORT,
+            $job->user,
+            \backup::TARGET_CURRENT_ADDING
+        );
         $rc->set_progress(new \core\progress\db_updater($job->id, 'block_courseimport', 'restoreprogress'));
         $this->prepare_for_restore($rc, $job);
 
