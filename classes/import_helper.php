@@ -81,9 +81,9 @@ class import_helper {
         global $DB;
         // Check if the forum is an announcement, which type is news
         $params = ['instanceid' => $instanceid, 'type' => "news"];
-        $sql = 'SELECT * 
-                  FROM {forum} fo 
-                  JOIN {course_modules} cm 
+        $sql = 'SELECT *
+                  FROM {forum} fo
+                  JOIN {course_modules} cm
                     ON (fo.id = cm.instance)
                  WHERE (cm.id = :instanceid) AND (fo.type = :type)';
         if ($DB->record_exists_sql($sql, $params)) {
