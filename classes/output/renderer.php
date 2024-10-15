@@ -138,6 +138,13 @@ class renderer extends \core_backup_renderer {
         return $this->render_from_template('block_courseimport/import_status', $data);
     }
 
+    /**
+     * Displays the progress of an import.
+     *
+     * @param job $job The import job that is being processed.
+     * @param int $courseid The database id of the course.
+     * @return string
+     */
     public function display_import_progress(job $job, int $courseid): string {
         $courseurl = new \moodle_url('/course/view.php', ['id' => $courseid]);
         $progresssetup = [

@@ -47,6 +47,14 @@ class progress implements \renderable, \templatable {
     /** @var bool True when progress on the job has started. */
     public $started = false;
 
+    /**
+     * Gets the progress for a specific job.
+     *
+     * This method should be used to create progress objects.
+     *
+     * @param int $jobid
+     * @return progress
+     */
     public static function get_for_job(int $jobid): progress {
         $progress = new progress();
         $job = job::instance($jobid);
@@ -97,7 +105,13 @@ class progress implements \renderable, \templatable {
     }
 
     /**
-     * @inheritDoc
+     * Function to export the renderer data in a format that is suitable for a
+     * mustache template. This means:
+     * 1. No complex types - only stdClass, array, int, string, float, bool
+     * 2. Any additional info that is required for the template is pre-calculated (e.g. capability checks).
+     *
+     * @param renderer_base $output Used to do a final render of any components that need to be rendered for export.
+     * @return stdClass|array
      */
     public function export_for_template(\renderer_base $output) {
         return $this->export_for_external();
