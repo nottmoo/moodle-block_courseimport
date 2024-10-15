@@ -119,7 +119,7 @@ class search extends \import_course_search {
                 }
                 // Non saturn courses require a more specific short name.
                 if (strlen($shortnamesearch) <= 4 and $shortnamehyphen) {
-                    $shortnamesearch = substr($shortnamestring,0,-4);
+                    $shortnamesearch = substr($shortnamestring, 0, -4);
                 }
             } else {
                 // Should not get here if the course names in the db are in the right format

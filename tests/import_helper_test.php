@@ -38,7 +38,7 @@ use context_user;
  * @group block_courseimport
  * @group uon
  */
-class import_helper_test extends \advanced_testcase  {
+class import_helper_test extends \advanced_testcase {
     /**
      * Tests that we can detect the size of files in a resource correctly.
      *

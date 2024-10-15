@@ -36,7 +36,7 @@ namespace block_courseimport;
  * @group block_courseimport
  * @group uon
  */
-class job_test extends \advanced_testcase  {
+class job_test extends \advanced_testcase {
     /**
      * Creates a UK help user.
      */

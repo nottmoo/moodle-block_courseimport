@@ -30,7 +30,7 @@ class block_courseimport_generator extends testing_block_generator {
      * @param array|stdClass $job
      * @return stdClass
      */
-    public function create_job($job) : stdClass {
+    public function create_job($job): stdClass {
         global $DB;
         $now = time();
         $defaults = [

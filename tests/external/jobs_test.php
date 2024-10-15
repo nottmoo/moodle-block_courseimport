@@ -41,7 +41,7 @@ use core_external\external_api;
  * @group block_courseimport
  * @group uon
  */
-class jobs_test extends \advanced_testcase  {
+class jobs_test extends \advanced_testcase {
     /**
      * Tests that the progress is calculated correctly.
      *
