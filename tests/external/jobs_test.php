@@ -73,7 +73,7 @@ class jobs_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function data_progress(): array {
+    public static function data_progress(): array {
         return [
             'none' => [0.0, 0.0, 0.0],
             'partial-backup' => [0.5, 0.0, 0.25],
@@ -117,7 +117,7 @@ class jobs_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function data_progress_status(): array {
+    public static function data_progress_status(): array {
         return [
             'waiting' => [job::STATE_WAITING, false, false, false],
             'processing' => [job::STATE_PROCESSING, true, false, false],

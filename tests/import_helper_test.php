@@ -93,7 +93,7 @@ class import_helper_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function data_get_resource_filesize(): array {
+    public static function data_get_resource_filesize(): array {
         return [
             'small' => ['small.txt', 670, 670, 'text/plain'],
             'medium' => ['medium.txt', 332331, 332382, 'text/plain'],

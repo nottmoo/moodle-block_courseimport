@@ -87,7 +87,7 @@ class job_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function data_abandon_running(): array {
+    public static function data_abandon_running(): array {
         return [
             'waiting' => [job::STATE_WAITING, job::STATE_WAITING, 0],
             'processing' => [job::STATE_PROCESSING, job::STATE_FAILED, 1],
@@ -172,7 +172,7 @@ class job_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function data_job_queued(): array {
+    public static function data_job_queued(): array {
         return [
             'waiting' => [job::STATE_WAITING, true],
             'processing' => [job::STATE_PROCESSING, true],
@@ -209,7 +209,7 @@ class job_test extends \advanced_testcase {
      *
      * @return array
      */
-    public function data_set_status(): array {
+    public static function data_set_status(): array {
         return [
             'waiting->processing' => [job::STATE_WAITING, job::STATE_WAITING],
             'processing->fail' => [job::STATE_PROCESSING, job::STATE_FAILED],
