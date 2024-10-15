@@ -35,6 +35,7 @@ use context_user;
  * @copyright   University of Nottingham, 2020
  * @author      Neill Magill <neill.magill@nottingham.ac.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \block_courseimport\import_helper
  * @group block_courseimport
  * @group uon
  */

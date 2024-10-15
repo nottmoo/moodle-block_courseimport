@@ -33,6 +33,7 @@ namespace block_courseimport;
  * @copyright   University of Nottingham, 2020
  * @author      Neill Magill <neill.magill@nottingham.ac.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \block_courseimport\job
  * @group block_courseimport
  * @group uon
  */

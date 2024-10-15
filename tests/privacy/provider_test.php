@@ -38,6 +38,7 @@ use core_privacy\local\request\writer;
  * @copyright   University of Nottingham, 2018
  * @author      Neill Magill <neill.magill@nottingham.ac.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \block_courseimport\privacy\provider
  * @group block_courseimport
  * @group uon
  */

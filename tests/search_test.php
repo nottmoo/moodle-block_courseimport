@@ -23,6 +23,7 @@ namespace block_courseimport;
  * @copyright   University of Nottingham, 2014
  * @author      Neill Magill <neill.magill@nottingham.ac.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \block_courseimport\search
  * @group block_courseimport
  * @group uon
  */
@@ -30,8 +31,6 @@ class search_test extends \advanced_testcase {
     /**
      * Tests that the block_courseimport_search::searchshortname method works correctly.
      *
-     * @covers \block_courseimport\search::searchshortname
-     * @covers \block_courseimport\search::get_shortnameresults
      * @group block_courseimport
      * @group uon
      */
