@@ -28,13 +28,10 @@ namespace block_courseimport\external;
 use block_courseimport\job;
 use core_external\external_api;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests the enternal methods of the jobs class.
  *
  * @package     block_courseimport
- * @category    testing
  * @copyright   University of Nottingham, 2020
  * @author      Neill Magill <neill.magill@nottingham.ac.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -43,7 +40,7 @@ defined('MOODLE_INTERNAL') || die();
  * @group block_courseimport
  * @group uon
  */
-class jobs_test extends \advanced_testcase  {
+class jobs_test extends \advanced_testcase {
     /**
      * Tests that the progress is calculated correctly.
      *
@@ -63,7 +60,7 @@ class jobs_test extends \advanced_testcase  {
         $USER->ignoresesskey = true;
 
         $args = [
-            'id' => $job->id
+            'id' => $job->id,
         ];
         $result = external_api::call_external_function('block_courseimport_get_job_progress', $args);
         $this->assertFalse($result['error']);
@@ -75,7 +72,7 @@ class jobs_test extends \advanced_testcase  {
      *
      * @return array
      */
-    public function data_progress(): array {
+    public static function data_progress(): array {
         return [
             'none' => [0.0, 0.0, 0.0],
             'partial-backup' => [0.5, 0.0, 0.25],
@@ -105,7 +102,7 @@ class jobs_test extends \advanced_testcase  {
         $USER->ignoresesskey = true;
 
         $args = [
-            'id' => $job->id
+            'id' => $job->id,
         ];
         $result = external_api::call_external_function('block_courseimport_get_job_progress', $args);
         $this->assertFalse($result['error']);
@@ -119,7 +116,7 @@ class jobs_test extends \advanced_testcase  {
      *
      * @return array
      */
-    public function data_progress_status(): array {
+    public static function data_progress_status(): array {
         return [
             'waiting' => [job::STATE_WAITING, false, false, false],
             'processing' => [job::STATE_PROCESSING, true, false, false],

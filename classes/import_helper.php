@@ -79,11 +79,11 @@ class import_helper {
      */
     public static function unselect_announcement(\base_setting $setting, string $instanceid) {
         global $DB;
-        // Check if the forum is an announcement, which type is news
-        $params = array('instanceid' => $instanceid, 'type' => "news");
-        $sql = 'SELECT * 
-                  FROM {forum} fo 
-                  JOIN {course_modules} cm 
+        // Check if the forum is an announcement, which type is news.
+        $params = ['instanceid' => $instanceid, 'type' => "news"];
+        $sql = 'SELECT *
+                  FROM {forum} fo
+                  JOIN {course_modules} cm
                     ON (fo.id = cm.instance)
                  WHERE (cm.id = :instanceid) AND (fo.type = :type)';
         if ($DB->record_exists_sql($sql, $params)) {

@@ -24,8 +24,6 @@
  */
 namespace block_courseimport;
 
-defined('MOODLE_INTERNAL') || die;
-
 /**
  * Job failed to process exception.
  *

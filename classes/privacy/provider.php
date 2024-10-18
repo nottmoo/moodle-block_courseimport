@@ -16,17 +16,15 @@
 
 namespace block_courseimport\privacy;
 
-use \core_privacy\local\metadata\collection;
-use \core_privacy\local\request\approved_contextlist;
-use \core_privacy\local\request\contextlist;
-use \core_privacy\local\request\helper;
-use \core_privacy\local\request\writer;
-use \core_privacy\local\request\transform;
-use \core_privacy\local\request\approved_userlist;
-use \core_privacy\local\request\userlist;
-use \block_courseimport\job;
-
-defined('MOODLE_INTERNAL') || die();
+use core_privacy\local\metadata\collection;
+use core_privacy\local\request\approved_contextlist;
+use core_privacy\local\request\contextlist;
+use core_privacy\local\request\helper;
+use core_privacy\local\request\writer;
+use core_privacy\local\request\transform;
+use core_privacy\local\request\approved_userlist;
+use core_privacy\local\request\userlist;
+use block_courseimport\job;
 
 /**
  * Privacy provider for the course import block.
@@ -48,11 +46,11 @@ class provider implements
      * @param collection $collection The initialised collection to add items to.
      * @return collection A listing of user data stored through this system.
      */
-    public static function get_metadata(collection $collection) : collection {
+    public static function get_metadata(collection $collection): collection {
         // Sub systems used.
         $collection->add_subsystem_link('core_backup', [], 'privacy:metadata:core_backup');
         // Personal data stored in the database.
-        $jobs = array(
+        $jobs = [
             'source' => 'privacy:metadata:block_courseimport:source',
             'target' => 'privacy:metadata:block_courseimport:target',
             'userid' => 'privacy:metadata:block_courseimport:userid',
@@ -60,7 +58,7 @@ class provider implements
             'status' => 'privacy:metadata:block_courseimport:status',
             'timecreated' => 'privacy:metadata:block_courseimport:timecreated',
             'timemodified' => 'privacy:metadata:block_courseimport:timemodified',
-        );
+        ];
         $collection->add_database_table('block_courseimport', $jobs, 'privacy:metadata:block_courseimport');
         // Does not export data from Moodle to another system.
         // Does not store any user preferences.
@@ -70,11 +68,10 @@ class provider implements
     /**
      * Get the list of contexts that contain user information for the specified user.
      *
-     * @global \moodle_database $DB
      * @param int $userid The user to search.
      * @return contextlist $contextlist The contextlist containing the list of contexts used in this plugin.
      */
-    public static function get_contexts_for_userid(int $userid) : contextlist {
+    public static function get_contexts_for_userid(int $userid): contextlist {
         global $DB;
         $contextlist = new contextlist();
         $contextlist->set_component('block_courseimport');
@@ -147,7 +144,7 @@ class provider implements
      * @param $userlist The userlist containing the list of users who have data in this context/plugin combination.
      *
      */
-    public static function get_users_in_context(userlist $userlist){
+    public static function get_users_in_context(userlist $userlist) {
         $context = $userlist->get_context();
         if (!$context instanceof \context_user) {
             return;
@@ -171,7 +168,7 @@ class provider implements
      *
      * @param approved_userlist $userlist The approved context and user information to delete.
      */
-    public static function delete_data_for_users(approved_userlist $userlist){
+    public static function delete_data_for_users(approved_userlist $userlist) {
         $userids = $userlist->get_userids();
         $context = $userlist->get_context();
         if ($context instanceof \context_user) {
@@ -204,7 +201,7 @@ class provider implements
      * @param \stdClass $record
      * @return array
      */
-    protected static function transform_job(\stdClass $record) : array {
+    protected static function transform_job(\stdClass $record): array {
         return [
             'sourcecourse' => "$record->source : $record->sourcename",
             'targetcourse' => "$record->target : $record->targetname",
@@ -221,7 +218,7 @@ class provider implements
      * @param string $statuscode
      * @return string
      */
-    protected static function transform_status(string $statuscode) : string {
+    protected static function transform_status(string $statuscode): string {
         switch ($statuscode) {
             case job::STATE_WAITING:
                 $status = get_string('privacy:export:status:waiting', 'block_courseimport');

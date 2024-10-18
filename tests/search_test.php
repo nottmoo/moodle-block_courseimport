@@ -16,8 +16,6 @@
 
 namespace block_courseimport;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests the block_courseimport_search class.
  *
@@ -25,6 +23,7 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright   University of Nottingham, 2014
  * @author      Neill Magill <neill.magill@nottingham.ac.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \block_courseimport\search
  * @group block_courseimport
  * @group uon
  */
@@ -32,8 +31,6 @@ class search_test extends \advanced_testcase {
     /**
      * Tests that the block_courseimport_search::searchshortname method works correctly.
      *
-     * @covers \block_courseimport\search::searchshortname
-     * @covers \block_courseimport\search::get_shortnameresults
      * @group block_courseimport
      * @group uon
      */
@@ -42,19 +39,19 @@ class search_test extends \advanced_testcase {
 
         // First create some courses.
         // This group should all match each other.
-        $course0g1 = self::getDataGenerator()->create_course(array('shortname' => 'XX3L11-UK-FYR1112'));
-        $course1g1 = self::getDataGenerator()->create_course(array('shortname' => 'XX3L11-UK-FYR1213'));
-        $course2g1 = self::getDataGenerator()->create_course(array('shortname' => 'XX3L11-UK-FYR1314'));
-        $course3g1 = self::getDataGenerator()->create_course(array('shortname' => 'XX3L11-MY-FYR1314'));
-        $course4g1 = self::getDataGenerator()->create_course(array('shortname' => 'XX3L11-CN-FYR1314'));
+        $course0g1 = self::getDataGenerator()->create_course(['shortname' => 'XX3L11-UK-FYR1112']);
+        $course1g1 = self::getDataGenerator()->create_course(['shortname' => 'XX3L11-UK-FYR1213']);
+        $course2g1 = self::getDataGenerator()->create_course(['shortname' => 'XX3L11-UK-FYR1314']);
+        $course3g1 = self::getDataGenerator()->create_course(['shortname' => 'XX3L11-MY-FYR1314']);
+        $course4g1 = self::getDataGenerator()->create_course(['shortname' => 'XX3L11-CN-FYR1314']);
         // The UK codes in this group group should also match each other.
-        $course0g2 = self::getDataGenerator()->create_course(array('shortname' => 'LE-CAREERS-ECON-UK-1213'));
-        $course1g2 = self::getDataGenerator()->create_course(array('shortname' => 'LE-CAREERS-ECON-UK-1314'));
-        $course2g2 = self::getDataGenerator()->create_course(array('shortname' => 'LE-CAREERS-ECON-CN-1314'));
+        $course0g2 = self::getDataGenerator()->create_course(['shortname' => 'LE-CAREERS-ECON-UK-1213']);
+        $course1g2 = self::getDataGenerator()->create_course(['shortname' => 'LE-CAREERS-ECON-UK-1314']);
+        $course2g2 = self::getDataGenerator()->create_course(['shortname' => 'LE-CAREERS-ECON-CN-1314']);
         // Some random courses.
-        $course0g3 = self::getDataGenerator()->create_course(array('shortname' => 'XX3L12-UK-FYR1413'));
-        $course0g3 = self::getDataGenerator()->create_course(array('shortname' => 'G53NMD-UK-AUT-G53NMD-MY-AUT-1314'));
-        $course0g3 = self::getDataGenerator()->create_course(array('shortname' => 'PA-HS-INDUCT-UK'));
+        $course0g3 = self::getDataGenerator()->create_course(['shortname' => 'XX3L12-UK-FYR1413']);
+        $course0g3 = self::getDataGenerator()->create_course(['shortname' => 'G53NMD-UK-AUT-G53NMD-MY-AUT-1314']);
+        $course0g3 = self::getDataGenerator()->create_course(['shortname' => 'PA-HS-INDUCT-UK']);
         $search = new search();
 
         $results0 = $search->searchshortname('XX3L11', 'XX3L11-UK-FYR1112');

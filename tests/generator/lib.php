@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * The block_courseimport data generator.
  *
@@ -28,14 +26,13 @@ class block_courseimport_generator extends testing_block_generator {
     /**
      * Creates a job in the import queue.
      *
-     * @global moodle_database $DB
      * @param array|stdClass $job
      * @return stdClass
      */
-    public function create_job($job) : stdClass {
+    public function create_job($job): stdClass {
         global $DB;
         $now = time();
-        $defaults = array(
+        $defaults = [
             'target' => null,
             'source' => null,
             'userid' => null,
@@ -45,7 +42,7 @@ class block_courseimport_generator extends testing_block_generator {
             'restoreprogress' => 0.0,
             'timecreated' => $now,
             'timemodified' => $now,
-        );
+        ];
         $record = (object)$this->datagenerator->combine_defaults_and_record($defaults, $job);
         // Ensure there is a source course.
         if (is_null($record->source)) {

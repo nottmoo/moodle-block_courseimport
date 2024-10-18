@@ -27,20 +27,18 @@ namespace block_courseimport;
 
 use context_user;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests the import_helper class of the course import block.
  *
  * @package     block_courseimport
- * @category    testing
  * @copyright   University of Nottingham, 2020
  * @author      Neill Magill <neill.magill@nottingham.ac.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \block_courseimport\import_helper
  * @group block_courseimport
  * @group uon
  */
-class import_helper_test extends \advanced_testcase  {
+class import_helper_test extends \advanced_testcase {
     /**
      * Tests that we can detect the size of files in a resource correctly.
      *
@@ -95,7 +93,7 @@ class import_helper_test extends \advanced_testcase  {
      *
      * @return array
      */
-    public function data_get_resource_filesize(): array {
+    public static function data_get_resource_filesize(): array {
         return [
             'small' => ['small.txt', 670, 670, 'text/plain'],
             'medium' => ['medium.txt', 332331, 332382, 'text/plain'],

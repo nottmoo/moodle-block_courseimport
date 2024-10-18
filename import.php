@@ -25,10 +25,10 @@
 
 require_once(dirname(__FILE__) . '/../../config.php');
 
-use \block_courseimport\import_helper;
+use block_courseimport\import_helper;
 use block_courseimport\search;
 
-// Require both the backup and restore libs
+// Require both the backup and restore libs.
 require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
 require_once($CFG->dirroot . '/backup/moodle2/backup_plan_builder.class.php');
 require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
@@ -53,7 +53,7 @@ $heading = get_string('import');
 // Set up the page.
 $PAGE->set_title($heading);
 $PAGE->set_heading($heading);
-$PAGE->set_url(new moodle_url('/blocks/courseimport/import.php', array('id' => $courseid)));
+$PAGE->set_url(new moodle_url('/blocks/courseimport/import.php', ['id' => $courseid]));
 $PAGE->set_context($context);
 $PAGE->set_pagelayout('incourse');
 $renderer = $PAGE->get_renderer('block_courseimport');
@@ -69,11 +69,11 @@ if (\block_courseimport\job::job_queued($courseid)) {
 
 // Check if we already have a import course id.
 if ($importcourseid === false || $search !== false) {
-    $url = new moodle_url('/blocks/courseimport/import.php', array('id' => $courseid));
-    $search = new search(array('url' => $url), $courseid);
+    $url = new moodle_url('/blocks/courseimport/import.php', ['id' => $courseid]);
+    $search = new search(['url' => $url], $courseid);
     // Show the course selector.
     echo $OUTPUT->header();
-    //Here find and list the user's course.
+    // Here find and list the user's course.
     echo $renderer->import_course_selector($url, $search);
     echo $OUTPUT->footer();
     die();
@@ -84,7 +84,7 @@ $importcontext = context_course::instance($importcourseid);
 // Make sure the user can backup from that course.
 require_capability('moodle/backup:backuptargetimport', $importcontext);
 // Attempt to load the existing backup controller (backupid will be false if there isn't one).
-$backupid = optional_param('backup', false, PARAM_ALPHANUM); // Initial settings - false
+$backupid = optional_param('backup', false, PARAM_ALPHANUM); // Initial settings - false.
 if (!($bc = backup_ui::load_controller($backupid))) {
     $bc = new backup_controller(
             backup::TYPE_1COURSE,
@@ -101,7 +101,7 @@ if (!($bc = backup_ui::load_controller($backupid))) {
     import_ui::skip_current_stage(!$visiblesettings);
 }
 // Prepare the import UI.
-$backup = new import_ui($bc, array('importid' => $importcourse->id, 'target' => $restoretarget));
+$backup = new import_ui($bc, ['importid' => $importcourse->id, 'target' => $restoretarget]);
 // Process the current stage.
 $backup->process();
 if ($backup->get_stage() === backup_ui::STAGE_SCHEMA) {
@@ -116,7 +116,7 @@ if ($backup->get_stage() == backup_ui::STAGE_CONFIRMATION) {
     $backup->get_setting('filename')->set_visibility(backup_setting::HIDDEN);
 }
 
-if ($backup->get_stage() == backup_ui::STAGE_FINAL) { //backup_ui::STAGE_FINAL=8
+if ($backup->get_stage() == backup_ui::STAGE_FINAL) {
     $backup->get_controller()->finish_ui();
 
     $job = new \block_courseimport\job($importcourseid, $course->id, $backupid, $USER->id);
@@ -127,15 +127,15 @@ if ($backup->get_stage() == backup_ui::STAGE_FINAL) { //backup_ui::STAGE_FINAL=8
     echo $OUTPUT->footer();
     die();
 } else {
-    // Otherwise save the controller and progress
+    // Otherwise save the controller and progress.
     $backup->save_controller();
 }
-// Adjust the page for the stage
+// Adjust the page for the stage.
 $PAGE->set_title($heading . ': ' . $backup->get_stage_name());
 $PAGE->set_heading($heading . ': ' . $backup->get_stage_name());
 $PAGE->navbar->add($backup->get_stage_name());
 
-// Display the current stage
+// Display the current stage.
 echo $OUTPUT->header();
 if ($backup->enforce_changed_dependencies()) {
     echo $renderer->dependency_notification(get_string('dependenciesenforced', 'backup'));

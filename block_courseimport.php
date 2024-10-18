@@ -23,8 +23,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  *  Course Import block class
  *
@@ -47,8 +45,13 @@ class block_courseimport extends block_base {
      * @return array
      */
     public function applicable_formats() {
-        return array('all' => true, 'mod' => false, 'my' => false, 'admin' => false,
-            'tag' => false);
+        return [
+            'all' => true,
+            'mod' => false,
+            'my' => false,
+            'admin' => false,
+            'tag' => false,
+        ];
     }
 
     /**
@@ -65,13 +68,13 @@ class block_courseimport extends block_base {
      * Checks that the user has permission to use the block
      */
     public function get_content() {
-        global $COURSE, $PAGE;
+        global $COURSE;
         if ($this->content !== null) {
             return $this->content;
         }
 
         // Don't display content on the Site Home page.
-        if ($PAGE->category) {
+        if ($this->page->category) {
             $this->content = new stdClass;
             $this->content->text = '';
             $coursecontext = context_course::instance($COURSE->id);
@@ -79,7 +82,7 @@ class block_courseimport extends block_base {
             if (has_capability('block/courseimport:view', $coursecontext)
                 && has_capability('moodle/course:update', $coursecontext)
             ) {
-                $importpageurl = new moodle_url('/blocks/courseimport/import.php', array('id' => $COURSE->id));
+                $importpageurl = new moodle_url('/blocks/courseimport/import.php', ['id' => $COURSE->id]);
                 $this->content->text .= html_writer::link($importpageurl, get_string('importlink', 'block_courseimport'));
 
                 return $this->content;
@@ -88,7 +91,7 @@ class block_courseimport extends block_base {
     }
 
     /**
-     * @see block_base::has_config
+     * The block has no configuration.
      */
     public function has_config() {
         return false;

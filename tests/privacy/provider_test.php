@@ -31,8 +31,6 @@ use core_privacy\local\request\approved_userlist;
 use core_privacy\local\request\userlist;
 use core_privacy\local\request\writer;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests the course import block privacy provider class.
  *
@@ -40,6 +38,7 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright   University of Nottingham, 2018
  * @author      Neill Magill <neill.magill@nottingham.ac.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \block_courseimport\privacy\provider
  * @group block_courseimport
  * @group uon
  */
@@ -192,16 +191,16 @@ class provider_test extends \core_privacy\tests\provider_testcase {
         provider::get_users_in_context($userlist2);
         $this->assertCount(1, $userlist2);
 
-        // create approveduserlist for delete_data_for_users()
+        // Create approveduserlist for delete_data_for_users().
         $approveduserlist1 = new approved_userlist($usercontext1, $component, $userlist1->get_userids());
         $approveduserlist2 = new approved_userlist($usercontext2, $component, $userlist2->get_userids());
 
-        // All user2's data should be deleted
+        // All user2's data should be deleted.
         provider::delete_data_for_users($approveduserlist2);
         $this->assertEquals(0, $DB->count_records('block_courseimport', ['userid' => $user2->id]));
         $this->assertEquals(4, $DB->count_records('block_courseimport', ['userid' => $user1->id]));
 
-        // Only user1's 2 records left
+        // Only user1's 2 records left.
         provider::delete_data_for_users($approveduserlist1);
         $this->assertEquals(2, $DB->count_records('block_courseimport', ['userid' => $user1->id]));
 
@@ -229,14 +228,14 @@ class provider_test extends \core_privacy\tests\provider_testcase {
         $userlist1 = new userlist($usercontext1, $component);
         provider::get_users_in_context($userlist1);
         $this->assertCount(1, $userlist1);
-        $expected = array($user1->id);
+        $expected = [$user1->id];
         $actual = $userlist1->get_userids();
         $this->assertEquals($expected, $actual);
 
         $userlist2 = new userlist($usercontext2, $component);
         provider::get_users_in_context($userlist2);
         $this->assertCount(1, $userlist2);
-        $expected = array($user2->id);
+        $expected = [$user2->id];
         $actual = $userlist2->get_userids();
         $this->assertEquals($expected, $actual);
     }

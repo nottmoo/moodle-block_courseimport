@@ -78,7 +78,7 @@ class renderer extends \core_backup_renderer {
                     'shortname' => format_string($course->shortname, true, ['context' => $context]),
                 ];
 
-                if ((!is_null($colist)) and (array_key_exists($course->id, $colist))) {
+                if (!is_null($colist) && array_key_exists($course->id, $colist)) {
                     // Remove the course from the found course.
                     unset($colist[$course->id]);
                 }
@@ -107,7 +107,7 @@ class renderer extends \core_backup_renderer {
         $searchstr = trim(optional_param('search', '', PARAM_TEXT));
 
         // Course list for shortname search is not treated as original course list.
-        if ((!is_null($colist)) and (count($colist) > 0) and ($searchstr === "")) {
+        if (!is_null($colist) && count($colist) > 0 && $searchstr === "") {
             $data->hasinaccesibile = true;
             $data->resultcount += count($colist);
 
@@ -138,6 +138,13 @@ class renderer extends \core_backup_renderer {
         return $this->render_from_template('block_courseimport/import_status', $data);
     }
 
+    /**
+     * Displays the progress of an import.
+     *
+     * @param job $job The import job that is being processed.
+     * @param int $courseid The database id of the course.
+     * @return string
+     */
     public function display_import_progress(job $job, int $courseid): string {
         $courseurl = new \moodle_url('/course/view.php', ['id' => $courseid]);
         $progresssetup = [

@@ -25,20 +25,18 @@
 
 namespace block_courseimport;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests the job class of the course import block.
  *
  * @package     block_courseimport
- * @category    testing
  * @copyright   University of Nottingham, 2020
  * @author      Neill Magill <neill.magill@nottingham.ac.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \block_courseimport\job
  * @group block_courseimport
  * @group uon
  */
-class job_test extends \advanced_testcase  {
+class job_test extends \advanced_testcase {
     /**
      * Creates a UK help user.
      */
@@ -89,7 +87,7 @@ class job_test extends \advanced_testcase  {
      *
      * @return array
      */
-    public function data_abandon_running(): array {
+    public static function data_abandon_running(): array {
         return [
             'waiting' => [job::STATE_WAITING, job::STATE_WAITING, 0],
             'processing' => [job::STATE_PROCESSING, job::STATE_FAILED, 1],
@@ -127,7 +125,7 @@ class job_test extends \advanced_testcase  {
 
         // We will now test that we can use the record to create a job object.
         $record = clone $records[$job->id];
-        // change the course names so that we can test they are cached (and not getting the courses real names.
+        // Change the course names so that we can test they are cached (and not getting the courses real names.
         $record->fromname = 'C3';
         $record->toname = 'C4';
         $instance = job::create_from_record($record);
@@ -174,7 +172,7 @@ class job_test extends \advanced_testcase  {
      *
      * @return array
      */
-    public function data_job_queued(): array {
+    public static function data_job_queued(): array {
         return [
             'waiting' => [job::STATE_WAITING, true],
             'processing' => [job::STATE_PROCESSING, true],
@@ -211,7 +209,7 @@ class job_test extends \advanced_testcase  {
      *
      * @return array
      */
-    public function data_set_status(): array {
+    public static function data_set_status(): array {
         return [
             'waiting->processing' => [job::STATE_WAITING, job::STATE_WAITING],
             'processing->fail' => [job::STATE_PROCESSING, job::STATE_FAILED],

@@ -22,6 +22,9 @@
  * @copyright  2020 University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+defined('MOODLE_INTERNAL') || die();
+
 $functions = [
     'block_courseimport_get_job_progress' => [
         'classname' => '\block_courseimport\external\jobs',

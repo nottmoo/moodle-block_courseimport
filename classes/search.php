@@ -63,7 +63,6 @@ class search extends \import_course_search {
     /**
      * Case insensative search for courses with similar shortname but same code.
      *
-     * @global \moodle_database $DB
      * @param string $coursecode - fragment of a shortname to match.
      * @param string $shortnamestr - the short name of a course that should not be returned.
      * @return int - the number of results found.
@@ -74,12 +73,12 @@ class search extends \import_course_search {
         if ((isset($this->shortnameresults[$queryhash]))) {
             return count($this->shortnameresults[$queryhash]);
         }
-        $this->shortnameresults = array();
-        $params = array(
+        $this->shortnameresults = [];
+        $params = [
             'shortnamestr' => strtolower($shortnamestr),
             'siteid' => SITEID,
             'coursecode' => strtolower($coursecode).'%',
-        );
+        ];
 
         $likesql = $DB->sql_like('LOWER(c.shortname)', ':coursecode');
         $searchsql = 'SELECT c.id, c.fullname, c.shortname, c.visible, c.sortorder,
@@ -96,17 +95,16 @@ class search extends \import_course_search {
     /**
      * Create search SQL
      *
-     * @global \moodle_database $DB
      * @return array sql and parameters
      */
     protected function get_searchsql() {
         global $DB, $COURSE;
         $ctxselect = context_helper::get_preload_record_columns_sql('ctx');
         $ctxjoin = "LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = :contextlevel)";
-        $params = array(
+        $params = [
             'siteid' => SITEID,
-            'contextlevel' => CONTEXT_COURSE
-        );
+            'contextlevel' => CONTEXT_COURSE,
+        ];
         // If no search string supplied use target course short name.
         $shortnamesearch = $this->get_search();
         if (empty($shortnamesearch)) {
@@ -118,15 +116,15 @@ class search extends \import_course_search {
                     $shortnamesearch = substr($shortnamestring, 0, $shortnamehyphen);
                 }
                 // Non saturn courses require a more specific short name.
-                if (strlen($shortnamesearch) <= 4 and $shortnamehyphen) {
-                    $shortnamesearch = substr($shortnamestring,0,-4);
+                if (strlen($shortnamesearch) <= 4 && $shortnamehyphen) {
+                    $shortnamesearch = substr($shortnamestring, 0, -4);
                 }
             } else {
                 // Should not get here if the course names in the db are in the right format
-                // If we do bottle out as we don't want to do a bad query
-                $params = array();
+                // If we do bottle out as we don't want to do a bad query.
+                $params = [];
                 $select = "SELECT NULL from {course} where FALSE";
-                return array($select, $params);
+                return [$select, $params];
             }
             $params['shortnamesearch'] = $shortnamesearch . '%';
             $where = " WHERE (" . $DB->sql_like('c.shortname', ':shortnamesearch', false) . ") AND c.id <> :siteid";
@@ -143,6 +141,6 @@ class search extends \import_course_search {
             $where .= " AND c.id <> :currentcourseid";
             $params['currentcourseid'] = $this->currentcourseid;
         }
-        return array($select . $ctxselect . $from . $ctxjoin . $where . $orderby, $params);
+        return [$select . $ctxselect . $from . $ctxjoin . $where . $orderby, $params];
     }
 }

@@ -15,10 +15,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace block_courseimport;
-use \core\message\message;
+use core\message\message;
 use local_uonlib\course_utils;
-
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * Class for sending messages.
@@ -32,7 +30,6 @@ class messenger {
     /**
      * Sends a message that an import job completed successfully.
      *
-     * @global \moodle_database $DB
      * @param int $userid The id of the user the message is to.
      * @param int $targetcourseid The id of the course that content was imported into.
      * @param string $targetcourse The name of the course content was imported into.
@@ -42,13 +39,13 @@ class messenger {
     public static function import_success($userid, $targetcourseid, $targetcourse, $sourcecourse) {
         global $DB;
         $campusmail = course_utils::get_support_email("");
-        $fromuser = $DB->get_record('user', array('email' => $campusmail));
+        $fromuser = $DB->get_record('user', ['email' => $campusmail]);
         if (!$fromuser) {
             return;
         }
         $context = \context_course::instance($targetcourseid);
 
-        $textparams = array('importto' => $targetcourse, 'importfrom' => $sourcecourse);
+        $textparams = ['importto' => $targetcourse, 'importfrom' => $sourcecourse];
         $text = get_string('useremailmessage', 'block_courseimport', $textparams);
 
         $message = new message();
