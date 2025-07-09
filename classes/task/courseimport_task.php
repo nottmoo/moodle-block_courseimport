@@ -181,15 +181,47 @@ class courseimport_task extends \core\task\scheduled_task {
 
         // Execute prechecks.
         if (!$rc->execute_precheck()) {
-            $params = [
-                'timenow' => date('Y-m-d H:i:s'),
-                'jobid' => $job->id,
-                'target' => $job->target,
-                'source' => $job->source,
-            ];
-            $message = get_string('precheckfail', 'block_courseimport', $params);
-            mtrace($message);
-            throw new job_failed($message);
+            $precheckresults = $rc->get_precheck_results();
+            $this->display_precheck_problems($precheckresults);
+
+            if (!empty($precheckresults['errors'])) {
+                // We cannot proceed while there are errors.
+                $params = [
+                    'timenow' => date('Y-m-d H:i:s'),
+                    'jobid' => $job->id,
+                    'target' => $job->target,
+                    'source' => $job->source,
+                ];
+                $message = get_string('precheckfail', 'block_courseimport', $params);
+                mtrace($message);
+                throw new job_failed($message);
+            }
+
+            // We may proceed when there are only warnings.
+        }
+    }
+
+    /**
+     * Displays the list of errors and warnings in pre-checks
+     *
+     * This is so that they will appear in any task logs, which will help us to
+     * check what is wrong when there is a problem with imports.
+     *
+     * @param array $precheckresults
+     */
+    protected function display_precheck_problems(array $precheckresults): void {
+        if (!empty($precheckresults['errors'])) {
+            mtrace('Pre-check errors:');
+            foreach ($precheckresults['errors'] as $error) {
+                mtrace("* {$error}");
+            }
+        }
+
+        if (!empty($precheckresults['warnings'])) {
+            mtrace('Pre-check warnings:');
+            foreach ($precheckresults['warnings'] as $warning) {
+                mtrace("* {$warning}");
+            }
         }
     }
 }
