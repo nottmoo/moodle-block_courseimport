@@ -229,6 +229,7 @@ final class job_test extends \advanced_testcase {
      */
     public function test_save(): void {
         global $DB;
+        $clock = \core\di::get(\core\clock::class);
         $this->resetAfterTest(true);
         $source = self::getDataGenerator()->create_course();
         $target = self::getDataGenerator()->create_course();
@@ -243,7 +244,7 @@ final class job_test extends \advanced_testcase {
         self::assertEquals($job->bid, $record->backupid);
         self::assertEquals($job->user, $record->userid);
         self::assertEquals(job::STATE_WAITING, $record->status);
-        $now = time();
+        $now = $clock->time();
         self::assertLessThanOrEqual($now, $record->timecreated);
         self::assertLessThanOrEqual($now, $record->timemodified);
         self::assertEquals($record->timecreated, $record->timemodified);
