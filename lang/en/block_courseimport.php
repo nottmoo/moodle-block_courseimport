@@ -60,8 +60,8 @@ $string['privacy:metadata:block_courseimport:userid'] = 'The user who created th
 $string['privacy:metadata:core_backup'] = 'Creates backups of course information to transfer it into another Moodle course.';
 $string['searchcourses'] = 'Search courses';
 $string['time'] = 'Cron time';
-$string['useremailsubject'] = 'Moodle course import';
 $string['useremailmessage'] = 'Your course import job had completed.
 
 * Imported from: {$a->importfrom}
 * Imported into: {$a->importto}';
+$string['useremailsubject'] = 'Moodle course import';
