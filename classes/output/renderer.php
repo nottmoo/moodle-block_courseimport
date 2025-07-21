@@ -20,6 +20,7 @@ use block_courseimport\search;
 use context_course;
 use local_uonlib\course_utils;
 use block_courseimport\job;
+use core\url;
 
 defined('MOODLE_INTERNAL') || die;
 
@@ -146,7 +147,7 @@ class renderer extends \core_backup_renderer {
      * @return string
      */
     public function display_import_progress(job $job, int $courseid): string {
-        $courseurl = new \moodle_url('/course/view.php', ['id' => $courseid]);
+        $courseurl = new url('/course/view.php', ['id' => $courseid]);
         $progresssetup = [
                 'backupid' => $job->id,
                 'courseurl' => $courseurl->out(),

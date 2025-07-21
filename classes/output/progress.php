@@ -19,6 +19,10 @@ namespace block_courseimport\output;
 use block_courseimport\job;
 use core_external\external_single_structure;
 use core_external\external_value;
+use core\url;
+use core\output\renderable;
+use core\output\templatable;
+use core\output\renderer_base;
 
 /**
  * Progress output component.
@@ -28,7 +32,7 @@ use core_external\external_value;
  * @copyright  2020 University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class progress implements \renderable, \templatable {
+class progress implements renderable, templatable {
     /** @var int The id of the course that content is being imported into. */
     public $courseid;
 
@@ -76,7 +80,7 @@ class progress implements \renderable, \templatable {
      * @throws \moodle_exception
      */
     public function export_for_external(): array {
-        $courseurl = new \moodle_url('/course/view.php', ['id' => $this->courseid]);
+        $courseurl = new url('/course/view.php', ['id' => $this->courseid]);
         return [
             'backupid' => $this->job,
             'courseurl' => $courseurl->out(false),
@@ -113,7 +117,7 @@ class progress implements \renderable, \templatable {
      * @param renderer_base $output Used to do a final render of any components that need to be rendered for export.
      * @return stdClass|array
      */
-    public function export_for_template(\renderer_base $output) {
+    public function export_for_template(renderer_base $output) {
         return $this->export_for_external();
     }
 }

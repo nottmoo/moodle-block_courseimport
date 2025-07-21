@@ -23,6 +23,9 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use core\url;
+use core\output\html_writer;
+
 /**
  *  Course Import block class
  *
@@ -82,7 +85,7 @@ class block_courseimport extends block_base {
             if (has_capability('block/courseimport:view', $coursecontext)
                 && has_capability('moodle/course:update', $coursecontext)
             ) {
-                $importpageurl = new moodle_url('/blocks/courseimport/import.php', ['id' => $COURSE->id]);
+                $importpageurl = new url('/blocks/courseimport/import.php', ['id' => $COURSE->id]);
                 $this->content->text .= html_writer::link($importpageurl, get_string('importlink', 'block_courseimport'));
 
                 return $this->content;
