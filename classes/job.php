@@ -95,7 +95,7 @@ class job {
      * @param string $bid The backup controller id for the backup.
      * @param int $user The id of the user who started the job.
      */
-    public function __construct(int $source, int $target, string $bid, int $user) {        
+    public function __construct(int $source, int $target, string $bid, int $user) {
         $this->source = $source;
         $this->target = $target;
         $this->bid = $bid;
