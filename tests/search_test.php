@@ -27,14 +27,16 @@ namespace block_courseimport;
  * @group block_courseimport
  * @group uon
  */
-class search_test extends \advanced_testcase {
+final class search_test extends \advanced_testcase {
     /**
      * Tests that the block_courseimport_search::searchshortname method works correctly.
      *
      * @group block_courseimport
      * @group uon
+     *
+     * @return void
      */
-    public function test_searchshortname() {
+    public function test_searchshortname(): void {
         $this->resetAfterTest(true);
 
         // First create some courses.

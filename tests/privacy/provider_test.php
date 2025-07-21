@@ -42,7 +42,7 @@ use core_privacy\local\request\writer;
  * @group block_courseimport
  * @group uon
  */
-class provider_test extends \core_privacy\tests\provider_testcase {
+final class provider_test extends \core_privacy\tests\provider_testcase {
     /** @var \block_courseimport_generator The course import block data generator. */
     protected $generator;
 
@@ -65,8 +65,10 @@ class provider_test extends \core_privacy\tests\provider_testcase {
 
     /**
      * Test that when a user has not started any import jobs that nothing is exported.
+     *
+     * @return void
      */
-    public function test_user_with_no_jobs() {
+    public function test_user_with_no_jobs(): void {
         $user = self::getDataGenerator()->create_user();
         $otheruser = self::getDataGenerator()->create_user();
         $this->generator->create_job(['userid' => $otheruser->id]);
@@ -78,8 +80,10 @@ class provider_test extends \core_privacy\tests\provider_testcase {
 
     /**
      * Tests that when a user has started an import job that it is exported.
+     *
+     * @return void
      */
-    public function test_user_with_job() {
+    public function test_user_with_job(): void {
         $user = self::getDataGenerator()->create_user();
         $otheruser = self::getDataGenerator()->create_user();
         $this->generator->create_job(['userid' => $user->id]);
@@ -102,8 +106,10 @@ class provider_test extends \core_privacy\tests\provider_testcase {
 
     /**
      * Tests that we delete all jobs in a context.
+     *
+     * @return void
      */
-    public function test_delete_data_for_all_users_in_context() {
+    public function test_delete_data_for_all_users_in_context(): void {
         global $DB;
         $user = self::getDataGenerator()->create_user();
         $usercontext = \context_user::instance($user->id);
@@ -128,8 +134,10 @@ class provider_test extends \core_privacy\tests\provider_testcase {
 
     /**
      * Test that we delete the resolved jobs for the user.
+     *
+     * @return void
      */
-    public function test_delete_data_for_user() {
+    public function test_delete_data_for_user(): void {
         global $DB;
 
         $user = self::getDataGenerator()->create_user();
@@ -160,8 +168,10 @@ class provider_test extends \core_privacy\tests\provider_testcase {
 
     /**
      * Test that data for users in approved userlist is deleted.
+     *
+     * @return void
      */
-    public function test_delete_data_for_users() {
+    public function test_delete_data_for_users(): void {
         global $DB;
         $component = 'block_courseimport';
 
@@ -208,8 +218,10 @@ class provider_test extends \core_privacy\tests\provider_testcase {
 
     /**
      * Test get users in the context
+     *
+     * @return void
      */
-    public function test_get_users_in_context() {
+    public function test_get_users_in_context(): void {
         $user1 = self::getDataGenerator()->create_user();
         $usercontext1 = \context_user::instance($user1->id);
 
