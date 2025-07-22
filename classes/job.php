@@ -338,8 +338,8 @@ class job {
             'userid' => $this->user,
             'backupid' => $this->bid,
             'status' => $this->status,
-            'timecreated' => $this->clock->time(),
-            'timemodified' => $this->clock->time(),
+            'timecreated' => $time,
+            'timemodified' => $time,
         ];
         $this->id = $DB->insert_record('block_courseimport', $record);
     }
