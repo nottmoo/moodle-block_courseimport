@@ -40,7 +40,7 @@ use core_external\external_api;
  * @group block_courseimport
  * @group uon
  */
-class jobs_test extends \advanced_testcase {
+final class jobs_test extends \advanced_testcase {
     /**
      * Tests that the progress is calculated correctly.
      *
@@ -48,8 +48,10 @@ class jobs_test extends \advanced_testcase {
      * @param float $import
      * @param float $expected
      * @dataProvider data_progress
+     *
+     * @return void
      */
-    public function test_progress(float $backup, float $import, float $expected) {
+    public function test_progress(float $backup, float $import, float $expected): void {
         global $USER;
         $this->resetAfterTest(true);
         $generator = self::getDataGenerator()->get_plugin_generator('block_courseimport');
@@ -90,8 +92,9 @@ class jobs_test extends \advanced_testcase {
      * @param bool $finished The expected flag for if the job has finished.
      * @param bool $failed The expected flag for if the job has failed.
      * @dataProvider data_progress_status
+     * @return void
      */
-    public function test_progress_status(string $status, bool $started, bool $finished, bool $failed) {
+    public function test_progress_status(string $status, bool $started, bool $finished, bool $failed): void {
         global $USER;
         $this->resetAfterTest(true);
         $generator = self::getDataGenerator()->get_plugin_generator('block_courseimport');

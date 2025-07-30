@@ -42,7 +42,7 @@ class job_failed extends \Exception {
      * @param string $message A message to be sent to the admin
      * @param string|null $subject A subject for the e-mail (if the default is not enough)
      */
-    public function __construct($message = "", string $subject = null) {
+    public function __construct(string $message = "", ?string $subject = null) {
         if (is_null($subject)) {
             $this->subject = get_string('alertemailsubject', 'block_courseimport');
         } else {

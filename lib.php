@@ -42,7 +42,7 @@ function block_courseimport_extend_navigation_course(
     ];
     if (has_all_capabilities($requiredcapabilities, $context)) {
         // Add a link to the import page.
-        $url = new moodle_url('/blocks/courseimport/import.php', ['id' => $course->id]);
+        $url = new \core\url('/blocks/courseimport/import.php', ['id' => $course->id]);
         $text = get_string('importlink', 'block_courseimport');
         $node = $parentnode->add($text, $url);
         $node->set_force_into_more_menu(true);

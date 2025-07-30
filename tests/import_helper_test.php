@@ -38,7 +38,7 @@ use context_user;
  * @group block_courseimport
  * @group uon
  */
-class import_helper_test extends \advanced_testcase {
+final class import_helper_test extends \advanced_testcase {
     /**
      * Tests that we can detect the size of files in a resource correctly.
      *
@@ -48,8 +48,9 @@ class import_helper_test extends \advanced_testcase {
      * @param string $mimetype The mimetype of the file.
      *
      * @dataProvider data_get_resource_filesize
+     * @return void
      */
-    public function test_get_resource_filesize(string $filename, int $minsize, int $maxsize, string $mimetype) {
+    public function test_get_resource_filesize(string $filename, int $minsize, int $maxsize, string $mimetype): void {
         $this->resetAfterTest(true);
 
         $generator = self::getDataGenerator()->get_plugin_generator('mod_resource');

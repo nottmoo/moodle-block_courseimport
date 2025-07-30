@@ -36,7 +36,7 @@ namespace block_courseimport;
  * @group block_courseimport
  * @group uon
  */
-class job_test extends \advanced_testcase {
+final class job_test extends \advanced_testcase {
     /**
      * Creates a UK help user.
      */
@@ -68,8 +68,9 @@ class job_test extends \advanced_testcase {
      * @param int $messagecount The number of messages that should be sent.
      *
      * @dataProvider data_abandon_running
+     * @return void
      */
-    public function test_abandon_running(string $status, string $expected, int $messagecount) {
+    public function test_abandon_running(string $status, string $expected, int $messagecount): void {
         global $DB;
         $this->resetAfterTest(true);
         $this->create_helpuser();
@@ -98,8 +99,10 @@ class job_test extends \advanced_testcase {
 
     /**
      * Tests that we correctly get jobs that are queued for processing.
+     *
+     * @return void
      */
-    public function test_get_queued_jobs() {
+    public function test_get_queued_jobs(): void {
         $this->resetAfterTest(true);
         $source = self::getDataGenerator()->create_course(['fullname' => 'C1']);
         $target = self::getDataGenerator()->create_course(['fullname' => 'C2']);
@@ -146,8 +149,9 @@ class job_test extends \advanced_testcase {
      * @param bool $expected The expected result from the method for the target course.
      *
      * @dataProvider data_job_queued
+     * @return void
      */
-    public function test_job_queued(string $status, bool $expected) {
+    public function test_job_queued(string $status, bool $expected): void {
         $this->resetAfterTest(true);
         // Create courses that we can test against.
         $source = self::getDataGenerator()->create_course();
@@ -188,8 +192,9 @@ class job_test extends \advanced_testcase {
      * @param string $change
      *
      * @dataProvider data_set_status
+     * @return void
      */
-    public function test_set_status(string $status, string $change) {
+    public function test_set_status(string $status, string $change): void {
         global $DB;
         $this->resetAfterTest(true);
         // Create and load the job.
@@ -219,9 +224,12 @@ class job_test extends \advanced_testcase {
 
     /**
      * Tests that a job gets saved correctly.
+     *
+     * @return void
      */
-    public function test_save() {
+    public function test_save(): void {
         global $DB;
+        $clock = $this->mock_clock_with_frozen();
         $this->resetAfterTest(true);
         $source = self::getDataGenerator()->create_course();
         $target = self::getDataGenerator()->create_course();
@@ -236,16 +244,17 @@ class job_test extends \advanced_testcase {
         self::assertEquals($job->bid, $record->backupid);
         self::assertEquals($job->user, $record->userid);
         self::assertEquals(job::STATE_WAITING, $record->status);
-        $now = time();
-        self::assertLessThanOrEqual($now, $record->timecreated);
-        self::assertLessThanOrEqual($now, $record->timemodified);
-        self::assertEquals($record->timecreated, $record->timemodified);
+        // We expect that the timecreated and timemodified are the same as the frozen clock time.
+        self::assertEquals($clock->time(), $record->timecreated);
+        self::assertEquals($clock->time(), $record->timemodified);
     }
 
     /**
      * Tests that we can get data from the job about the courses from a job.
+     *
+     * @return void
      */
-    public function test_course_properties() {
+    public function test_course_properties(): void {
         $this->resetAfterTest(true);
         $source = self::getDataGenerator()->create_course();
         $target = self::getDataGenerator()->create_course();

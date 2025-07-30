@@ -84,6 +84,9 @@ class job {
     /** @var int The id of the user who started the import. */
     protected $user;
 
+    /** @var clock A reference to the Moodle core clock API */
+    protected \core\clock $clock;
+
     /**
      * Constructor for the job class.
      *
@@ -98,6 +101,7 @@ class job {
         $this->bid = $bid;
         $this->user = $user;
         $this->status = static::STATE_WAITING;
+        $this->clock = \core\di::get(\core\clock::class);
     }
 
     /**
@@ -131,8 +135,9 @@ class job {
         foreach ($jobs as $abandon) {
             $job = static::create_from_record($abandon);
             $job->set_status(static::STATE_FAILED);
+            $clock = \core\di::get(\core\clock::class);
             $params = [
-                'timenow' => date('Y-m-d H:i:s'),
+                'timenow' => $clock->now()->format('Y-m-d H:i:s'),
                 'jobid' => $job->id,
                 'userid' => $job->user,
                 'target' => $job->target,
@@ -301,7 +306,7 @@ class job {
         $record = (object)[
             'id' => $this->id,
             'status' => $this->status,
-            'timemodified' => time(),
+            'timemodified' => $this->clock->time(),
         ];
         $DB->update_record('block_courseimport', $record);
     }
@@ -326,7 +331,7 @@ class job {
      */
     protected function insert() {
         global $DB;
-        $time = time();
+        $time = $this->clock->time();
         $record = (object)[
             'target' => $this->target,
             'source' => $this->source,
@@ -353,7 +358,7 @@ class job {
             'userid' => $this->user,
             'backupid' => $this->bid,
             'status' => $this->status,
-            'timemodified' => time(),
+            'timemodified' => $this->clock->time(),
         ];
         $DB->update_record('block_courseimport', $record);
     }
