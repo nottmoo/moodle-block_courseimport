@@ -100,17 +100,18 @@ if (!($bc = backup_ui::load_controller($backupid))) {
     // For the initial stage we want to hide all locked settings and if there are no visible settings move to the next stage.
     $visiblesettings = import_helper::hide_locked_settings($plan);
     import_ui::skip_current_stage(!$visiblesettings);
-}
-// Prepare the import UI.
-$backup = new import_ui($bc, ['importid' => $importcourse->id, 'target' => $restoretarget]);
-// Process the current stage.
-$backup->process();
-if ($backup->get_stage() === backup_ui::STAGE_SCHEMA) {
+
+    // Set the defaults we want to use for tasks, we do it here so that they have
+    // an effect when jumping directly to the final stage.
     $tasks = $bc->get_plan()->get_tasks();
     foreach ($tasks as $task) {
         import_helper::filter_task($task);
     }
 }
+// Prepare the import UI.
+$backup = new import_ui($bc, ['importid' => $importcourse->id, 'target' => $restoretarget]);
+// Process the current stage.
+$backup->process();
 
 // If this is the confirmation stage remove the filename setting.
 if ($backup->get_stage() == backup_ui::STAGE_CONFIRMATION) {
