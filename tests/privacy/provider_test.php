@@ -215,7 +215,6 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
         // Only user1's 2 records left.
         provider::delete_data_for_users($approveduserlist1);
         $this->assertEquals(2, $DB->count_records('block_courseimport', ['userid' => $user1->id]));
-
     }
 
     /**
