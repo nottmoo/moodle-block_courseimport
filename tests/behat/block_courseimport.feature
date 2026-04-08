@@ -71,7 +71,6 @@ Feature: Test block_courseimport function
       | Include activities and resources | 1 |
       | Include blocks                   | 1 |
       | Include filters                  | 1 |
-      | Include question bank            | 1 |
     And I press "Jump to final step"
     Then I should see "Content queued for import"
     And I click on "Return to course" "link_or_button"
