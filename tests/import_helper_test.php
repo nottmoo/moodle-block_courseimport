@@ -26,6 +26,9 @@
 namespace block_courseimport;
 
 use context_user;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 
 /**
  * Tests the import_helper class of the course import block.
@@ -34,10 +37,10 @@ use context_user;
  * @copyright   University of Nottingham, 2020
  * @author      Neill Magill <neill.magill@nottingham.ac.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \block_courseimport\import_helper
- * @group block_courseimport
- * @group uon
  */
+#[Group('block_courseimport')]
+#[Group('uon')]
+#[CoversClass(import_helper::class)]
 final class import_helper_test extends \advanced_testcase {
     /**
      * Tests that we can detect the size of files in a resource correctly.
@@ -46,10 +49,9 @@ final class import_helper_test extends \advanced_testcase {
      * @param int $minsize The minimum size of the file.
      * @param int $maxsize The maximum size of the file.
      * @param string $mimetype The mimetype of the file.
-     *
-     * @dataProvider data_get_resource_filesize
      * @return void
      */
+    #[DataProvider('data_get_resource_filesize')]
     public function test_get_resource_filesize(string $filename, int $minsize, int $maxsize, string $mimetype): void {
         $this->resetAfterTest(true);
 

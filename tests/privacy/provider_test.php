@@ -30,6 +30,8 @@ use core_privacy\tests\request\approved_contextlist;
 use core_privacy\local\request\approved_userlist;
 use core_privacy\local\request\userlist;
 use core_privacy\local\request\writer;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
 
 /**
  * Tests the course import block privacy provider class.
@@ -38,10 +40,10 @@ use core_privacy\local\request\writer;
  * @copyright   University of Nottingham, 2018
  * @author      Neill Magill <neill.magill@nottingham.ac.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \block_courseimport\privacy\provider
- * @group block_courseimport
- * @group uon
  */
+#[Group('block_courseimport')]
+#[Group('uon')]
+#[CoversClass(provider::class)]
 final class provider_test extends \core_privacy\tests\provider_testcase {
     /** @var \block_courseimport_generator The course import block data generator. */
     protected $generator;

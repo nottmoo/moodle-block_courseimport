@@ -27,6 +27,10 @@ namespace block_courseimport\external;
 
 use block_courseimport\job;
 use core_external\external_api;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests the enternal methods of the jobs class.
@@ -35,11 +39,11 @@ use core_external\external_api;
  * @copyright   University of Nottingham, 2020
  * @author      Neill Magill <neill.magill@nottingham.ac.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @runInSeparateProcess
- * @covers \block_courseimport\external\jobs
- * @group block_courseimport
- * @group uon
  */
+#[RunTestsInSeparateProcesses]
+#[Group('block_courseimport')]
+#[Group('uon')]
+#[CoversClass(jobs::class)]
 final class jobs_test extends \advanced_testcase {
     /**
      * Tests that the progress is calculated correctly.
@@ -47,10 +51,9 @@ final class jobs_test extends \advanced_testcase {
      * @param float $backup
      * @param float $import
      * @param float $expected
-     * @dataProvider data_progress
-     *
      * @return void
      */
+    #[DataProvider('data_progress')]
     public function test_progress(float $backup, float $import, float $expected): void {
         global $USER;
         $this->resetAfterTest(true);
@@ -91,9 +94,9 @@ final class jobs_test extends \advanced_testcase {
      * @param bool $started The expected flag for if the job has started.
      * @param bool $finished The expected flag for if the job has finished.
      * @param bool $failed The expected flag for if the job has failed.
-     * @dataProvider data_progress_status
      * @return void
      */
+    #[DataProvider('data_progress_status')]
     public function test_progress_status(string $status, bool $started, bool $finished, bool $failed): void {
         global $USER;
         $this->resetAfterTest(true);
