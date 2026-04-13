@@ -25,6 +25,10 @@
 
 namespace block_courseimport;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
+
 /**
  * Tests the job class of the course import block.
  *
@@ -32,10 +36,10 @@ namespace block_courseimport;
  * @copyright   University of Nottingham, 2020
  * @author      Neill Magill <neill.magill@nottingham.ac.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \block_courseimport\job
- * @group block_courseimport
- * @group uon
  */
+#[Group('block_courseimport')]
+#[Group('uon')]
+#[CoversClass(job::class)]
 final class job_test extends \advanced_testcase {
     /**
      * Creates a UK help user.
@@ -66,10 +70,9 @@ final class job_test extends \advanced_testcase {
      * @param string $status The initial status of the job.
      * @param string $expected The expected status after running jobs have been abandoned.
      * @param int $messagecount The number of messages that should be sent.
-     *
-     * @dataProvider data_abandon_running
      * @return void
      */
+    #[DataProvider('data_abandon_running')]
     public function test_abandon_running(string $status, string $expected, int $messagecount): void {
         global $DB;
         $this->resetAfterTest(true);
@@ -147,10 +150,9 @@ final class job_test extends \advanced_testcase {
      *
      * @param string $status The status of the job.
      * @param bool $expected The expected result from the method for the target course.
-     *
-     * @dataProvider data_job_queued
      * @return void
      */
+    #[DataProvider('data_job_queued')]
     public function test_job_queued(string $status, bool $expected): void {
         $this->resetAfterTest(true);
         // Create courses that we can test against.
@@ -190,10 +192,9 @@ final class job_test extends \advanced_testcase {
      *
      * @param string $status
      * @param string $change
-     *
-     * @dataProvider data_set_status
      * @return void
      */
+    #[DataProvider('data_set_status')]
     public function test_set_status(string $status, string $change): void {
         global $DB;
         $this->resetAfterTest(true);

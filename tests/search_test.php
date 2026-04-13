@@ -16,6 +16,9 @@
 
 namespace block_courseimport;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+
 /**
  * Tests the block_courseimport_search class.
  *
@@ -23,16 +26,13 @@ namespace block_courseimport;
  * @copyright   University of Nottingham, 2014
  * @author      Neill Magill <neill.magill@nottingham.ac.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \block_courseimport\search
- * @group block_courseimport
- * @group uon
  */
+#[Group('block_courseimport')]
+#[Group('uon')]
+#[CoversClass(search::class)]
 final class search_test extends \advanced_testcase {
     /**
      * Tests that the block_courseimport_search::searchshortname method works correctly.
-     *
-     * @group block_courseimport
-     * @group uon
      *
      * @return void
      */
