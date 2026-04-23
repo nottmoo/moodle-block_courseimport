@@ -39,7 +39,7 @@ require_once($CFG->dirroot . '/backup/util/ui/import_extensions.php');
 $courseid = required_param('id', PARAM_INT);
 // The id of the course we are exporting FROM (will only be set if past first stage).
 $importcourseid = optional_param('importid', false, PARAM_INT);
-$search = optional_param('searchcourses', false, PARAM_INT);
+$search = optional_param('searchcourses', false, PARAM_BOOL);
 // The target method for the restore (adding or deleting).
 $restoretarget = 1;
 // Load the course and context.
@@ -69,7 +69,7 @@ if (\block_courseimport\job::job_queued($courseid)) {
 }
 
 // Check if we already have a import course id.
-if ($importcourseid === false || $search !== false) {
+if ($importcourseid === false || $search) {
     $url = new url('/blocks/courseimport/import.php', ['id' => $courseid]);
     $search = new search(['url' => $url], $courseid);
     // Show the course selector.
@@ -97,6 +97,7 @@ if (!($bc = backup_ui::load_controller($backupid))) {
     );
     $plan = $bc->get_plan();
     import_helper::disbable_userdata_import($plan);
+    import_helper::apply_plan_setting_toggles($plan);
     // For the initial stage we want to hide all locked settings and if there are no visible settings move to the next stage.
     $visiblesettings = import_helper::hide_locked_settings($plan);
     import_ui::skip_current_stage(!$visiblesettings);

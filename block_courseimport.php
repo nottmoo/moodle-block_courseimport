@@ -87,6 +87,13 @@ class block_courseimport extends block_base {
             ) {
                 $importpageurl = new url('/blocks/courseimport/import.php', ['id' => $COURSE->id]);
                 $this->content->text .= html_writer::link($importpageurl, get_string('importlink', 'block_courseimport'));
+                $systemcontext = context_system::instance();
+                if (get_capability_info('block/courseimport:bulkrollover') &&
+                        has_capability('block/courseimport:bulkrollover', $systemcontext)) {
+                    $bulkurl = new url('/blocks/courseimport/bulk/index.php');
+                    $this->content->text .= html_writer::empty_tag('br');
+                    $this->content->text .= html_writer::link($bulkurl, get_string('bulkrollover', 'block_courseimport'));
+                }
 
                 return $this->content;
             }
@@ -94,9 +101,9 @@ class block_courseimport extends block_base {
     }
 
     /**
-     * The block has no configuration.
+     * Site-level settings (import profile, bulk limits) are defined in settings.php.
      */
     public function has_config() {
-        return false;
+        return true;
     }
 }

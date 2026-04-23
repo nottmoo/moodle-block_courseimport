@@ -36,6 +36,7 @@ class block_courseimport_generator extends testing_block_generator {
             'target' => null,
             'source' => null,
             'userid' => null,
+            'bulk_job_id' => null,
             'backupid' => 'utterlyinvalidid',
             'status' => \block_courseimport\job::STATE_WAITING,
             'backupprogress' => 0.0,
