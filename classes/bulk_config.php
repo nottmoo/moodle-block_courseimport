@@ -1,0 +1,47 @@
+<?php
+// This file is part of the courseimport block plugin for Moodle
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+namespace block_courseimport;
+
+defined('MOODLE_INTERNAL') || die();
+
+/**
+ * Bulk CSV upload configuration helpers.
+ *
+ * @package    block_courseimport
+ * @copyright  2026 University of Nottingham
+ * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+class bulk_config {
+    /** Maximum data rows per upload (hard limit). */
+    public const MAX_CSV_ROWS = 10000;
+
+    /**
+     * Maximum upload size: use the server's effective upload limit.
+     */
+    public static function max_csv_bytes(): int {
+        return (int) get_max_upload_file_size();
+    }
+
+    /**
+     * Maximum data rows allowed per CSV (hard limit, no admin setting).
+     */
+    public static function max_csv_rows(): int {
+        return self::MAX_CSV_ROWS;
+    }
+}

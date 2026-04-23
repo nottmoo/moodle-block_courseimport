@@ -110,7 +110,7 @@ class courseimport_task extends \core\task\scheduled_task {
      * @throws \restore_controller_exception
      */
     protected function restore(job $job) {
-        global $CFG;
+        global $CFG, $DB;
 
         // Check the backup file is there.
         $tempdestination = $CFG->tempdir . '/backup/' . $job->bid;
@@ -132,6 +132,13 @@ class courseimport_task extends \core\task\scheduled_task {
         $rc->set_progress(new \core\progress\db_updater($job->id, 'block_courseimport', 'restoreprogress'));
         $this->prepare_for_restore($rc, $job);
 
+        $preservedtarget = $DB->get_record('course', ['id' => $job->target], 'id, fullname, shortname, idnumber', IGNORE_MISSING);
+        if (!$preservedtarget) {
+            $message = "Error: Job ({$job->id}) target course {$job->target} no longer exists.";
+            mtrace($message);
+            throw new job_failed($message);
+        }
+
         // Execute the restore.
         try {
             $rc->execute_plan();
@@ -152,6 +159,15 @@ class courseimport_task extends \core\task\scheduled_task {
         } finally {
             $rc->destroy();
             fulldelete($tempdestination);
+        }
+
+        // Restore may reset metadata from source course; keep CSV-driven fields.
+        if ($preservedtarget) {
+            if (trim((string) $preservedtarget->fullname) !== '') {
+                $DB->set_field('course', 'fullname', $preservedtarget->fullname, ['id' => (int) $job->target]);
+            }
+            $DB->set_field('course', 'shortname', $preservedtarget->shortname, ['id' => (int) $job->target]);
+            $DB->set_field('course', 'idnumber', (string) $preservedtarget->idnumber, ['id' => (int) $job->target]);
         }
 
         $job->set_status(job::STATE_FINISHED);

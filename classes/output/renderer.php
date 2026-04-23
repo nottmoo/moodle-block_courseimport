@@ -124,7 +124,36 @@ class renderer extends \core_backup_renderer {
             }
         }
 
-        return $this->render_from_template('block_courseimport/course_search', $data);
+        return $this->render_from_template('block_courseimport/course_selector_bulk', $data);
+    }
+
+    /**
+     * Tabs: single import form + link to bulk CSV page.
+     *
+     * @param \core\url $bulkurl
+     * @param string $singleformhtml Full HTML for the single-import form (from parent wrapper).
+     * @return string
+     */
+    public function import_page_with_tabs(\core\url $bulkurl, string $singleformhtml): string {
+        return $this->render_from_template('block_courseimport/import_page_with_tabs', [
+            'bulkurl' => $bulkurl->out(false),
+            'singlecontent' => $singleformhtml,
+            'singletablabel' => get_string('singleimporttab', 'block_courseimport'),
+            'bulktablabel' => get_string('bulkrollover', 'block_courseimport'),
+        ]);
+    }
+
+    /**
+     * Overrides core_backup_renderer::import_course_selector to wrap the form in a tabbed layout.
+     *
+     * @param \moodle_url $nextstageurl
+     * @param \import_course_search|null $courses
+     * @return string
+     */
+    public function import_course_selector(\moodle_url $nextstageurl, ?\import_course_search $courses = null): string {
+        $formhtml = parent::import_course_selector($nextstageurl, $courses);
+        $bulkurl = new url('/blocks/courseimport/bulk/index.php');
+        return $this->import_page_with_tabs($bulkurl, $formhtml);
     }
 
     /**

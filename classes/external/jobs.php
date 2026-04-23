@@ -17,6 +17,7 @@
 namespace block_courseimport\external;
 
 use block_courseimport\output\progress;
+use core\url;
 use core_external\external_function_parameters;
 use core_external\external_single_structure;
 use core_external\external_value;
@@ -41,8 +42,20 @@ class jobs extends \core_external\external_api {
     public static function progress($id): array {
         $progress = progress::get_for_job($id);
         // Verify that the user has the capability to import into the course.
-        $context = \context_course::instance($progress->courseid);
-        require_capability('moodle/restore:restoretargetimport', $context);
+        // If the target course has been deleted, gracefully stop polling.
+        try {
+            $context = \context_course::instance($progress->courseid);
+            require_capability('moodle/restore:restoretargetimport', $context);
+        } catch (\dml_missing_record_exception $e) {
+            return [
+                'backupid' => (int)$id,
+                'courseurl' => (new url('/'))->out(false),
+                'failed' => true,
+                'finished' => true,
+                'started' => true,
+                'progress' => 1.0,
+            ];
+        }
         // Send back the progress.
         return $progress->export_for_external();
     }

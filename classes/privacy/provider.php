@@ -54,6 +54,7 @@ class provider implements
             'source' => 'privacy:metadata:block_courseimport:source',
             'target' => 'privacy:metadata:block_courseimport:target',
             'userid' => 'privacy:metadata:block_courseimport:userid',
+            'bulk_job_id' => 'privacy:metadata:block_courseimport:bulk_job_id',
             'backupid' => 'privacy:metadata:block_courseimport:backupid',
             'status' => 'privacy:metadata:block_courseimport:status',
             'timecreated' => 'privacy:metadata:block_courseimport:timecreated',

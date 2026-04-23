@@ -23,7 +23,6 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->dirroot . "/backup/util/interfaces/checksumable.class.php");
 require_once($CFG->dirroot . '/backup/backup.class.php');
 require_once($CFG->dirroot . '/backup/util/ui/base_ui.class.php');
-require_once($CFG->dirroot . "/backup/backup.class.php");
 require_once($CFG->dirroot . "/backup/util/ui/backup_ui.class.php");
 require_once($CFG->dirroot . '/backup/util/ui/base_ui_stage.class.php');
 require_once($CFG->dirroot . '/backup/util/ui/backup_ui_stage.class.php');
@@ -57,7 +56,7 @@ class search extends \import_course_search {
         if (!isset($this->shortnameresults[$queryhash])) {
             $this->searchshortname($coursecode, $shortnamestr);
         }
-        return $this->shortnameresults[$queryhash];
+        return $this->shortnameresults[$queryhash] ?? [];
     }
 
     /**
@@ -65,13 +64,12 @@ class search extends \import_course_search {
      *
      * @param string $coursecode - fragment of a shortname to match.
      * @param string $shortnamestr - the short name of a course that should not be returned.
-     * @return int - the number of results found.
      */
-    public function searchshortname($coursecode, $shortnamestr) {
+    public function searchshortname($coursecode, $shortnamestr): void {
         global $DB;
         $queryhash = md5($coursecode.'---@---'.$shortnamestr);
-        if ((isset($this->shortnameresults[$queryhash]))) {
-            return count($this->shortnameresults[$queryhash]);
+        if (isset($this->shortnameresults[$queryhash])) {
+            return;
         }
         $this->shortnameresults = [];
         $params = [
@@ -87,9 +85,7 @@ class search extends \import_course_search {
         FROM {course} c
         LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = 50)
         WHERE (('.$likesql.') and (LOWER(c.shortname) <> :shortnamestr) and (c.id <> :siteid))';
-        $resultsetshortname = $DB->get_records_sql($searchsql, $params);
-        $this->shortnameresults[$queryhash] = $resultsetshortname;
-        return count($resultsetshortname);
+        $this->shortnameresults[$queryhash] = $DB->get_records_sql($searchsql, $params);
     }
 
     /**

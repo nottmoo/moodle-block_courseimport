@@ -38,6 +38,7 @@ namespace block_courseimport;
  * @property-read \coursecontext $targetcontext The contect of the course we are impoting to.
  * @property-read string $targetname The name of the course we are importing to.
  * @property-read int $user The id of the user who triggered the job.
+ * @property-read int|null $bulkjobid The parent bulk job id, if any.
  *
  * @package    block_courseimport
  * @author     Neill Magill <neill.magill@nottingham.ac.uk>
@@ -84,6 +85,9 @@ class job {
     /** @var int The id of the user who started the import. */
     protected $user;
 
+    /** @var int|null The parent bulk job id. */
+    protected $bulkjobid;
+
     /** @var clock A reference to the Moodle core clock API */
     protected \core\clock $clock;
 
@@ -94,12 +98,14 @@ class job {
      * @param int $target The id of the course that content will be imported to.
      * @param string $bid The backup controller id for the backup.
      * @param int $user The id of the user who started the job.
+     * @param int|null $bulkjobid The parent bulk job id.
      */
-    public function __construct(int $source, int $target, string $bid, int $user) {
+    public function __construct(int $source, int $target, string $bid, int $user, ?int $bulkjobid = null) {
         $this->source = $source;
         $this->target = $target;
         $this->bid = $bid;
         $this->user = $user;
+        $this->bulkjobid = $bulkjobid;
         $this->status = static::STATE_WAITING;
         $this->clock = \core\di::get(\core\clock::class);
     }
@@ -159,7 +165,8 @@ class job {
      * @return job
      */
     public static function create_from_record(\stdClass $record): job {
-        $job = new job($record->source, $record->target, $record->backupid, $record->userid);
+        $bulkid = isset($record->bulk_job_id) && $record->bulk_job_id !== null ? (int) $record->bulk_job_id : null;
+        $job = new job($record->source, $record->target, $record->backupid, $record->userid, $bulkid);
         $job->id = $record->id;
         $job->status = $record->status;
         if (isset($record->fromname)) {
@@ -280,10 +287,11 @@ class job {
      */
     public static function get_queued_jobs(): \moodle_recordset {
         global $DB;
+        // Do not inner-join course: deleted source/target would hide queued jobs forever.
         $sql = "SELECT ci.*, tc.fullname AS fromname, sc.fullname AS toname
                   FROM {block_courseimport} ci
-                  JOIN {course} tc ON ci.source = tc.id
-                  JOIN {course} sc ON ci.target = sc.id
+                  LEFT JOIN {course} tc ON tc.id = ci.source
+                  LEFT JOIN {course} sc ON sc.id = ci.target
                  WHERE ci.status = :status";
         $params = ['status' => self::STATE_WAITING];
         return $DB->get_recordset_sql($sql, $params);
@@ -298,6 +306,7 @@ class job {
      */
     public function set_status(string $status) {
         global $DB;
+        $previous = $this->status;
         $this->status = $status;
         if (!isset($this->id)) {
             // The job has not been saved to the database.
@@ -309,6 +318,10 @@ class job {
             'timemodified' => $this->clock->time(),
         ];
         $DB->update_record('block_courseimport', $record);
+        if ($previous === static::STATE_PROCESSING &&
+                ($status === static::STATE_FINISHED || $status === static::STATE_FAILED)) {
+            bulk_job::record_child_finished($this->bulkjobid ?? null, $status === static::STATE_FINISHED);
+        }
     }
 
     /**
@@ -337,6 +350,7 @@ class job {
             'source' => $this->source,
             'userid' => $this->user,
             'backupid' => $this->bid,
+            'bulk_job_id' => $this->bulkjobid,
             'status' => $this->status,
             'timecreated' => $time,
             'timemodified' => $time,
@@ -357,6 +371,7 @@ class job {
             'source' => $this->source,
             'userid' => $this->user,
             'backupid' => $this->bid,
+            'bulk_job_id' => $this->bulkjobid,
             'status' => $this->status,
             'timemodified' => $this->clock->time(),
         ];

@@ -30,8 +30,10 @@ use base_setting;
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->dirroot . '/backup/util/settings/base_setting.class.php');
+// Load backup core first (defines backup_exception) before settings classes extend it.
+require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
 require_once($CFG->dirroot . '/backup/moodle2/backup_settingslib.php');
+require_once($CFG->dirroot . '/blocks/courseimport/db/profiledefaults.php');
 /**
  * Helper for the import page.
  *
@@ -41,6 +43,62 @@ require_once($CFG->dirroot . '/backup/moodle2/backup_settingslib.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class import_helper {
+    /**
+     * Default checkbox values for the import profile (admin settings and bulk UI summary).
+     *
+     * @return array<string, bool>
+     */
+    public static function profile_toggle_defaults(): array {
+        $defaults = [];
+        foreach (block_courseimport_profile_toggle_defaults() as $key => $value) {
+            $defaults[$key] = ((int)$value) === 1;
+        }
+        return $defaults;
+    }
+
+    /**
+     * Whether a profile toggle is enabled (same interpretation as backup/import apply logic).
+     *
+     * @param string $key
+     * @return bool
+     */
+    public static function profile_toggle_enabled(string $key): bool {
+        $defaults = self::profile_toggle_defaults();
+        $default = $defaults[$key] ?? false;
+        return self::config_enabled($key, $default);
+    }
+
+    /**
+     * Human-readable labels for enabled profile options (admin order), for bulk upload sidebar.
+     *
+     * @return string[] HTML-safe plain text lines
+     */
+    public static function enabled_profile_sidebar_labels(): array {
+        $keys = array_keys(self::profile_toggle_defaults());
+        $out = [];
+        foreach ($keys as $key) {
+            if (self::profile_toggle_enabled($key)) {
+                $out[] = get_string($key, 'block_courseimport');
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Gets a boolean plugin config value.
+     *
+     * @param string $key
+     * @param bool $default
+     * @return bool
+     */
+    public static function config_enabled(string $key, bool $default = true): bool {
+        $value = get_config('block_courseimport', $key);
+        if ($value === false) {
+            return $default;
+        }
+        return ((int)$value) === 1;
+    }
+
     /**
      * Stops the user from changing the setting of the user import setting.
      *
@@ -68,6 +126,42 @@ class import_helper {
             }
         }
         return $skip;
+    }
+
+    /**
+     * Applies include/exclude profile toggles from plugin settings.
+     *
+     * @param \backup_plan $plan
+     * @return void
+     */
+    public static function apply_plan_setting_toggles(\backup_plan $plan): void {
+        $toggles = [
+            'includepermissionoverrides' => ['role_assignments'],
+            'includeblocks' => ['blocks'],
+            'includefiles' => ['files'],
+            'includefilters' => ['filters'],
+            'includecalendarevents' => ['calendarevents'],
+            'includequestionbank' => ['questionbank'],
+            'includegroupsgroupings' => ['groups', 'groupings'],
+            'includecustomfields' => ['customfields'],
+            'includecontentbankcontent' => ['contentbankcontent'],
+            'includelegacycoursefiles' => ['legacyfiles'],
+        ];
+        foreach ($toggles as $configkey => $settingnames) {
+            if (self::profile_toggle_enabled($configkey)) {
+                continue;
+            }
+            foreach ($settingnames as $settingname) {
+                try {
+                    $setting = $plan->get_setting($settingname);
+                    if ($setting instanceof \base_setting) {
+                        self::disable_setting($setting);
+                    }
+                } catch (\Throwable $e) {
+                    // Missing setting in a specific backup plan, ignore safely.
+                }
+            }
+        }
     }
 
     /**
@@ -119,8 +213,14 @@ class import_helper {
      * @return void
      */
     public static function filter_task(\base_task $task) {
+        $includeactivities = self::profile_toggle_enabled('includeactivitiesresources');
         foreach ($task->get_settings() as $setting) {
             $settingname = $setting->get_name();
+
+            if (!$includeactivities && preg_match('/_[0-9]+_included$|_included$/', $settingname) === 1) {
+                self::disable_setting($setting);
+                continue;
+            }
 
             // Unselect announcement forum activities.
             if (preg_match('/^(forum_)\K[0-9]+(?=_included)/', $settingname, $instanceid) === 1) {
