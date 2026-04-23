@@ -39,7 +39,7 @@
         "width": "500"
     }
 }}
-<div class="progressbar_container" id="{{backupid}}">
+<div class="progressbar_container mb-4 block-courseimport-active-import" id="{{backupid}}">
     <h3 id="{{backupid}}_status">{{# str }} importpending, block_courseimport {{/ str }}</h3>
     {{> core/async_backup_progress }}
     <p id="{{backupid}}_detail">{{# str }} asyncnowait, backup {{/ str }}</p>
