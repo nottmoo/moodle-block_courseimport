@@ -31,6 +31,7 @@
  */
 function xmldb_block_courseimport_upgrade($oldversion) {
     global $DB;
+    require_once(__DIR__ . '/profiledefaults.php');
     $dbman = $DB->get_manager();
 
     if ($oldversion < 2018050900) {
@@ -69,6 +70,46 @@ function xmldb_block_courseimport_upgrade($oldversion) {
             $dbman->add_field($table, $restorefield);
         }
         upgrade_block_savepoint(true, 2020012301, 'courseimport');
+    }
+
+    if ($oldversion < 2026041700) {
+        $table = new xmldb_table('block_courseimport');
+        $field = new xmldb_field('bulk_job_id', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'userid');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $bulktable = new xmldb_table('block_courseimport_bulk_job');
+        if (!$dbman->table_exists($bulktable)) {
+            $bulktable->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+            $bulktable->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, 0);
+            $bulktable->add_field('source_year', XMLDB_TYPE_CHAR, '32', null, null, null, null);
+            $bulktable->add_field('target_year', XMLDB_TYPE_CHAR, '32', null, null, null, null);
+            $bulktable->add_field('status', XMLDB_TYPE_CHAR, '32', null, XMLDB_NOTNULL, null, 'queued');
+            $bulktable->add_field('total_count', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, 0);
+            $bulktable->add_field('completed_count', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, 0);
+            $bulktable->add_field('failed_count', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, 0);
+            $bulktable->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, 0);
+            $bulktable->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, 0);
+            $bulktable->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+            $dbman->create_table($bulktable);
+        }
+
+        foreach (block_courseimport_profile_toggle_defaults() as $key => $value) {
+            if (get_config('block_courseimport', $key) === false) {
+                set_config($key, $value, 'block_courseimport');
+            }
+        }
+
+        upgrade_block_savepoint(true, 2026041700, 'courseimport');
+    }
+
+    if ($oldversion < 2026041800) {
+        // These settings were removed — clean up any existing values.
+        unset_config('bulkmaxrows', 'block_courseimport');
+        unset_config('bulkcsvmaxbytes', 'block_courseimport');
+        unset_config('bulknewcoursecategory', 'block_courseimport');
+        upgrade_block_savepoint(true, 2026041800, 'courseimport');
     }
 
     return true;
