@@ -1,0 +1,20 @@
+/**
+ * Styles for the course import block.
+ * 
+ * @package    block_courseimport
+ * @copyright  2026 University of Nottingham
+ * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or late
+ */
+
+/* Bulk status progress bar container */
+.block-courseimport-progress {
+    height: 24px;
+    border-radius: 6px;
+}
+
+/* Bulk status progress bar fill (width set inline via Mustache: {{progresspct}}%) */
+.block-courseimport-progress-bar {
+    font-size: 0.85rem;
+    line-height: 24px;
+}

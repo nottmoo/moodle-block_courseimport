@@ -14,7 +14,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * This module updates the UI during an course import process.
+ * Polls import job progress (one independent timer per job). Removes the block when the job ends.
  *
  * @module     block_courseimport/async
  * @author     Neill Magill <neill.magill@nottingham.ac.uk>
@@ -25,15 +25,9 @@ import Ajax from 'core/ajax';
 import {get_string} from 'core/str';
 import Notification from 'core/notification';
 
-let checkdelay = 15000; // The delay (in milliseconds) between requests.
-let timeout = 2000; // The timeout (in milliseconds) for AJAX requests.
-let checkid; // The id of the interval timer.
-let jobid = 0; // The database id of the job we are monitoring progress for.
-let bar; // The progress bar element.
+const checkdelay = 15000;
+const timeout = 2000;
 
-/**
- * Stores the class and string of the progress bar for each state.
- */
 const status = {
     started: {
         'class': 'bg-success',
@@ -50,90 +44,89 @@ const status = {
 };
 
 /**
- * Starts checking progress of the job.
+ * @param {{jobid: number, bar: ?HTMLElement, container: ?HTMLElement, checkid: ?number}} state
  */
-const start = () => {
-    checkid = setInterval(getProgress, checkdelay);
+const stop = (state) => {
+    if (state.checkid !== null) {
+        clearInterval(state.checkid);
+        state.checkid = null;
+    }
 };
 
 /**
- * Stops checking of progress for the job.
+ * @param {{jobid: number, bar: ?HTMLElement, container: ?HTMLElement, checkid: ?number}} state
  */
-const stop = () => {
-    clearInterval(checkid);
-};
-
-/**
- * Gets progress for the job, then updates the UI.
- */
-const getProgress = () => {
-    let params = [{
-        // Get the backup progress via webservice.
+const getProgress = (state) => {
+    const params = [{
         methodname: 'block_courseimport_get_job_progress',
-        args: {'id': jobid},
+        args: {'id': state.jobid},
     }];
-    let promises = Ajax.call(params, true, true, false, timeout);
-    promises[0].then(updateProgress).catch(Notification.exception);
+    const promises = Ajax.call(params, true, true, false, timeout);
+    promises[0].then((response) => updateProgress(response, state)).catch(Notification.exception);
 };
 
 /**
- * Updates the progress of the import.
- *
- * @param response Data returned from the progress web service.
+ * @param {*} response
+ * @param {{jobid: number, bar: ?HTMLElement, container: ?HTMLElement, checkid: ?number}} state
  */
-const updateProgress = (response) => {
-    let progress = Math.round(response.progress * 100);
-    let removeClass = 'doesnotexist'; // Use a value that should not exist.
+const updateProgress = (response, state) => {
+    const bar = state.bar;
+    if (!bar) {
+        stop(state);
+        return;
+    }
+    const progress = Math.round(response.progress * 100);
+    let removeClass = 'doesnotexist';
     let addClass = '';
-    let string;
+    let stringKey;
 
     if (response.failed) {
-        // The job has failed to complete.
         removeClass = status.started.class;
         addClass = status.failed.class;
-        string = status.failed.string;
-        stop();
+        stringKey = status.failed.string;
+        stop(state);
     } else if (response.finished) {
-        // The import has completed successfully.
         removeClass = status.started.class;
         addClass = status.finished.class;
-        string = status.finished.string;
-        stop();
+        stringKey = status.finished.string;
+        stop(state);
     } else if (response.started) {
-        // The job is processing.
         addClass = status.started.class;
-        string = status.started.string;
+        stringKey = status.started.string;
     } else {
-        // The job is waiting to start.
         return;
     }
 
-    // Update the text of the status bar.
-    get_string(string, 'block_courseimport').then(updateBarText).catch(Notification.exception);
-    // Ensure the correct class is present.
+    get_string(stringKey, 'block_courseimport').then((label) => {
+        bar.innerHTML = label;
+    }).catch(Notification.exception);
     bar.classList.remove(removeClass);
     bar.classList.add(addClass);
-    // Set the progress for the bar.
     bar.setAttribute('aria-valuenow', progress);
     bar.setAttribute('style', 'width:' + progress + '%');
+
+    if (response.failed || response.finished) {
+        const wrap = state.container;
+        if (wrap && wrap.parentNode) {
+            wrap.parentNode.removeChild(wrap);
+        }
+    }
 };
 
 /**
- * Updates the lable of the progress bar.
- *
- * @param {String} label
- */
-const updateBarText = (label) => {
-    bar.innerHTML = label;
-};
-
-/**
- * Sets up the polling of the webservice.
- *
- * @param {Number} id
+ * @param {string|number} id Job row id (same as block_courseimport.id).
  */
 export const init = (id) => {
-    jobid = id;
-    bar = document.getElementById(id + '_bar');
-    start();
+    const idstr = String(id);
+    const jobid = parseInt(idstr, 10);
+    const bar = document.getElementById(idstr + '_bar');
+    const container = document.getElementById(idstr);
+    const state = {
+        jobid,
+        bar,
+        container,
+        checkid: null,
+    };
+    state.checkid = setInterval(() => getProgress(state), checkdelay);
+    getProgress(state);
 };
