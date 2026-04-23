@@ -26,7 +26,7 @@ Feature: Adding course import block to a course
       | user   | user1             |
       | course | N12401-UK-SPR1415 |
       | role   | <role>            |
-    Given I am on the "N12401-UK-SPR1415" "course" page logged in as "user1"
+    And I am on the "N12401-UK-SPR1415" "course" page logged in as "user1"
     And I turn editing mode on
     When I click on "Add a block" "link_or_button"
     Then I should not see "Course import" in the "Add a block" "dialogue"
