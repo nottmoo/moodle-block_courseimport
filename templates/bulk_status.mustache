@@ -82,8 +82,15 @@
             <tbody>
                 {{#childjobs}}
                 <tr>
-                    <td>{{jobid}}</td>
-                    <td>{{target}} ({{targetid}})</td>
+                    <td>{{rownum}}</td>
+                    <td>
+                        {{#targetlinkurl}}
+                        <a href="{{targetlinkurl}}" target="_blank" rel="noopener noreferrer">{{target}}</a> ({{targetid}})
+                        {{/targetlinkurl}}
+                        {{^targetlinkurl}}
+                        {{target}} ({{targetid}})
+                        {{/targetlinkurl}}
+                    </td>
                     <td>{{source}} ({{sourceid}})</td>
                     <td>{{statelabel}}</td>
                 </tr>

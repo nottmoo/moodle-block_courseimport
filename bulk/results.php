@@ -70,7 +70,7 @@ if ($bulkid) {
               LEFT JOIN {course} tc ON tc.id = j.target
               LEFT JOIN {course} sc ON sc.id = j.source
              WHERE j.bulk_job_id = :bid
-          ORDER BY j.id ASC";
+          ORDER BY j.id DESC";
     $children = $DB->get_records_sql($sql, ['bid' => $bulkid]);
 
     // Fallback: if bulk job claims to be running but no child jobs are still active,
@@ -107,10 +107,16 @@ if ($bulkid) {
         $sname = $c->sourcename ?? '';
         $tctx = context_course::instance($c->target, IGNORE_MISSING);
         $sctx = context_course::instance($c->source, IGNORE_MISSING);
+        $targetid = (int) $c->target;
+        $targetlabel = $tctx ? format_string($tname, true, ['context' => $tctx]) : get_string('bulkcoursedeleted', 'block_courseimport');
+        $targetlinkurl = ($tctx && $targetid > 0)
+            ? (new \moodle_url('/course/view.php', ['id' => $targetid]))->out(false)
+            : '';
+
         $childrows[] = [
-            'jobid' => (int) $c->id,
-            'target' => $tctx ? format_string($tname, true, ['context' => $tctx]) : get_string('bulkcoursedeleted', 'block_courseimport'),
-            'targetid' => (int) $c->target,
+            'target' => $targetlabel,
+            'targetid' => $targetid,
+            'targetlinkurl' => $targetlinkurl,
             'source' => $sctx ? format_string($sname, true, ['context' => $sctx]) : get_string('bulkcoursedeleted', 'block_courseimport'),
             'sourceid' => (int) $c->source,
             'statelabel' => block_courseimport_bulk_results_job_label($c->status),
@@ -118,7 +124,11 @@ if ($bulkid) {
     }
 
     $childtotal = count($childrows);
-    $childslice = array_slice($childrows, $cpage * $childperpage, $childperpage);
+    $childslice = array_values(array_slice($childrows, $cpage * $childperpage, $childperpage));
+    $rowoffset = $cpage * $childperpage;
+    foreach ($childslice as $i => $row) {
+        $childslice[$i]['rownum'] = $rowoffset + $i + 1;
+    }
     $childnavurl = new moodle_url('/blocks/courseimport/bulk/results.php', [
         'bulkid' => $bulkid,
         'completed' => $completedonly,
