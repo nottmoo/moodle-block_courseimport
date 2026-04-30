@@ -81,20 +81,23 @@ class block_courseimport extends block_base {
             $this->content = new stdClass;
             $this->content->text = '';
             $coursecontext = context_course::instance($COURSE->id);
+            $links = [];
 
             if (has_capability('block/courseimport:view', $coursecontext)
                 && has_capability('moodle/course:update', $coursecontext)
             ) {
                 $importpageurl = new url('/blocks/courseimport/import.php', ['id' => $COURSE->id]);
-                $this->content->text .= html_writer::link($importpageurl, get_string('importlink', 'block_courseimport'));
-                $systemcontext = context_system::instance();
-                if (get_capability_info('block/courseimport:bulkrollover') &&
-                        has_capability('block/courseimport:bulkrollover', $systemcontext)) {
-                    $bulkurl = new url('/blocks/courseimport/bulk/index.php');
-                    $this->content->text .= html_writer::empty_tag('br');
-                    $this->content->text .= html_writer::link($bulkurl, get_string('bulkrollover', 'block_courseimport'));
-                }
+                $links[] = html_writer::link($importpageurl, get_string('importlink', 'block_courseimport'));
+            }
 
+            $systemcontext = context_system::instance();
+            if (has_capability('block/courseimport:bulkrollover', $systemcontext)) {
+                $bulkurl = new url('/blocks/courseimport/bulk/index.php');
+                $links[] = html_writer::link($bulkurl, get_string('bulkrollover', 'block_courseimport'));
+            }
+
+            if (!empty($links)) {
+                $this->content->text = implode(html_writer::empty_tag('br'), $links);
                 return $this->content;
             }
         }
