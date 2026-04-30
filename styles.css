@@ -9,12 +9,11 @@
 
 /* Bulk status progress bar container */
 .block-courseimport-progress {
-    height: 24px;
-    border-radius: 6px;
+    height: 1.5rem;
 }
 
 /* Bulk status progress bar fill (width set inline via Mustache: {{progresspct}}%) */
 .block-courseimport-progress-bar {
     font-size: 0.85rem;
-    line-height: 24px;
+    line-height: 1.5rem;
 }
