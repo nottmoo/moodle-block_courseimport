@@ -24,7 +24,6 @@
  */
 
 defined('MOODLE_INTERNAL') || die();
-require_once(__DIR__ . '/profiledefaults.php');
 
 /**
  * Block install hook.
@@ -34,7 +33,7 @@ require_once(__DIR__ . '/profiledefaults.php');
  * @return void
  */
 function xmldb_block_courseimport_install(): void {
-    foreach (block_courseimport_profile_toggle_defaults() as $key => $value) {
+    foreach (\block_courseimport\local\profile_defaults::get_toggle_defaults() as $key => $value) {
         set_config($key, $value, 'block_courseimport');
     }
 }

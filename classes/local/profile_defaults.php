@@ -15,23 +15,29 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Shared import profile defaults used by settings/install/upgrade.
- * 
+ * Import profile default settings shared by admin UI, install, and upgrade.
+ *
  * @package    block_courseimport
  * @copyright  2026 University of Nottingham
  * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+namespace block_courseimport\local;
+
 defined('MOODLE_INTERNAL') || die();
 
-if (!function_exists('block_courseimport_profile_toggle_defaults')) {
+/**
+ * Default values for import profile toggles.
+ */
+class profile_defaults {
+
     /**
-     * Shared import profile defaults used by settings/install/upgrade.
+     * Keys are setting names (without plugin prefix); values are '0' or '1' strings.
      *
      * @return array<string, string>
      */
-    function block_courseimport_profile_toggle_defaults(): array {
+    public static function get_toggle_defaults(): array {
         return [
             'includepermissionoverrides' => '0',
             'includeactivitiesresources' => '1',
@@ -47,4 +53,3 @@ if (!function_exists('block_courseimport_profile_toggle_defaults')) {
         ];
     }
 }
-

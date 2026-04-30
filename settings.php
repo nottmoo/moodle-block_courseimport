@@ -24,7 +24,6 @@
  */
 
 defined('MOODLE_INTERNAL') || die();
-require_once(__DIR__ . '/db/profiledefaults.php');
 
 if ($hassiteconfig && !$ADMIN->locate('block_courseimport_bulkrollover')) {
     $ADMIN->add('blocksettings', new admin_externalpage(
@@ -42,7 +41,7 @@ if ($ADMIN->fulltree) {
         ''
     ));
 
-    $profiledefaults = block_courseimport_profile_toggle_defaults();
+    $profiledefaults = \block_courseimport\local\profile_defaults::get_toggle_defaults();
     foreach ($profiledefaults as $key => $default) {
         $settings->add(new admin_setting_configcheckbox(
             'block_courseimport/' . $key,
