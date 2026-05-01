@@ -25,14 +25,14 @@
             <h2 class="mb-2">{{heading}}</h2>
             {{#statusurl}}
             <div class="mb-3">
-                <a href="{{statusurl}}">{{statuslabel}}</a>
+                <a href="{{statusurl}}">{{#str}} bulkstatusview, block_courseimport {{/str}}</a>
             </div>
             {{/statusurl}}
 
             {{#activebulknotice}}
             <div class="alert alert-info d-flex align-items-center justify-content-between mt-2 mb-3" role="alert">
                 <span>{{#str}} bulkactiveimports, block_courseimport {{/str}} — {{#str}} bulkstatusid, block_courseimport {{/str}} #{{jobid}}</span>
-                <a href="{{url}}" class="btn btn-sm btn-outline-primary ms-3">{{label}}</a>
+                <a href="{{url}}" class="btn btn-sm btn-outline-primary ms-3">{{#str}} bulkstatusview, block_courseimport {{/str}}</a>
             </div>
             {{/activebulknotice}}
 
@@ -45,19 +45,19 @@
         <div class="col-lg-4 col-md-5 mt-4 mt-md-0">
             <div class="card h-100 border-secondary">
                 <div class="card-header">
-                    <strong>{{sidebartitle}}</strong>
+                    <strong>{{#str}} bulkenabledsettingstitle, block_courseimport {{/str}}</strong>
                 </div>
                 <div class="card-body">
-                    <p class="small text-muted mb-3">{{sidebarintro}}</p>
+                    <p class="small text-muted mb-3">{{#str}} bulkenabledsettingsintro, block_courseimport {{/str}}</p>
                     <ul class="mb-4 ps-3">
                         {{#enableditems}}
                         <li>{{label}}</li>
                         {{/enableditems}}
                         {{^enableditems}}
-                        <li class="text-muted small">{{sidebarempty}}</li>
+                        <li class="text-muted small">{{#str}} bulkenabledsettingsnone, block_courseimport {{/str}}</li>
                         {{/enableditems}}
                     </ul>
-                    <a class="btn btn-outline-secondary btn-sm" href="{{settingsurl}}">{{settingsbutton}}</a>
+                    <a class="btn btn-outline-secondary btn-sm" href="{{settingsurl}}">{{#str}} bulkgotoimportsettings, block_courseimport {{/str}}</a>
                 </div>
             </div>
         </div>

@@ -41,6 +41,7 @@ require_capability('block/courseimport:bulkrollover', $systemcontext);
 $previewpage = optional_param('previewpage', 0, PARAM_INT);
 $errorpage = optional_param('errorpage', 0, PARAM_INT);
 $confirm = optional_param('confirm', 0, PARAM_INT);
+$draftidparam = optional_param('draftid', 0, PARAM_INT);
 $perpage = 25;
 
 $PAGE->set_context($systemcontext);
@@ -89,8 +90,8 @@ if ($form->is_cancelled()) {
     redirect(new url('/blocks/courseimport/bulk/index.php'));
 }
 
-if ($fromform = $form->get_data()) {
-    $draftid = $fromform->csvfile;
+if ($draftidparam || ($fromform = $form->get_data())) {
+    $draftid = $draftidparam ?: (int) $fromform->csvfile;
     $fs = get_file_storage();
     $usercontext = context_user::instance($USER->id);
     $files = $fs->get_area_files($usercontext->id, 'user', 'draft', $draftid, 'itemid, filepath, filename', false);

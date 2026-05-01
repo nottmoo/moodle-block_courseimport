@@ -206,8 +206,40 @@ class bulk_job {
      * @param int $limit
      * @return array<int, \stdClass>
      */
-    public static function list_for_user(int $userid, int $limit = 50): array {
+    public static function list_for_user(int $userid, int $limit = 10): array {
         return self::list_for_user_page($userid, $limit);
+    }
+
+    /**
+     * Returns whether the user currently has at least one queued bulk job.
+     *
+     * @param int $userid
+     * @return bool
+     */
+    public static function user_has_queued(int $userid): bool {
+        global $DB;
+        return $DB->record_exists('block_courseimport_bulk_job', [
+            'userid' => $userid,
+            'status' => self::STATUS_QUEUED,
+        ]);
+    }
+
+    /**
+     * Returns the user's most recent queued bulk job.
+     *
+     * @param int $userid
+     * @return \stdClass|null
+     */
+    public static function get_most_recent_queued_for_user(int $userid): ?\stdClass {
+        global $DB;
+        $records = $DB->get_records('block_courseimport_bulk_job', [
+            'userid' => $userid,
+            'status' => self::STATUS_QUEUED,
+        ], 'timecreated DESC, id DESC', '*', 0, 1);
+        if (!$records) {
+            return null;
+        }
+        return reset($records) ?: null;
     }
 
     /**

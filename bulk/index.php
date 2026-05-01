@@ -15,7 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Bulk rollover index page.
+ * Bulk rollover CSV submission page.
+ *
+ * Shows the upload form and (optionally) a notice for the user's current queued job.
+ * Full job history/details are shown on bulk/results.php.
  * 
  * @package    block_courseimport
  * @copyright  2026 University of Nottingham
@@ -43,20 +46,20 @@ $PAGE->set_heading($heading);
 $PAGE->set_pagelayout('admin');
 
 $maxbytes = bulk_config::max_csv_bytes();
-$submiturl = new url('/blocks/courseimport/bulk/submit.php');
+$submiturl = new url('/blocks/courseimport/bulk/index.php');
 $form = new csv_upload_form($submiturl, ['maxbytes' => $maxbytes]);
+
+if ($fromform = $form->get_data()) {
+    redirect(new url('/blocks/courseimport/bulk/submit.php', ['draftid' => (int) $fromform->csvfile]));
+}
 
 echo $OUTPUT->header();
 ob_start();
 $form->display();
 $formhtml = ob_get_clean();
 
-// Check if the user has any active bulk jobs (queued).
-$activebulkjobs = array_filter(
-    bulk_job::list_for_user((int) $USER->id, 10),
-    fn($j) => $j->status === bulk_job::STATUS_QUEUED
-);
-$activebulkjob = $activebulkjobs ? reset($activebulkjobs) : null;
+// Show a notice for the user's most recent queued bulk job.
+$activebulkjob = bulk_job::get_most_recent_queued_for_user((int) $USER->id);
 
 $statusurl = (new url('/blocks/courseimport/bulk/results.php'))->out(false);
 
@@ -73,7 +76,6 @@ if ($activebulkjob) {
     $jobstatusurl = (new url('/blocks/courseimport/bulk/results.php', ['bulkid' => $activebulkjob->id]))->out(false);
     $activebulknotice = [
         'url'   => $jobstatusurl,
-        'label' => get_string('bulkstatusview', 'block_courseimport'),
         'jobid' => (int) $activebulkjob->id,
     ];
 }
@@ -81,14 +83,9 @@ if ($activebulkjob) {
 echo $OUTPUT->render_from_template('block_courseimport/bulk_upload', [
     'heading' => $heading,
     'statusurl' => $statusurl,
-    'statuslabel' => get_string('bulkstatusview', 'block_courseimport'),
     'formhtml' => $formhtml,
     'activebulknotice' => $activebulknotice,
-    'sidebartitle' => get_string('bulkenabledsettingstitle', 'block_courseimport'),
-    'sidebarintro' => get_string('bulkenabledsettingsintro', 'block_courseimport'),
-    'sidebarempty' => get_string('bulkenabledsettingsnone', 'block_courseimport'),
     'enableditems' => $enableditems,
     'settingsurl' => $settingsurl,
-    'settingsbutton' => get_string('bulkgotoimportsettings', 'block_courseimport'),
 ]);
 echo $OUTPUT->footer();
