@@ -16,6 +16,9 @@
 /**
  * Polls import job progress (one independent timer per job). Removes the block when the job ends.
  *
+ * Loaded from `blocks/courseimport/templates/import_status.mustache` 
+ * when `block_courseimport\output\renderer::display_import_progress()` renders the import progress page
+ *
  * @module     block_courseimport/async
  * @author     Neill Magill <neill.magill@nottingham.ac.uk>
  * @copyright  2020 University of Nottingham
@@ -25,8 +28,8 @@ import Ajax from 'core/ajax';
 import {get_string} from 'core/str';
 import Notification from 'core/notification';
 
-const checkdelay = 15000;
-const timeout = 2000;
+const checkdelay = 15000; // The delay (in milliseconds) between requests.
+const timeout = 2000; // The timeout (in milliseconds) for AJAX requests.
 
 const status = {
     started: {
@@ -44,6 +47,8 @@ const status = {
 };
 
 /**
+ * Stops polling for this job by clearing its interval id.
+ *
  * @param {{jobid: number, bar: ?HTMLElement, container: ?HTMLElement, checkid: ?number}} state
  */
 const stop = (state) => {
@@ -54,6 +59,8 @@ const stop = (state) => {
 };
 
 /**
+ * Requests current progress for this job from `block_courseimport_get_job_progress` and applies it.
+ *
  * @param {{jobid: number, bar: ?HTMLElement, container: ?HTMLElement, checkid: ?number}} state
  */
 const getProgress = (state) => {
@@ -66,7 +73,9 @@ const getProgress = (state) => {
 };
 
 /**
- * @param {*} response
+ * Updates the Bootstrap progress bar label, width, and status classes from the AJAX response.
+ * When the job finishes or fails, polling is stopped and the progress UI container is removed from the page.
+ *
  * @param {{jobid: number, bar: ?HTMLElement, container: ?HTMLElement, checkid: ?number}} state
  */
 const updateProgress = (response, state) => {
@@ -76,7 +85,7 @@ const updateProgress = (response, state) => {
         return;
     }
     const progress = Math.round(response.progress * 100);
-    let removeClass = 'doesnotexist';
+    let removeClass = 'doesnotexist'; // Use a value that should not exist.
     let addClass = '';
     let stringKey;
 
@@ -114,7 +123,9 @@ const updateProgress = (response, state) => {
 };
 
 /**
- * @param {string|number} id Job row id (same as block_courseimport.id).
+ * Starts polling import progress for a queued job: immediate fetch plus repeating interval.
+ *
+ * @param {string|number} id Job row id (same as `block_courseimport.id` / template `backupid`).
  */
 export const init = (id) => {
     const idstr = String(id);
