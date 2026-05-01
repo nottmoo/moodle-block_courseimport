@@ -27,13 +27,13 @@ namespace block_courseimport;
 
 use backup_setting;
 use base_setting;
+use block_courseimport\local\profile_defaults;
 
 defined('MOODLE_INTERNAL') || die();
 
 // Load backup core first (defines backup_exception) before settings classes extend it.
 require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
 require_once($CFG->dirroot . '/backup/moodle2/backup_settingslib.php');
-require_once($CFG->dirroot . '/blocks/courseimport/db/profiledefaults.php');
 /**
  * Helper for the import page.
  *
@@ -50,7 +50,7 @@ class import_helper {
      */
     public static function profile_toggle_defaults(): array {
         $defaults = [];
-        foreach (block_courseimport_profile_toggle_defaults() as $key => $value) {
+        foreach (profile_defaults::get_toggle_defaults() as $key => $value) {
             $defaults[$key] = ((int)$value) === 1;
         }
         return $defaults;
