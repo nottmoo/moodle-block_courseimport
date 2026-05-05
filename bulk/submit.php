@@ -25,7 +25,6 @@
 
 require_once(dirname(__DIR__, 3) . '/config.php');
 
-use block_courseimport\bulk_config;
 use block_courseimport\form\csv_upload_form;
 use block_courseimport\local\bulk_submit_confirmation_cache;
 use block_courseimport\local\bulk_submit_preview;
@@ -79,7 +78,7 @@ if ($confirm && confirm_sesskey()) {
     redirect(new url('/blocks/courseimport/bulk/results.php', ['bulkid' => $bulkid]));
 }
 
-$maxbytes = bulk_config::max_csv_bytes();
+$maxbytes = (int) get_max_upload_file_size();
 $formurl = new url('/blocks/courseimport/bulk/submit.php');
 $form = new csv_upload_form($formurl, ['maxbytes' => $maxbytes]);
 

@@ -58,7 +58,7 @@ final class bulk_submit_service {
             throw new \moodle_exception('bulkcsvrequired', 'block_courseimport');
         }
 
-        $maxrows = bulk_config::max_csv_rows();
+        $maxrows = bulk_config::MAX_CSV_ROWS;
         if (count($rows) > $maxrows) {
             throw new \moodle_exception('bulkmaxrowsexceeded', 'block_courseimport', '', $maxrows);
         }

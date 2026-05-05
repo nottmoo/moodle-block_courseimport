@@ -26,22 +26,8 @@ defined('MOODLE_INTERNAL') || die();
  * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 class bulk_config {
     /** Maximum data rows per upload (hard limit). */
     public const MAX_CSV_ROWS = 10000;
 
-    /**
-     * Maximum upload size: use the server's effective upload limit.
-     */
-    public static function max_csv_bytes(): int {
-        return (int) get_max_upload_file_size();
-    }
-
-    /**
-     * Maximum data rows allowed per CSV (hard limit, no admin setting).
-     */
-    public static function max_csv_rows(): int {
-        return self::MAX_CSV_ROWS;
-    }
 }
