@@ -16,6 +16,8 @@
 
 namespace block_courseimport;
 
+use local_uonlib\course_utils;
+
 defined('MOODLE_INTERNAL') || die();
 
 /**
@@ -26,7 +28,6 @@ defined('MOODLE_INTERNAL') || die();
  * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 class bulk_course_schedule {
     /**
      * Copy start/end from source course, shifting the calendar year to match the token (day/month/time preserved per field).
@@ -56,6 +57,8 @@ class bulk_course_schedule {
     }
 
     /**
+     * Parses a supported year token into a four-digit calendar year.
+     *
      * @param string $token e.g. "2025", "25-26", "2526"
      * @return int|null calendar year for the course start
      */
@@ -67,8 +70,9 @@ class bulk_course_schedule {
         if (preg_match('/^(19|20)\d{2}$/', $t)) {
             return (int) $t;
         }
-        if (preg_match('/^(\d{2})[\-\/]?(\d{2})$/', $t, $m)) {
-            return 2000 + (int) $m[1];
+        $academicyear = str_replace(['-', '/'], '', $t);
+        if (preg_match('/^\d{4}$/', $academicyear)) {
+            return 2000 + (int) substr($academicyear, 0, 2);
         }
         return null;
     }
@@ -84,19 +88,13 @@ class bulk_course_schedule {
         if ($text === '') {
             return null;
         }
-        if (preg_match('/(\d{2})\s*[-\/]\s*(\d{2})/', $text, $m)) {
-            return $m[1] . '-' . $m[2];
-        }
-        if (preg_match('/(\d{2})(\d{2})(?=\D*$)/', $text, $m)) {
-            return $m[1] . $m[2];
-        }
-        if (preg_match('/(19|20)\d{2}/', $text, $m)) {
-            return $m[0];
-        }
-        return null;
+        $yearcode = course_utils::parse_year($text);
+        return $yearcode !== '' ? $yearcode : null;
     }
 
     /**
+     * Rebuilds a timestamp with the same month/day/time in the requested year.
+     *
      * @param int $timestamp
      * @param int $newyear
      * @return int

@@ -24,7 +24,6 @@
  */
 namespace block_courseimport\local;
 
-use block_courseimport\bulk_config;
 use block_courseimport\bulk_job;
 use block_courseimport\form\csv_upload_form;
 use block_courseimport\import_helper;
@@ -62,7 +61,7 @@ final class bulk_index_page {
      * @return csv_upload_form
      */
     public static function make_upload_form(url $actionurl): csv_upload_form {
-        $maxbytes = bulk_config::max_csv_bytes();
+        $maxbytes = (int) get_max_upload_file_size();
         return new csv_upload_form($actionurl, ['maxbytes' => $maxbytes]);
     }
 
