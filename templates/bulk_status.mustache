@@ -22,11 +22,6 @@
     Polls every 5 s while the job is still queued or running.
 }}
 <div class="block-courseimport-bulk-status container-fluid">
-    {{#backurl}}
-    <div class="mb-3">
-        <a href="{{backurl}}" class="badge badge-info">{{backlabel}}</a>
-    </div>
-    {{/backurl}}
     <h2>{{heading}}</h2>
 
     {{#isrunning}}
@@ -66,6 +61,18 @@
         {{#failed}} &nbsp;·&nbsp; {{#str}} bulkstatusfailed, block_courseimport {{/str}}: {{failed}} {{/failed}}
     </div>
     {{/isrunning}}
+
+    {{#showchildjobfilters}}
+    <nav class="mb-3 block-courseimport-childjob-filters" aria-label="{{#str}} bulkchildjobfiltersnav, block_courseimport {{/str}}">
+        <div class="d-flex flex-wrap align-items-baseline column-gap-3 row-gap-2">
+            {{#childjobfilteritems}}
+            <span>
+                <a href="{{url}}"{{#current}} class="fw-bold text-decoration-underline" aria-current="page"{{/current}}>{{label}}</a> <span class="text-body-secondary">{{count}}</span>
+            </span>
+            {{/childjobfilteritems}}
+        </div>
+    </nav>
+    {{/showchildjobfilters}}
 
     <h3>{{childheading}}</h3>
     {{{childpaginationtop}}}

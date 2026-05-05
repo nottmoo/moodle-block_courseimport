@@ -19,7 +19,7 @@
  *
  * Shows the upload form and (optionally) a notice for the user's current queued job.
  * Full job history/details are shown on bulk/results.php.
- * 
+ *
  * @package    block_courseimport
  * @copyright  2026 University of Nottingham
  * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
@@ -28,29 +28,24 @@
 
 require_once(dirname(__DIR__, 3) . '/config.php');
 
-use block_courseimport\bulk_config;
-use block_courseimport\bulk_job;
-use block_courseimport\form\csv_upload_form;
-use block_courseimport\import_helper;
-use core\url;
+use block_courseimport\local\bulk_index_page;
+
+global $USER, $OUTPUT;
 
 $systemcontext = context_system::instance();
 require_login();
 require_capability('block/courseimport:bulkrollover', $systemcontext);
 
-$heading = get_string('bulkrolloverheading', 'block_courseimport');
+$heading = bulk_index_page::get_page_heading();
 $PAGE->set_context($systemcontext);
-$PAGE->set_url(new url('/blocks/courseimport/bulk/index.php'));
+$PAGE->set_url(bulk_index_page::get_form_action_url());
 $PAGE->set_title($heading);
 $PAGE->set_heading($heading);
 $PAGE->set_pagelayout('admin');
 
-$maxbytes = bulk_config::max_csv_bytes();
-$submiturl = new url('/blocks/courseimport/bulk/index.php');
-$form = new csv_upload_form($submiturl, ['maxbytes' => $maxbytes]);
-
+$form = bulk_index_page::make_upload_form(bulk_index_page::get_form_action_url());
 if ($fromform = $form->get_data()) {
-    redirect(new url('/blocks/courseimport/bulk/submit.php', ['draftid' => (int) $fromform->csvfile]));
+    redirect(bulk_index_page::get_post_upload_redirect((int) $fromform->csvfile));
 }
 
 echo $OUTPUT->header();
@@ -58,34 +53,8 @@ ob_start();
 $form->display();
 $formhtml = ob_get_clean();
 
-// Show a notice for the user's most recent queued bulk job.
-$activebulkjob = bulk_job::get_most_recent_queued_for_user((int) $USER->id);
-
-$statusurl = (new url('/blocks/courseimport/bulk/results.php'))->out(false);
-
-$labels = import_helper::enabled_profile_sidebar_labels();
-$enableditems = [];
-foreach ($labels as $label) {
-    $enableditems[] = ['label' => $label];
-}
-
-$settingsurl = (new moodle_url('/admin/settings.php', ['section' => 'blocksettingcourseimport']))->out(false);
-
-$activebulknotice = null;
-if ($activebulkjob) {
-    $jobstatusurl = (new url('/blocks/courseimport/bulk/results.php', ['bulkid' => $activebulkjob->id]))->out(false);
-    $activebulknotice = [
-        'url'   => $jobstatusurl,
-        'jobid' => (int) $activebulkjob->id,
-    ];
-}
-
-echo $OUTPUT->render_from_template('block_courseimport/bulk_upload', [
-    'heading' => $heading,
-    'statusurl' => $statusurl,
-    'formhtml' => $formhtml,
-    'activebulknotice' => $activebulknotice,
-    'enableditems' => $enableditems,
-    'settingsurl' => $settingsurl,
-]);
+echo $OUTPUT->render_from_template(
+    'block_courseimport/bulk_upload',
+    bulk_index_page::build_upload_template_context((int) $USER->id, $heading, $formhtml)
+);
 echo $OUTPUT->footer();

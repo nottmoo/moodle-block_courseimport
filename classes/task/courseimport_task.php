@@ -16,6 +16,7 @@
 
 namespace block_courseimport\task;
 
+use block_courseimport\bulk_job;
 use block_courseimport\job;
 use block_courseimport\job_failed;
 use block_courseimport\messenger;
@@ -67,17 +68,24 @@ class courseimport_task extends \core\task\scheduled_task {
      * @param \block_courseimport\job $job
      */
     protected function process_job(job $job) {
-        // Start processing, successfully will change to 555555, otherwise abandon and email admin.
-        $job->set_status(job::STATE_PROCESSING);
-        mtrace("Jobid: {$job->id}, Userid: {$job->user}, Import course: {$job->target}, Export course:{$job->source}");
-        mtrace("Creating backup for course ID:{$job->source}");
         try {
-            $this->backup($job);
-            $this->restore($job);
-        } catch (job_failed $e) {
-            $job->set_status(job::STATE_FAILED);
-            if (messenger::failure($e->subject, $e->getMessage(), $job->target)) {
-                mtrace("Error! Jobid: {$job->id}. Failed to send email to admin.");
+            // Start processing, successfully will change to 555555, otherwise abandon and email admin.
+            $job->set_status(job::STATE_PROCESSING);
+            mtrace("Jobid: {$job->id}, Userid: {$job->user}, Import course: {$job->target}, Export course:{$job->source}");
+            mtrace("Creating backup for course ID:{$job->source}");
+            try {
+                $this->backup($job);
+                $this->restore($job);
+            } catch (job_failed $e) {
+                $job->set_status(job::STATE_FAILED);
+                if (messenger::failure($e->subject, $e->getMessage(), $job->target)) {
+                    mtrace("Error! Jobid: {$job->id}. Failed to send email to admin.");
+                }
+            }
+        } finally {
+            $bulkjobid = $job->bulkjobid ?? null;
+            if ($bulkjobid) {
+                bulk_job::reconcile_queued_parent_if_stale((int) $bulkjobid);
             }
         }
     }

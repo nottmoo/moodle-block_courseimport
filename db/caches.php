@@ -15,20 +15,22 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version details
+ * Cache definitions (MUC).
+ *
+ * Session-mode bulk preview payload: avoids storing large structures on the raw PHP session object.
  *
  * @package    block_courseimport
- * @copyright  University of Nottingham
+ * @copyright  2026 University of Nottingham
+ * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2026050112;
-$plugin->requires = 2025100600;
-$plugin->release = '1.7.2 (2026-05-01)';
-$plugin->maturity = MATURITY_STABLE;
-$plugin->component = 'block_courseimport';
-$plugin->dependencies = [
-    'local_uonlib' => 2023010500,
+$definitions = [
+    'bulk_submit_confirmation' => [
+        'mode' => cache_store::MODE_SESSION,
+        'simplekeys' => true,
+        'simpledata' => false,
+    ],
 ];

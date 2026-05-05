@@ -28,13 +28,22 @@ defined('MOODLE_INTERNAL') || die();
  */
 
 class bulk_job {
-    /** @var string */
+    /**
+     * Non-terminal parent bulk batch : set at creation and kept until every child
+     * import has finished, including while children are actively processing.
+     *
+     * @var string
+     */
     public const STATUS_QUEUED = 'queued';
     /** @var string */
     public const STATUS_COMPLETED = 'completed';
     /** @var string */
     public const STATUS_FAILED = 'failed';
-    /** @var string */
+    /**
+     * Terminal outcome: batch finished with a mix of successful and failed child imports.
+     *
+     * @var string
+     */
     public const STATUS_PARTIAL = 'partial';
 
     /** @var int|null */
@@ -168,6 +177,139 @@ class bulk_job {
     }
 
     /**
+     * Child import job rows for a bulk parent job (newest child first).
+     *
+     * For paginated UI, prefer {@see self::count_import_jobs_for_bulk_job()} and
+     * {@see self::get_import_jobs_for_bulk_job_page()} to avoid loading every child row.
+     *
+     * @param int $bulkjobid Parent bulk job id.
+     * @return array<int, \stdClass>
+     */
+    public static function get_import_jobs_for_bulk_job(int $bulkjobid): array {
+        global $DB;
+        $sql = "SELECT j.id, j.target, j.source, j.status, j.timecreated,
+                       tc.fullname AS targetname, sc.fullname AS sourcename
+                  FROM {block_courseimport} j
+             LEFT JOIN {course} tc ON tc.id = j.target
+             LEFT JOIN {course} sc ON sc.id = j.source
+                 WHERE j.bulk_job_id = :bid
+              ORDER BY j.id DESC";
+        return $DB->get_records_sql($sql, ['bid' => $bulkjobid]);
+    }
+
+    /**
+     * Total child import jobs for a bulk parent (optionally only finished jobs).
+     *
+     * @param int $bulkjobid Parent bulk job id.
+     * @param bool $completedonly If true, count rows whose status is {@see job::STATE_FINISHED}.
+     * @return int
+     */
+    public static function count_import_jobs_for_bulk_job(int $bulkjobid, bool $completedonly): int {
+        global $DB;
+        $params = ['bid' => $bulkjobid];
+        $statussql = '';
+        if ($completedonly) {
+            $statussql = ' AND j.status = :finished';
+            $params['finished'] = job::STATE_FINISHED;
+        }
+        $sql = "SELECT COUNT(1)
+                  FROM {block_courseimport} j
+                 WHERE j.bulk_job_id = :bid
+                       {$statussql}";
+        return (int) $DB->count_records_sql($sql, $params);
+    }
+
+    /**
+     * One page of child import job rows for a bulk parent (newest child first).
+     *
+     * @param int $bulkjobid Parent bulk job id.
+     * @param int $limit Max rows.
+     * @param int $offset Row offset.
+     * @param bool $completedonly If true, only rows whose status is {@see job::STATE_FINISHED}.
+     * @return array<int, \stdClass>
+     */
+    public static function get_import_jobs_for_bulk_job_page(
+        int $bulkjobid,
+        int $limit,
+        int $offset,
+        bool $completedonly
+    ): array {
+        global $DB;
+        $params = ['bid' => $bulkjobid];
+        $statussql = '';
+        if ($completedonly) {
+            $statussql = ' AND j.status = :finished';
+            $params['finished'] = job::STATE_FINISHED;
+        }
+        $sql = "SELECT j.id, j.target, j.source, j.status, j.timecreated,
+                       tc.fullname AS targetname, sc.fullname AS sourcename
+                  FROM {block_courseimport} j
+             LEFT JOIN {course} tc ON tc.id = j.target
+             LEFT JOIN {course} sc ON sc.id = j.source
+                 WHERE j.bulk_job_id = :bid
+                       {$statussql}
+              ORDER BY j.id DESC";
+        return $DB->get_records_sql($sql, $params, $offset, $limit);
+    }
+
+    /**
+     * Count child import rows by coarse lifecycle bucket.
+     *
+     * @param array<int, \stdClass> $childrecords Rows from {@see self::get_import_jobs_for_bulk_job()}.
+     * @return \stdClass Object with int fields: active, finished, failed.
+     */
+    public static function summarize_child_import_states(array $childrecords): \stdClass {
+        $activecount = 0;
+        $finishedcount = 0;
+        $failedcount = 0;
+        foreach ($childrecords as $child) {
+            if ($child->status === job::STATE_WAITING || $child->status === job::STATE_PROCESSING) {
+                $activecount++;
+            } else if ($child->status === job::STATE_FINISHED) {
+                $finishedcount++;
+            } else {
+                $failedcount++;
+            }
+        }
+        $out = new \stdClass();
+        $out->active = $activecount;
+        $out->finished = $finishedcount;
+        $out->failed = $failedcount;
+        return $out;
+    }
+
+    /**
+     * If the parent bulk row is still {@see self::STATUS_QUEUED} but every child import is terminal,
+     * realign parent counts and status from the child rows.
+     *
+     * This runs after each child job in the scheduled task (so the DB is corrected without opening the
+     * results page) and when rendering bulk results as a safety net if incremental updates were missed.
+     *
+     * @param int $bulkjobid
+     * @return void
+     */
+    public static function reconcile_queued_parent_if_stale(int $bulkjobid): void {
+        global $DB;
+        $bulk = $DB->get_record('block_courseimport_bulk_job', ['id' => $bulkjobid], '*', IGNORE_MISSING);
+        if (!$bulk || $bulk->status !== self::STATUS_QUEUED) {
+            return;
+        }
+        $children = self::get_import_jobs_for_bulk_job($bulkjobid);
+        if (!$children) {
+            return;
+        }
+        $summary = self::summarize_child_import_states($children);
+        if ($summary->active > 0) {
+            return;
+        }
+        $total = (int) $bulk->total_count;
+        if ($total < 1) {
+            $total = max(1, $summary->finished + $summary->failed);
+        }
+        self::sync_status_from_children($bulkjobid, $summary->finished, $summary->failed, $total);
+    }
+
+    /**
      * Whether the user may view this bulk job (owner or manage capability).
      *
      * @param \stdClass $bulkrecord
@@ -197,17 +339,6 @@ class bulk_job {
             $offset,
             $limit
         );
-    }
-
-    /**
-     * Convenience wrapper — returns the most recent bulk jobs without pagination.
-     *
-     * @param int $userid
-     * @param int $limit
-     * @return array<int, \stdClass>
-     */
-    public static function list_for_user(int $userid, int $limit = 10): array {
-        return self::list_for_user_page($userid, $limit);
     }
 
     /**

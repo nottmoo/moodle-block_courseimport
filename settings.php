@@ -23,13 +23,15 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use core\url;
+
 defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig && !$ADMIN->locate('block_courseimport_bulkrollover')) {
     $ADMIN->add('blocksettings', new admin_externalpage(
         'block_courseimport_bulkrollover',
         get_string('bulkrollover', 'block_courseimport'),
-        new moodle_url('/blocks/courseimport/bulk/index.php'),
+        new url('/blocks/courseimport/bulk/index.php'),
         'block/courseimport:manage'
     ));
 }

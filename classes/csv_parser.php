@@ -37,9 +37,45 @@ class csv_parser {
         if ($fh === false) {
             return [];
         }
+        try {
+            return self::parse_from_handle($fh);
+        } finally {
+            fclose($fh);
+        }
+    }
+
+    /**
+     * Parse CSV from raw file contents (e.g. {@see \moodleform::get_file_content()}), no temp file.
+     *
+     * @param string $content
+     * @return array<int, array<string, string>> List of associative rows
+     */
+    public static function parse_string(string $content): array {
+        if ($content === '') {
+            return [];
+        }
+        $fh = fopen('php://memory', 'r+b');
+        if ($fh === false) {
+            return [];
+        }
+        fwrite($fh, $content);
+        rewind($fh);
+        try {
+            return self::parse_from_handle($fh);
+        } finally {
+            fclose($fh);
+        }
+    }
+
+    /**
+     * Parse CSV from an open readable handle (e.g. {@see \stored_file::get_content_file_handle()}).
+     *
+     * @param resource $fh
+     * @return array<int, array<string, string>> List of associative rows
+     */
+    public static function parse_from_handle($fh): array {
         $header = fgetcsv($fh);
         if ($header === false) {
-            fclose($fh);
             return [];
         }
         $header = array_map(function ($h) {
@@ -63,7 +99,6 @@ class csv_parser {
             $row = self::normalize_course_id_column($row);
             $rows[] = self::normalize_name_columns($row);
         }
-        fclose($fh);
         return $rows;
     }
 

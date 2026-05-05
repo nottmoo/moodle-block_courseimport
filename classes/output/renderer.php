@@ -68,6 +68,8 @@ class renderer extends \core_backup_renderer {
 
         $data->nomatching = ($component->get_count() === 0);
 
+        $formatter = \core\di::get(\core\formatting::class);
+
         if (!$data->nomatching) {
             foreach ($component->get_results() as $course) {
                 $context = context_course::instance($course->id);
@@ -75,8 +77,8 @@ class renderer extends \core_backup_renderer {
                     'id' => $course->id,
                     'visible' => $course->visible,
                     'highlight' => false,
-                    'fullname' => format_string($course->fullname, true, ['context' => $context]),
-                    'shortname' => format_string($course->shortname, true, ['context' => $context]),
+                    'fullname' => $formatter->format_string($course->fullname, true, $context),
+                    'shortname' => $formatter->format_string($course->shortname, true, $context),
                 ];
 
                 if (!is_null($colist) && array_key_exists($course->id, $colist)) {
@@ -118,8 +120,8 @@ class renderer extends \core_backup_renderer {
                     'id' => $course->id,
                     'visible' => $course->visible,
                     'highlight' => false,
-                    'fullname' => format_string($course->fullname, true, ['context' => $context]),
-                    'shortname' => format_string($course->shortname, true, ['context' => $context]),
+                    'fullname' => $formatter->format_string($course->fullname, true, $context),
+                    'shortname' => $formatter->format_string($course->shortname, true, $context),
                 ];
             }
         }
@@ -130,11 +132,11 @@ class renderer extends \core_backup_renderer {
     /**
      * Tabs: single import form + link to bulk CSV page.
      *
-     * @param \core\url $bulkurl
+     * @param url $bulkurl
      * @param string $singleformhtml Full HTML for the single-import form (from parent wrapper).
      * @return string
      */
-    public function import_page_with_tabs(\core\url $bulkurl, string $singleformhtml): string {
+    public function import_page_with_tabs(url $bulkurl, string $singleformhtml): string {
         return $this->render_from_template('block_courseimport/import_page_with_tabs', [
             'bulkurl' => $bulkurl->out(false),
             'singlecontent' => $singleformhtml,
@@ -146,14 +148,36 @@ class renderer extends \core_backup_renderer {
     /**
      * Overrides core_backup_renderer::import_course_selector to wrap the form in a tabbed layout.
      *
-     * @param \moodle_url $nextstageurl
+     * @param url $nextstageurl
      * @param \import_course_search|null $courses
      * @return string
      */
-    public function import_course_selector(\moodle_url $nextstageurl, ?\import_course_search $courses = null): string {
+    public function import_course_selector(url $nextstageurl, ?\import_course_search $courses = null): string {
         $formhtml = parent::import_course_selector($nextstageurl, $courses);
         $bulkurl = new url('/blocks/courseimport/bulk/index.php');
         return $this->import_page_with_tabs($bulkurl, $formhtml);
+    }
+
+    /**
+     * Renders the bulk job status page body ({@see bulk_status} template).
+     *
+     * @param bulk_status $bulkstatus
+     * @return string
+     */
+    public function render_bulk_status(bulk_status $bulkstatus): string {
+        $data = $bulkstatus->export_for_template($this);
+        return $this->render_from_template('block_courseimport/bulk_status', $data);
+    }
+
+    /**
+     * Bulk job list (results.php without bulkid).
+     *
+     * @param bulk_results_list $list
+     * @return string
+     */
+    public function render_bulk_results_list(bulk_results_list $list): string {
+        $data = $list->export_for_template($this);
+        return $this->render_from_template('block_courseimport/bulk_results_list', $data);
     }
 
     /**
