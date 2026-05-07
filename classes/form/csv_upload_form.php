@@ -28,7 +28,6 @@ require_once($CFG->libdir . '/formslib.php');
  * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 class csv_upload_form extends \moodleform {
     /**
      * Form definition.

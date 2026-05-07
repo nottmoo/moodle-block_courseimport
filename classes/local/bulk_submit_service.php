@@ -22,7 +22,6 @@
  * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 namespace block_courseimport\local;
 
 use block_courseimport\bulk_config;
@@ -50,6 +49,7 @@ final class bulk_submit_service {
     }
 
     /**
+     * Builds the confirmation payload from parsed CSV rows.
      * @param array<int, array<string, string>> $rows
      * @return array{pairs: array, errors: array, summary: array}
      */

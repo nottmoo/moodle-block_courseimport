@@ -21,62 +21,63 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * Parent bulk rollover job metadata.
  *
+ * @property-read int|null $id The database id of the parent bulk job.
+ * @property-read int $userid The id of the user who submitted the bulk job.
+ * @property-read string|null $sourceyear Optional source academic year token captured at submit time.
+ * @property-read string|null $targetyear Optional target academic year token captured at submit time.
+ * @property-read string $status Parent bulk status ({@see self::STATUS_QUEUED} etc.).
  * @package    block_courseimport
  * @copyright  2026 University of Nottingham
  * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 class bulk_job {
-    /**
-     * Non-terminal parent bulk batch : set at creation and kept until every child
-     * import has finished, including while children are actively processing.
-     *
-     * @var string
-     */
+    /** @var string Non-terminal parent bulk batch : set at creation and kept until every child
+     * import has finished, including while children are actively processing. */
     public const STATUS_QUEUED = 'queued';
-    /** @var string */
+
+    /** @var string Terminal outcome: all child imports finished successfully. */
     public const STATUS_COMPLETED = 'completed';
-    /** @var string */
+
+    /** @var string Terminal outcome: all child imports failed (or no child imports could be queued). */
     public const STATUS_FAILED = 'failed';
-    /**
-     * Terminal outcome: batch finished with a mix of successful and failed child imports.
-     *
-     * @var string
-     */
+
+    /** @var string Terminal outcome: batch finished with a mix of successful and failed child imports.*/
     public const STATUS_PARTIAL = 'partial';
 
-    /** @var int|null */
+    /**  @var int|null Database id of the parent bulk job row (null until first save()). */
     protected $id;
 
-    /** @var int */
+    /** @var int User id that owns/submitted this bulk job. */
     protected $userid;
 
-    /** @var string|null */
+    /** @var string|null Optional source academic year token captured when the job was created. */
     protected $sourceyear;
 
-    /** @var string|null */
+    /** @var string|null Optional target academic year token captured when the job was created. */
     protected $targetyear;
 
-    /** @var string */
+    /** @var string Parent job lifecycle status ({@see self::STATUS_QUEUED} etc.). */
     protected $status = self::STATUS_QUEUED;
 
-    /** @var int */
+    /** @var int Total number of child imports expected for this bulk batch. */
     protected $totalcount = 0;
 
-    /** @var int */
+    /** @var int Number of child imports that have reached the finished/success state. */
     protected $completedcount = 0;
 
-    /** @var int */
+    /** @var int Number of child imports that have reached a failed terminal state. */
     protected $failedcount = 0;
 
-    /** @var \core\clock */
+    /** @var \core\clock Clock dependency used for deterministic timestamps in writes. */
     protected \core\clock $clock;
 
     /**
-     * @param int $userid
-     * @param string|null $sourceyear
-     * @param string|null $targetyear
+     * Creates an in-memory parent bulk job model.
+     *
+     * @param int $userid User id that owns/submitted this bulk batch.
+     * @param string|null $sourceyear Optional source academic year token captured at submit time.
+     * @param string|null $targetyear Optional target academic year token captured at submit time.
      */
     public function __construct(int $userid, ?string $sourceyear = null, ?string $targetyear = null) {
         $this->userid = $userid;
@@ -86,18 +87,32 @@ class bulk_job {
     }
 
     /**
-     * @param string $name
-     * @return mixed
+     * Gets protected properties.
+     *
+     * @param string $name Property name.
+     * @return mixed Property value for supported names.
      */
     public function __get(string $name) {
-        if ($name === 'id') {
-            return $this->id;
+        switch ($name) {
+            case 'id':
+                return $this->id;
+            case 'userid':
+                return $this->userid;
+            case 'sourceyear':
+                return $this->sourceyear;
+            case 'targetyear':
+                return $this->targetyear;
+            case 'status':
+                return $this->status;
         }
         throw new \coding_exception('Invalid bulk_job property');
     }
 
     /**
-     * @param string $status
+     * Sets the parent bulk status and persists immediately when already saved.
+     *
+     * @param string $status One of {@see self::STATUS_QUEUED}, {@see self::STATUS_COMPLETED},
+     *                       {@see self::STATUS_FAILED}, {@see self::STATUS_PARTIAL}.
      * @return void
      */
     public function set_status(string $status): void {
@@ -108,9 +123,11 @@ class bulk_job {
     }
 
     /**
-     * @param int $total
-     * @param int $completed
-     * @param int $failed
+     * Replaces the parent counters and persists immediately when already saved.
+     *
+     * @param int $total Total child imports expected for this bulk batch.
+     * @param int $completed Number of child imports finished successfully.
+     * @param int $failed Number of child imports finished with failure.
      * @return void
      */
     public function set_counts(int $total, int $completed, int $failed): void {
@@ -123,6 +140,8 @@ class bulk_job {
     }
 
     /**
+     * Inserts a new parent row or updates persisted status/counters for an existing one.
+     *
      * @return void
      * @throws \dml_exception
      */
@@ -148,6 +167,8 @@ class bulk_job {
     }
 
     /**
+     * Persists current status and counters for an existing parent row.
+     *
      * @return void
      * @throws \dml_exception
      */
@@ -167,8 +188,8 @@ class bulk_job {
     /**
      * Load a bulk job row by id.
      *
-     * @param int $id
-     * @return \stdClass|null
+     * @param int $id Parent bulk job id.
+     * @return \stdClass|null Matching DB row, or null when no row exists.
      */
     public static function get_record(int $id): ?\stdClass {
         global $DB;
@@ -285,7 +306,7 @@ class bulk_job {
      * This runs after each child job in the scheduled task (so the DB is corrected without opening the
      * results page) and when rendering bulk results as a safety net if incremental updates were missed.
      *
-     * @param int $bulkjobid
+     * @param int $bulkjobid Parent bulk job id.
      * @return void
      */
     public static function reconcile_queued_parent_if_stale(int $bulkjobid): void {
@@ -312,9 +333,9 @@ class bulk_job {
     /**
      * Whether the user may view this bulk job (owner or manage capability).
      *
-     * @param \stdClass $bulkrecord
-     * @param int $userid
-     * @return bool
+     * @param \stdClass $bulkrecord Parent bulk job DB row.
+     * @param int $userid User id to authorise.
+     * @return bool True when user is owner or has manage capability.
      */
     public static function user_can_view(\stdClass $bulkrecord, int $userid): bool {
         if ((int) $bulkrecord->userid === (int) $userid) {
@@ -326,13 +347,14 @@ class bulk_job {
     /**
      * Recent bulk jobs for a user (newest first).
      *
-     * @param int $userid
+     * @param int $userid User id.
      * @param int $limit  Maximum rows to return.
-     * @param int $offset Row offset for pagination (default 0).
-     * @return array<int, \stdClass>
+     * @param int $page Zero-based page index for pagination (default 0).
+     * @return array<int, \stdClass> Parent bulk rows for the requested page.
      */
-    public static function list_for_user_page(int $userid, int $limit, int $offset = 0): array {
+    public static function list_for_user_page(int $userid, int $limit, int $page = 0): array {
         global $DB;
+        $offset = max(0, $page) * max(1, $limit);
         return $DB->get_records_sql(
             'SELECT * FROM {block_courseimport_bulk_job} WHERE userid = :u ORDER BY timecreated DESC, id DESC',
             ['u' => $userid],
@@ -344,8 +366,8 @@ class bulk_job {
     /**
      * Returns whether the user currently has at least one queued bulk job.
      *
-     * @param int $userid
-     * @return bool
+     * @param int $userid User id.
+     * @return bool True when the user has at least one parent row in queued state.
      */
     public static function user_has_queued(int $userid): bool {
         global $DB;
@@ -358,8 +380,8 @@ class bulk_job {
     /**
      * Returns the user's most recent queued bulk job.
      *
-     * @param int $userid
-     * @return \stdClass|null
+     * @param int $userid User id.
+     * @return \stdClass|null Most recent queued parent row, or null if none exists.
      */
     public static function get_most_recent_queued_for_user(int $userid): ?\stdClass {
         global $DB;
@@ -374,7 +396,10 @@ class bulk_job {
     }
 
     /**
-     * @return int
+     * Counts parent bulk rows for a user.
+     *
+     * @param int $userid User id.
+     * @return int Number of parent rows owned by this user.
      */
     public static function count_for_user(int $userid): int {
         global $DB;
@@ -392,7 +417,7 @@ class bulk_job {
      */
     public static function sync_status_from_children(int $bulkjobid, int $finishedcnt, int $failedcnt, int $totalcount): void {
         global $DB;
-        $record = $DB->get_record('block_courseimport_bulk_job', ['id' => $bulkjobid], '*', IGNORE_MISSING);
+        $record = self::get_record($bulkjobid);
         if (!$record) {
             return;
         }
@@ -424,7 +449,7 @@ class bulk_job {
             return;
         }
         global $DB;
-        $record = $DB->get_record('block_courseimport_bulk_job', ['id' => $bulkjobid], '*', IGNORE_MISSING);
+        $record = self::get_record($bulkjobid);
         if (!$record) {
             return;
         }

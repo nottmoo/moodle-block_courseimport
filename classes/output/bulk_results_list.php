@@ -71,7 +71,7 @@ final class bulk_results_list implements renderable, templatable {
         global $PAGE;
 
         $totalcount = bulk_job::count_for_user($userid);
-        $jobs = bulk_job::list_for_user_page($userid, $perpage, $page * $perpage);
+        $jobs = bulk_job::list_for_user_page($userid, $perpage, $page);
         $listbaseurl = new url('/blocks/courseimport/bulk/results.php');
         $PAGE->set_url($listbaseurl, ['page' => $page]);
 

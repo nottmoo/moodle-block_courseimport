@@ -31,12 +31,13 @@ require_once($CFG->dirroot . '/backup/util/ui/import_extensions.php');
  * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 class bulk_backup_helper {
     /**
-     * @param int $sourcecourseid
-     * @param int $userid
-     * @return string backup id
+     * Creates a non-interactive import-mode backup for the source course and persists controller state.
+     *
+     * @param int $sourcecourseid Course id to export from.
+     * @param int $userid User owning the backup controller (typically the submitting user).
+     * @return string backup id ({@see \backup_controller::get_backupid()}).
      */
     public static function create_backup_controller(int $sourcecourseid, int $userid): string {
         $bc = new \backup_controller(

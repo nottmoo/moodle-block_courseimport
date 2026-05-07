@@ -22,7 +22,6 @@
  * @copyright  2020 University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 namespace block_courseimport;
 
 use backup_setting;

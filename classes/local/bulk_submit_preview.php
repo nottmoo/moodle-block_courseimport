@@ -22,7 +22,6 @@
  * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 namespace block_courseimport\local;
 
 use core\url;

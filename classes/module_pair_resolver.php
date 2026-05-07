@@ -31,7 +31,6 @@ defined('MOODLE_INTERNAL') || die();
  * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 class module_pair_resolver {
     /**
      * @param array<int, array<string, string>> $rows
