@@ -1,33 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="blocks/courseimport/db" VERSION="20251103" COMMENT="XMLDB file for Moodle block courseimport"
+<XMLDB PATH="blocks/courseimport/db" VERSION="20260513" COMMENT="XMLDB file for Moodle block courseimport"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
   <TABLES>
-    <TABLE NAME="block_courseimport" COMMENT="Stores a list of backup jobs that need to be processed">
-      <FIELDS>
-        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="target" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The course that content will be imported into"/>
-        <FIELD NAME="source" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The course that content will be exported from"/>
-        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false" COMMENT="User ID"/>
-        <FIELD NAME="bulk_job_id" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Optional parent bulk job id"/>
-        <FIELD NAME="backupid" TYPE="char" LENGTH="32" NOTNULL="true" SEQUENCE="false"/>
-        <FIELD NAME="status" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="backupprogress" TYPE="number" LENGTH="15" NOTNULL="true" DEFAULT="0" SEQUENCE="false" DECIMALS="14" COMMENT="Stores the progress of a backup for the job"/>
-        <FIELD NAME="restoreprogress" TYPE="number" LENGTH="15" NOTNULL="true" DEFAULT="0" SEQUENCE="false" DECIMALS="14" COMMENT="Stores the restore progress for the job"/>
-        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Time stamp"/>
-        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Time modified"/>
-      </FIELDS>
-      <KEYS>
-        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-      </KEYS>
-    </TABLE>
     <TABLE NAME="block_courseimport_bulk_job" COMMENT="Stores metadata for a bulk import submission">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="User who submitted the bulk job"/>
-        <FIELD NAME="source_year" TYPE="char" LENGTH="32" NOTNULL="false" SEQUENCE="false" COMMENT="Source academic year label"/>
-        <FIELD NAME="target_year" TYPE="char" LENGTH="32" NOTNULL="false" SEQUENCE="false" COMMENT="Target academic year label"/>
         <FIELD NAME="status" TYPE="char" LENGTH="32" NOTNULL="true" DEFAULT="queued" SEQUENCE="false" COMMENT="Bulk job status"/>
         <FIELD NAME="total_count" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Total number of child jobs"/>
         <FIELD NAME="completed_count" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Completed child jobs"/>
@@ -37,6 +17,25 @@
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="block_courseimport" COMMENT="Stores a list of backup jobs that need to be processed">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="target" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The course that content will be imported into"/>
+        <FIELD NAME="source" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The course that content will be exported from"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false" COMMENT="User ID"/>
+        <FIELD NAME="bulk_job_id" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Optional FK to block_courseimport_bulk_job.id; null when this import is not part of a bulk batch"/>
+        <FIELD NAME="backupid" TYPE="char" LENGTH="32" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="status" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="backupprogress" TYPE="number" LENGTH="15" NOTNULL="true" DEFAULT="0" SEQUENCE="false" DECIMALS="14" COMMENT="Stores the progress of a backup for the job"/>
+        <FIELD NAME="restoreprogress" TYPE="number" LENGTH="15" NOTNULL="true" DEFAULT="0" SEQUENCE="false" DECIMALS="14" COMMENT="Stores the restore progress for the job"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Time stamp"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Time modified"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="bulk_job_id" TYPE="foreign" FIELDS="bulk_job_id" REFTABLE="block_courseimport_bulk_job" REFFIELDS="id" COMMENT="Child import job belongs to this bulk parent when set"/>
       </KEYS>
     </TABLE>
   </TABLES>

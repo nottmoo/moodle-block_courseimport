@@ -23,8 +23,6 @@ defined('MOODLE_INTERNAL') || die();
  *
  * @property-read int|null $id The database id of the parent bulk job.
  * @property-read int $userid The id of the user who submitted the bulk job.
- * @property-read string|null $sourceyear Optional source academic year token captured at submit time.
- * @property-read string|null $targetyear Optional target academic year token captured at submit time.
  * @property-read string $status Parent bulk status ({@see self::STATUS_QUEUED} etc.).
  * @package    block_courseimport
  * @copyright  2026 University of Nottingham
@@ -51,12 +49,6 @@ class bulk_job {
     /** @var int User id that owns/submitted this bulk job. */
     protected $userid;
 
-    /** @var string|null Optional source academic year token captured when the job was created. */
-    protected $sourceyear;
-
-    /** @var string|null Optional target academic year token captured when the job was created. */
-    protected $targetyear;
-
     /** @var string Parent job lifecycle status ({@see self::STATUS_QUEUED} etc.). */
     protected $status = self::STATUS_QUEUED;
 
@@ -76,13 +68,9 @@ class bulk_job {
      * Creates an in-memory parent bulk job model.
      *
      * @param int $userid User id that owns/submitted this bulk batch.
-     * @param string|null $sourceyear Optional source academic year token captured at submit time.
-     * @param string|null $targetyear Optional target academic year token captured at submit time.
      */
-    public function __construct(int $userid, ?string $sourceyear = null, ?string $targetyear = null) {
+    public function __construct(int $userid) {
         $this->userid = $userid;
-        $this->sourceyear = $sourceyear;
-        $this->targetyear = $targetyear;
         $this->clock = \core\di::get(\core\clock::class);
     }
 
@@ -98,10 +86,6 @@ class bulk_job {
                 return $this->id;
             case 'userid':
                 return $this->userid;
-            case 'sourceyear':
-                return $this->sourceyear;
-            case 'targetyear':
-                return $this->targetyear;
             case 'status':
                 return $this->status;
         }
@@ -151,8 +135,6 @@ class bulk_job {
         if (!$this->id) {
             $record = (object) [
                 'userid' => $this->userid,
-                'source_year' => $this->sourceyear,
-                'target_year' => $this->targetyear,
                 'status' => $this->status,
                 'total_count' => $this->totalcount,
                 'completed_count' => $this->completedcount,

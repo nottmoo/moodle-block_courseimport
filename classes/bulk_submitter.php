@@ -35,14 +35,12 @@ class bulk_submitter {
     /**
      * @param array<int, array<string, mixed>> $pairs
      * @param int $userid
-     * @param string|null $sourceyear
-     * @param string|null $targetyear
      * @return array{bulkjob: bulk_job, created: int, failed: int, failures: array<int, array<string, mixed>>}
      */
-    public static function submit(array $pairs, int $userid, ?string $sourceyear = null, ?string $targetyear = null): array {
+    public static function submit(array $pairs, int $userid): array {
         global $DB;
 
-        $bulkjob = new bulk_job($userid, $sourceyear, $targetyear);
+        $bulkjob = new bulk_job($userid);
         $bulkjob->save();
         $bulkjob->set_counts(count($pairs), 0, 0);
 
