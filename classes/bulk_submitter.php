@@ -16,6 +16,8 @@
 
 namespace block_courseimport;
 
+use local_uonlib\course_utils;
+
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot . '/course/lib.php');
@@ -61,7 +63,7 @@ class bulk_submitter {
             }
             if (!empty($pair['pending_create'])) {
                 try {
-                    $target = self::create_target_from_csv_row($pair, $source, $userid, $targetyear);
+                    $target = self::create_target_from_csv_row($pair, $source, $userid);
                     $pair['target_id'] = $target;
                     unset($pair['pending_create']);
                 } catch (\Throwable $e) {
@@ -89,7 +91,6 @@ class bulk_submitter {
         foreach ($resolvedpairs as $pair) {
             $source = (int)($pair['source_id'] ?? 0);
             $target = (int)($pair['target_id'] ?? 0);
-            bulk_target_metadata::sync_before_queue($target, $source, $pair);
             try {
                 $backupid = bulk_backup_helper::create_backup_controller($source, $userid);
                 $job = new job($source, $target, $backupid, $userid, $bulkjob->id);
@@ -124,10 +125,9 @@ class bulk_submitter {
      * @param array<string, mixed> $pair
      * @param int $sourcecourseid
      * @param int $userid
-     * @param string|null $targetyeartoken
      * @return int new course id
      */
-    protected static function create_target_from_csv_row(array $pair, int $sourcecourseid, int $userid, ?string $targetyeartoken): int {
+    protected static function create_target_from_csv_row(array $pair, int $sourcecourseid, int $userid): int {
         global $DB;
 
         $fullname  = trim((string)($pair['csv_fullname']  ?? ''));
@@ -169,6 +169,9 @@ class bulk_submitter {
         $data->format         = 'topics';
         $data->numsections    = 1;
         $data->visible        = 1;
+        // Match enrol_nottingham\course_helper::create_course(): academic dates from target shortname only
+        $data->startdate = course_utils::calculate_startdate($shortname);
+        $data->enddate = course_utils::calculate_enddate($shortname);
 
         $course = create_course($data);
         $newid  = (int) $course->id;
@@ -178,9 +181,6 @@ class bulk_submitter {
         if ($roleid) {
             enrol_try_internal_enrol($newid, $userid, $roleid);
         }
-
-        $tok = bulk_course_schedule::year_token_from_text($shortname) ?? $targetyeartoken;
-        bulk_course_schedule::apply_year_from_source($newid, $sourcecourseid, $tok);
 
         return $newid;
     }
