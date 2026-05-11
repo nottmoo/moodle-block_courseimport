@@ -1,0 +1,102 @@
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * Polls bulk parent job progress via web service (no periodic full page reload).
+ *
+ * When the parent bulk job leaves the "queued" state, polling stops and the page
+ * reloads once so the child-jobs table and final summary match the server.
+ *
+ * @module     block_courseimport/bulk_status_progress
+ * @copyright  2026 University of Nottingham
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+define(['core/ajax', 'core/notification'], function(Ajax, Notification) {
+    'use strict';
+
+    const checkdelay = 10000;
+    const timeout = 5000;
+
+    /**
+     * @param {{checkid: ?number}} state
+     */
+    const stop = function(state) {
+        if (state.checkid !== null) {
+            clearInterval(state.checkid);
+            state.checkid = null;
+        }
+    };
+
+    /**
+     * @param {number} bulkid
+     * @param {{checkid: ?number, bar: ?HTMLElement, counts: ?HTMLElement}} state
+     */
+    const fetchProgress = function(bulkid, state) {
+        const requests = [{
+            methodname: 'block_courseimport_get_bulk_job_progress',
+            args: {bulkid: bulkid},
+        }];
+        const promises = Ajax.call(requests, true, true, false, timeout);
+        promises[0].then(function(response) {
+            applyResponse(response, state);
+        }).catch(Notification.exception);
+    };
+
+    /**
+     * @param {*} response
+     * @param {{checkid: ?number, bar: ?HTMLElement, counts: ?HTMLElement}} state
+     */
+    const applyResponse = function(response, state) {
+        const pct = Math.round(Number(response.progresspct));
+        if (state.bar) {
+            state.bar.style.width = pct + '%';
+            state.bar.setAttribute('aria-valuenow', String(pct));
+            state.bar.textContent = pct + '%';
+        }
+        if (state.counts) {
+            state.counts.textContent = response.countstext;
+        }
+
+        if (!response.isrunning) {
+            stop(state);
+            window.location.reload();
+        }
+    };
+
+    /**
+     * @param {number} bulkid
+     */
+    const init = function(bulkid) {
+        const root = document.getElementById('block-courseimport-bulk-root-' + bulkid);
+        if (!root) {
+            return;
+        }
+        const bar = root.querySelector('[data-region="bulk-progress-bar"]');
+        const counts = root.querySelector('[data-region="bulk-counts"]');
+        const state = {
+            checkid: null,
+            bar: bar,
+            counts: counts,
+        };
+        state.checkid = setInterval(function() {
+            fetchProgress(bulkid, state);
+        }, checkdelay);
+        fetchProgress(bulkid, state);
+    };
+
+    return {
+        init: init,
+    };
+});

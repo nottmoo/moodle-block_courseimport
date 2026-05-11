@@ -32,6 +32,25 @@ defined('MOODLE_INTERNAL') || die();
 final class bulk_progress {
 
     /**
+     * Single-line counts summary for bulk status UI and AJAX polling (plain text).
+     *
+     * @param int $completed Successful child jobs.
+     * @param int $total Planned child jobs.
+     * @param int $failed Failed child jobs.
+     * @return string
+     */
+    public static function format_count_summary_line(int $completed, int $total, int $failed): string {
+        $failedsuffix = $failed > 0
+            ? ' · ' . get_string('bulkstatusfailed', 'block_courseimport') . ': ' . $failed
+            : '';
+        return get_string('bulkstatusajaxcounts', 'block_courseimport', (object) [
+            'completed' => $completed,
+            'total' => $total,
+            'failedsuffix' => $failedsuffix,
+        ]);
+    }
+
+    /**
      * Percent complete for a bulk job, capped at 100.
      *
      * If there are zero planned imports (`totalunits` &lt; 1), there is no meaningful

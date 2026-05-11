@@ -17,7 +17,28 @@
 {{!
     @template block_courseimport/import_page_with_tabs
 
-    Tabs: single course import (in-page) and link to bulk CSV rollover.
+    Import page shell: Bootstrap tabs with the standard single-course import markup in the first pane
+    and a second tab that links to the bulk CSV rollover page.
+
+    Classes required for JS:
+    * none (Bootstrap tab markup only; bulk tab is a normal link.)
+
+    Data attributes required for JS:
+    * none
+
+    Context variables required for this template:
+    * bulkurl URL to the bulk CSV upload index (plain URL string).
+    * singletablabel Label for the active "single import" tab.
+    * bulktablabel Label for the bulk rollover tab (link text).
+    * singlecontent Raw HTML for the single-import flow (output of core backup/import UI).
+
+    Example context (json):
+    {
+        "bulkurl": "/blocks/courseimport/bulk/index.php",
+        "singletablabel": "Import from another course",
+        "bulktablabel": "Bulk rollover (CSV)",
+        "singlecontent": "<div class=\\"import-course-selector backup-restore\\"><p>Example single-import content</p></div>"
+    }
 }}
 <div class="block-courseimport-import-tabs mb-4">
     <ul class="nav nav-tabs" role="tablist">

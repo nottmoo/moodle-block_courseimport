@@ -17,20 +17,88 @@
 {{!
     @template block_courseimport/bulk_status
 
-    Single bulk job: summary + progress + child import jobs.
-    Matches the visual style of import_status / core/async_backup_progress.
-    Polls every 5 s while the job is still queued or running.
+    Single bulk rollover job on results.php: progress while queued, final summary when finished,
+    filter links for child import jobs, and a paginated table of child jobs.
+
+    Classes required for JS:
+    * none (AMD uses element ids and data-region hooks; see block_courseimport/bulk_status_progress.)
+
+    Data attributes required for JS:
+    * data-region="bulk-progress-bar", data-region="bulk-counts" on descendants of the root id.
+
+    Context variables required for this template:
+    * heading Page title (typically includes bulk job id).
+    * total Total child units in the bulk job.
+    * completed Child jobs completed successfully.
+    * failed Child jobs that failed.
+    * status Raw status code/string for the parent bulk job.
+    * progresspct Integer 0-100 for the progress bar width.
+    * bulkid Parent bulk job id (used for root element id and AMD init).
+    * countstext Plain-text line for completed/total/failed counts (matches AJAX poll output).
+    * isrunning When true, shows animated progress card and loads {@see block_courseimport/bulk_status_progress} to poll via web service.
+    * hasfailed When isrunning is false, selects warning vs success alert styling.
+    * showchildjobfilters When true, renders childjobfilteritems navigation.
+    * childjobfilteritems List of objects: url, label, count, current (bool).
+    * childheading Subheading above the child jobs table.
+    * childpaginationtop Raw HTML for pagination above the child table (may be empty).
+    * childpaginationbottom Raw HTML for pagination below the child table.
+    * childjobs List of row objects: rownum, target, targetid, targetlinkurl (optional URL string),
+      source, sourceid, statelabel.
+
+    Example context (json):
+    {
+        "bulkid": 42,
+        "heading": "Bulk job #42",
+        "total": 10,
+        "completed": 3,
+        "failed": 1,
+        "countstext": "Completed: 3 / Total: 10 · Failed: 1",
+        "status": "partial",
+        "progresspct": 40,
+        "isrunning": false,
+        "hasfailed": true,
+        "showchildjobfilters": true,
+        "childjobfilteritems": [
+            {
+                "url": "/blocks/courseimport/bulk/results.php?bulkid=42&completed=0",
+                "label": "All imports",
+                "count": 10,
+                "current": true
+            },
+            {
+                "url": "/blocks/courseimport/bulk/results.php?bulkid=42&completed=1",
+                "label": "Completed only",
+                "count": 4,
+                "current": false
+            }
+        ],
+        "childheading": "Import jobs",
+        "childpaginationtop": "",
+        "childpaginationbottom": "",
+        "childjobs": [
+            {
+                "rownum": 1,
+                "target": "Target course",
+                "targetid": 99,
+                "targetlinkurl": "/course/view.php?id=99",
+                "source": "Source course",
+                "sourceid": 88,
+                "statelabel": "Finished"
+            }
+        ]
+    }
 }}
-<div class="block-courseimport-bulk-status container-fluid">
+<div class="block-courseimport-bulk-status container-fluid" id="block-courseimport-bulk-root-{{bulkid}}">
     <h2>{{heading}}</h2>
 
     {{#isrunning}}
-    <div class="card mb-4">
+    <div class="card mb-4" data-region="bulk-running-card">
         <div class="card-body">
             <h5 class="card-title mb-3">{{#str}} inprogress, block_courseimport {{/str}}</h5>
 
             <div class="progress mb-2 block-courseimport-progress">
                 <div class="progress-bar progress-bar-striped progress-bar-animated bg-success block-courseimport-progress-bar"
+                     data-region="bulk-progress-bar"
                      role="progressbar"
                      style="width: {{progresspct}}%;"
                      aria-valuenow="{{progresspct}}"
@@ -41,13 +109,8 @@
             </div>
 
             <div class="d-flex justify-content-between align-items-center mt-2">
-                <small class="text-muted">
-                    {{#str}} bulkstatuscompleted, block_courseimport {{/str}}: <strong>{{completed}}</strong>
-                    &nbsp;/&nbsp;
-                    {{#str}} bulkstatustotal, block_courseimport {{/str}}: <strong>{{total}}</strong>
-                    {{#failed}}&nbsp;·&nbsp; {{#str}} bulkstatusfailed, block_courseimport {{/str}}: <strong class="text-danger">{{failed}}</strong>{{/failed}}
-                </small>
-                <small class="text-muted">{{#str}} bulkstatusrefreshing, block_courseimport {{/str}}</small>
+                <small class="text-muted" data-region="bulk-counts">{{countstext}}</small>
+                <small class="text-muted" aria-live="polite">{{#str}} bulkstatusrefreshing, block_courseimport {{/str}}</small>
             </div>
         </div>
     </div>
@@ -115,10 +178,8 @@
 
 {{#isrunning}}
 {{#js}}
-(function() {
-    setTimeout(function() {
-        window.location.href = '{{refreshurl}}';
-    }, 5000);
-})();
+require(['block_courseimport/bulk_status_progress'], function(mod) {
+    mod.init({{bulkid}});
+});
 {{/js}}
 {{/isrunning}}

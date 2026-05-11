@@ -17,7 +17,47 @@
 {{!
     @template block_courseimport/bulk_results_list
 
-    User's bulk rollover jobs: summary table + paging.
+    Lists the current user's bulk rollover parent jobs (summary table, paging, empty state).
+
+    Classes required for JS:
+    * none
+
+    Data attributes required for JS:
+    * none
+
+    Context variables required for this template:
+    * heading Page title.
+    * hasjobs If true, table and paging are shown; if false, emptymessage is shown.
+    * paginationtext Short summary of the visible row range (may be empty when hasjobs is false).
+    * pagingtop Raw HTML for paging controls above the table (often empty when not needed).
+    * pagingbottom Raw HTML for paging controls below the table.
+    * tableheaders Array of column header strings (same length as columns in jobrows).
+    * jobrows List of row objects: idlabel, total, completed, failed, status, progressdisplay, viewlink (raw HTML link).
+    * emptymessage Message when hasjobs is false.
+    * backlink Raw HTML link back to the upload page.
+
+    Example context (json):
+    {
+        "heading": "Bulk rollover jobs",
+        "hasjobs": true,
+        "paginationtext": "Showing 1 to 2 of 2",
+        "pagingtop": "",
+        "pagingbottom": "",
+        "tableheaders": ["Job", "Total", "Completed", "Failed", "Status", "Progress", ""],
+        "jobrows": [
+            {
+                "idlabel": "#101",
+                "total": 5,
+                "completed": 2,
+                "failed": 0,
+                "status": "queued",
+                "progressdisplay": "40%",
+                "viewlink": "<a href=\\"#\\">View</a>"
+            }
+        ],
+        "emptymessage": "No bulk jobs yet.",
+        "backlink": "<a href=\\"/blocks/courseimport/bulk/index.php\\">Back to upload</a>"
+    }
 }}
 <div class="block-courseimport-bulk-results-list">
     <h2>{{heading}}</h2>

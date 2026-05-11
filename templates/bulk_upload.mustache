@@ -17,7 +17,38 @@
 {{!
     @template block_courseimport/bulk_upload
 
-    Bulk CSV upload: two-column layout; sidebar lists options enabled in plugin config (database).
+    Bulk CSV rollover upload page: main column (heading, optional active-job notice, rendered upload form)
+    and a sidebar listing which import profile items are enabled in block settings.
+
+    Classes required for JS:
+    * none
+
+    Data attributes required for JS:
+    * none
+
+    Context variables required for this template:
+    * heading Page title (plain text).
+    * statusurl URL to bulk results list; if empty/falsy the "view status" link block is hidden.
+    * formhtml Raw HTML for the Moodle form (from moodleform::display()).
+    * activebulknotice Optional object when the user has a queued bulk job: url (string), jobid (int).
+    * enableditems List of objects with key label (string) for the sidebar checklist.
+    * settingsurl URL to the block's admin settings page.
+
+    Example context (json):
+    {
+        "heading": "Bulk course rollover",
+        "statusurl": "/blocks/courseimport/bulk/results.php",
+        "formhtml": "<p class=\\"text-muted\\">[Example: CSV upload form would render here]</p>",
+        "activebulknotice": {
+            "url": "/blocks/courseimport/bulk/results.php?bulkid=12",
+            "jobid": 12
+        },
+        "enableditems": [
+            {"label": "Activities"},
+            {"label": "Blocks"}
+        ],
+        "settingsurl": "/admin/settings.php?section=blocksettingcourseimport"
+    }
 }}
 <div class="block-courseimport-bulk-upload container-fluid">
     <div class="row">

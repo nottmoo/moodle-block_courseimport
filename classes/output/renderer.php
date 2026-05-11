@@ -126,7 +126,7 @@ class renderer extends \core_backup_renderer {
             }
         }
 
-        return $this->render_from_template('block_courseimport/course_selector_bulk', $data);
+        return $this->render_from_template('block_courseimport/course_search', $data);
     }
 
     /**
@@ -146,12 +146,18 @@ class renderer extends \core_backup_renderer {
     }
 
     /**
-     * Overrides core_backup_renderer::import_course_selector to wrap the form in a tabbed layout.
+     * Builds the import course selector UI inside a tabbed layout.
      *
-     * @param url $nextstageurl
-     * @param \import_course_search|null $courses
-     * @return string
+     * Delegates to {@see \core_backup_renderer::import_course_selector()} for the standard
+     * backup/import form HTML, then wraps that markup in {@see import_page_with_tabs()} so the
+     * single-course import and a link to bulk CSV rollover share one page.
+     *
+     * @see \core_backup_renderer::import_course_selector()
+     * @param \core\url $nextstageurl Form action URL for the import flow (core uses {@see \moodle_url}).
+     * @param \import_course_search|null $courses Course search component rendered inside the form.
+     * @return string Full page fragment HTML (tabs + single-import pane content).
      */
+    #[\Override]
     public function import_course_selector(url $nextstageurl, ?\import_course_search $courses = null): string {
         $formhtml = parent::import_course_selector($nextstageurl, $courses);
         $bulkurl = new url('/blocks/courseimport/bulk/index.php');

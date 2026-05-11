@@ -127,7 +127,14 @@ final class bulk_status implements renderable, templatable {
         );
         $PAGE->navbar->add(get_string('bulkstatusid', 'block_courseimport', $bulkid));
 
+        $countstext = bulk_progress::format_count_summary_line(
+            (int) $bulk->completed_count,
+            (int) $bulk->total_count,
+            (int) $bulk->failed_count
+        );
+
         $data = [
+            'bulkid' => $bulkid,
             'heading' => get_string('bulkstatusid', 'block_courseimport', $bulkid),
             'total' => (int) $bulk->total_count,
             'completed' => (int) $bulk->completed_count,
@@ -136,11 +143,7 @@ final class bulk_status implements renderable, templatable {
             'progresspct' => $progresspercent,
             'isrunning' => $isrunning,
             'hasfailed' => $hasfailed,
-            'refreshurl' => (new url('/blocks/courseimport/bulk/results.php', [
-                'bulkid' => $bulkid,
-                'cpage' => $childpage,
-                'completed' => $completedonly,
-            ]))->out(false),
+            'countstext' => $countstext,
             'childpaginationtop' => $childpaginationhtml,
             'childjobs' => $childslice,
             'childheading' => get_string('bulkstatuschildjobs', 'block_courseimport'),

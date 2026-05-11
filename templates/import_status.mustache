@@ -15,31 +15,32 @@
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
-    @template block_courseimport/import_status.
+    @template block_courseimport/import_status
 
-    Course import backup status template.
-
-    The purpose of this template is to render status
-    updates during an  the import process..
+    Single-course import progress: heading, core async progress bar, detail text, and return button.
+    See {@link https://moodledev.io/docs/5.0/guides/templates#documenting-the-templates template documentation}.
 
     Classes required for JS:
-    * block_courseimport/async (initialised from this template; polls `block_courseimport_get_job_progress`)
+    * block_courseimport/async (initialised from this template; polls block_courseimport_get_job_progress)
 
     Data attributes required for JS:
-    * none (uses element ids: container `#{{backupid}}`, bar `#{{backupid}}_bar` from `core/async_backup_progress`)
+    * none (uses element ids: container `#{{backupid}}`, bar `#{{backupid}}_bar` from core/async_backup_progress partial)
 
     Context variables required for this template:
-    * backupid
-    * courseurl
+    * backupid Import job id (string or int) used as HTML id prefix and passed to Async.init().
+    * courseurl URL for the "return to course" button.
+    * width Optional bar width in pixels for the core/async_backup_progress partial (defaults inside core template).
+    * operation Optional string for the core partial (e.g. backup).
 
     Example context (json):
     {
         "backupid": "76",
         "courseurl": "/course/view.php?id=6",
-        "width": "500"
+        "width": "500",
+        "operation": "backup"
     }
 }}
-<div class="progressbar_container mb-4 block-courseimport-active-import" id="{{backupid}}">
+<div class="progressbar_container mb-4" id="{{backupid}}">
     <h3 id="{{backupid}}_status">{{# str }} importpending, block_courseimport {{/ str }}</h3>
     {{> core/async_backup_progress }}
     <p id="{{backupid}}_detail">{{# str }} asyncnowait, backup {{/ str }}</p>
