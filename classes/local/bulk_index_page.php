@@ -81,7 +81,8 @@ final class bulk_index_page {
      * @param int $userid
      * @param string $heading
      * @param string $formhtml Rendered form markup from {@see moodleform::display()}.
-     * @return array<string, mixed>
+     * @return array<string, mixed> keys: heading, statusurl, formhtml, activebulknotice, enableditems,
+     *         cansettings (bool), settingsurl (string, empty when cansettings is false).
      */
     public static function build_upload_template_context(int $userid, string $heading, string $formhtml): array {
         $activebulkjob = bulk_job::get_most_recent_queued_for_user($userid);
@@ -93,7 +94,12 @@ final class bulk_index_page {
             $enableditems[] = ['label' => $label];
         }
 
-        $settingsurl = (new url('/admin/settings.php', ['section' => 'blocksettingcourseimport']))->out(false);
+        $systemcontext = \context_system::instance();
+        $cansettings = has_capability('block/courseimport:manage', $systemcontext)
+            || has_capability('moodle/site:config', $systemcontext);
+        $settingsurl = $cansettings
+            ? (new url('/admin/settings.php', ['section' => 'blocksettingcourseimport']))->out(false)
+            : '';
 
         $activebulknotice = null;
         if ($activebulkjob) {
@@ -110,6 +116,7 @@ final class bulk_index_page {
             'formhtml' => $formhtml,
             'activebulknotice' => $activebulknotice,
             'enableditems' => $enableditems,
+            'cansettings' => $cansettings,
             'settingsurl' => $settingsurl,
         ];
     }

@@ -39,7 +39,7 @@ if ($hassiteconfig && !$ADMIN->locate('block_courseimport_bulkrollover')) {
 if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_heading(
         'block_courseimport/profileheading',
-        get_string('importsettings', 'block_courseimport'),
+        get_string('courseimportsettings', 'block_courseimport'),
         ''
     ));
 
