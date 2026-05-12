@@ -68,12 +68,19 @@ class courseimport_task extends \core\task\scheduled_task {
      * @param \block_courseimport\job $job
      */
     protected function process_job(job $job) {
+        global $DB;
+
         try {
             // Start processing, successfully will change to 555555, otherwise abandon and email admin.
             $job->set_status(job::STATE_PROCESSING);
             mtrace("Jobid: {$job->id}, Userid: {$job->user}, Import course: {$job->target}, Export course:{$job->source}");
-            mtrace("Creating backup for course ID:{$job->source}");
             try {
+                if (!$DB->record_exists('course', ['id' => $job->target])) {
+                    $message = "Error: Job ({$job->id}) target course {$job->target} no longer exists.";
+                    mtrace($message);
+                    throw new job_failed($message);
+                }
+                mtrace("Creating backup for course ID:{$job->source}");
                 $this->backup($job);
                 $this->restore($job);
             } catch (job_failed $e) {
@@ -129,6 +136,14 @@ class courseimport_task extends \core\task\scheduled_task {
             throw new job_failed($message);
         }
 
+        // Fail before restore_controller / prechecks if the target course was deleted while queued.
+        if (!$DB->record_exists('course', ['id' => $job->target])) {
+            $message = "Error: Job ({$job->id}) target course {$job->target} no longer exists.";
+            mtrace($message);
+            fulldelete($tempdestination);
+            throw new job_failed($message);
+        }
+
         $rc = new \restore_controller(
             $job->bid,
             $job->target,
@@ -139,13 +154,6 @@ class courseimport_task extends \core\task\scheduled_task {
         );
         $rc->set_progress(new \core\progress\db_updater($job->id, 'block_courseimport', 'restoreprogress'));
         $this->prepare_for_restore($rc, $job);
-
-        $preservedtarget = $DB->get_record('course', ['id' => $job->target], 'id, fullname, shortname, idnumber', IGNORE_MISSING);
-        if (!$preservedtarget) {
-            $message = "Error: Job ({$job->id}) target course {$job->target} no longer exists.";
-            mtrace($message);
-            throw new job_failed($message);
-        }
 
         // Execute the restore.
         try {
@@ -167,15 +175,6 @@ class courseimport_task extends \core\task\scheduled_task {
         } finally {
             $rc->destroy();
             fulldelete($tempdestination);
-        }
-
-        // Restore may reset metadata from source course; keep CSV-driven fields.
-        if ($preservedtarget) {
-            if (trim((string) $preservedtarget->fullname) !== '') {
-                $DB->set_field('course', 'fullname', $preservedtarget->fullname, ['id' => (int) $job->target]);
-            }
-            $DB->set_field('course', 'shortname', $preservedtarget->shortname, ['id' => (int) $job->target]);
-            $DB->set_field('course', 'idnumber', (string) $preservedtarget->idnumber, ['id' => (int) $job->target]);
         }
 
         $job->set_status(job::STATE_FINISHED);
