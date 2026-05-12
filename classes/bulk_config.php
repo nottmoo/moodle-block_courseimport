@@ -30,4 +30,13 @@ class bulk_config {
     /** Maximum data rows per upload (hard limit). */
     public const MAX_CSV_ROWS = 10000;
 
+    /**
+     * Maximum CSV upload size in bytes (same cap as Moodle's upload limit for filepickers).
+     *
+     * @return int
+     */
+    public static function max_csv_bytes(): int {
+        return (int) get_max_upload_file_size();
+    }
+
 }

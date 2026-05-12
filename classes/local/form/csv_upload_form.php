@@ -14,7 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace block_courseimport\form;
+namespace block_courseimport\local\form;
+
+use block_courseimport\bulk_config;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -34,10 +36,9 @@ class csv_upload_form extends \moodleform {
      */
     protected function definition() {
         $mform = $this->_form;
-        $maxbytes = $this->_customdata['maxbytes'] ?? 0;
 
         $mform->addElement('filepicker', 'csvfile', get_string('bulkcsvfile', 'block_courseimport'), null, [
-            'maxbytes' => $maxbytes,
+            'maxbytes' => bulk_config::max_csv_bytes(),
             'accepted_types' => ['.csv'],
         ]);
         $mform->addRule('csvfile', get_string('bulkcsvrequired', 'block_courseimport'), 'required', null, 'client');
