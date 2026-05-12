@@ -39,10 +39,11 @@ require_once($CFG->dirroot . '/backup/util/ui/import_extensions.php');
  */
 class search extends \import_course_search {
     /**
-     * The results of the search
-     * @var array|null
+     * Cached shortname search keyed by md5(coursecode.'---@---'.shortnamestr).
+     *
+     * @var array<string, array<int, \stdClass>>
      */
-    private $shortnameresults = null;
+    private array $shortnameresults = [];
 
     /**
      * Returns an array of results from the search.
@@ -64,14 +65,14 @@ class search extends \import_course_search {
      *
      * @param string $coursecode - fragment of a shortname to match.
      * @param string $shortnamestr - the short name of a course that should not be returned.
+     * @return int number of matching courses (same rows as {@see get_shortnameresults}).
      */
-    public function searchshortname($coursecode, $shortnamestr): void {
+    public function searchshortname($coursecode, $shortnamestr): int {
         global $DB;
         $queryhash = md5($coursecode.'---@---'.$shortnamestr);
         if (isset($this->shortnameresults[$queryhash])) {
-            return;
+            return count($this->shortnameresults[$queryhash]);
         }
-        $this->shortnameresults = [];
         $params = [
             'shortnamestr' => strtolower($shortnamestr),
             'siteid' => SITEID,
@@ -86,6 +87,7 @@ class search extends \import_course_search {
         LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = 50)
         WHERE (('.$likesql.') and (LOWER(c.shortname) <> :shortnamestr) and (c.id <> :siteid))';
         $this->shortnameresults[$queryhash] = $DB->get_records_sql($searchsql, $params);
+        return count($this->shortnameresults[$queryhash]);
     }
 
     /**
