@@ -52,6 +52,15 @@ class progress implements renderable, templatable {
     public $started = false;
 
     /**
+     * True when the target course row no longer exists; {@see export_for_external()} uses the site home URL.
+     *
+     * Set via {@see self::stop_polling_missing_target_course()}.
+     *
+     * @var bool
+     */
+    public $missingtargetcourse = false;
+
+    /**
      * Gets the progress for a specific job.
      *
      * This method should be used to create progress objects.
@@ -72,6 +81,21 @@ class progress implements renderable, templatable {
     }
 
     /**
+     * Mark the job as finished/failed for external APIs when the target course no longer exists.
+     *
+     * Used so AJAX progress polling stops cleanly without duplicating {@see export_for_external()} shape.
+     *
+     * @return void
+     */
+    public function stop_polling_missing_target_course(): void {
+        $this->failed = true;
+        $this->finished = true;
+        $this->started = true;
+        $this->progress = 1.0;
+        $this->missingtargetcourse = true;
+    }
+
+    /**
      * Gets variables needed for exporting.
      *
      * The output must match the definition (@see \block_courseimport\output\progress::external_export_definition())
@@ -80,7 +104,11 @@ class progress implements renderable, templatable {
      * @throws \moodle_exception
      */
     public function export_for_external(): array {
-        $courseurl = new url('/course/view.php', ['id' => $this->courseid]);
+        if ($this->missingtargetcourse) {
+            $courseurl = new url('/');
+        } else {
+            $courseurl = new url('/course/view.php', ['id' => $this->courseid]);
+        }
         return [
             'backupid' => $this->job,
             'courseurl' => $courseurl->out(false),
