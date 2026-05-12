@@ -26,11 +26,25 @@ defined('MOODLE_INTERNAL') || die();
  * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 class csv_parser {
     /**
-     * @param string $path Absolute filesystem path to CSV
-     * @return array<int, array<string, string>> List of associative rows
+     * Bulk-import header labels (first CSV row), after {@see normalize_header_cell()}.
+     *
+     * Typical files use three columns: full name, short name, id number (idnumber field).
+     * You may also include a column titled Course id for Moodle’s numeric course id (normalised key “course id”).
+     */
+    public const HEADER_FULL_NAME = 'full name';
+    public const HEADER_SHORT_NAME = 'short name';
+    /** Moodle course idnumber value (same semantic as “course id number” in spreadsheets). */
+    public const HEADER_ID_NUMBER = 'id number';
+    /** Synonym heading only; normalises from "Course ID number". */
+    public const HEADER_ID_NUMBER_ALT = 'course id number';
+
+    /**
+     * Parses CSV rows from a file path.
+     *
+     * @param string $path Absolute filesystem path to a CSV file.
+     * @return array<int, array<string, string>> List of associative rows.
      */
     public static function parse_file(string $path): array {
         $fh = fopen($path, 'r');
@@ -45,7 +59,9 @@ class csv_parser {
     }
 
     /**
-     * Parse CSV from raw file contents (e.g. {@see \moodleform::get_file_content()}), no temp file.
+     * Parse CSV from raw file contents (e.g. {@see \moodleform::get_file_content()}).
+     *
+     * Uses php://temp so large inputs may spill to disk (PHP default behaviour).
      *
      * @param string $content
      * @return array<int, array<string, string>> List of associative rows
@@ -54,7 +70,8 @@ class csv_parser {
         if ($content === '') {
             return [];
         }
-        $fh = fopen('php://memory', 'r+b');
+        // php://temp spills to disk when large; avoids holding the whole parsed row list twice for big files.
+        $fh = fopen('php://temp', 'r+b');
         if ($fh === false) {
             return [];
         }
@@ -68,26 +85,22 @@ class csv_parser {
     }
 
     /**
-     * Parse CSV from an open readable handle (e.g. {@see \stored_file::get_content_file_handle()}).
+     * Reads header + data rows from a handle and invokes the callback once per non-empty data row.
+     *
+     * Does not build an array of all rows in memory (unlike {@see self::parse_from_handle()}).
+     * The handle must be positioned at the start of the file; the method reads until EOF.
      *
      * @param resource $fh
-     * @return array<int, array<string, string>> List of associative rows
+     * @param callable $callback function(array $row, int $rowindex): void — $rowindex is 0-based over non-empty data rows only
+     * @return int Number of non-empty data rows processed
      */
-    public static function parse_from_handle($fh): array {
+    public static function iterate_associative_rows_from_handle($fh, callable $callback): int {
         $header = fgetcsv($fh);
         if ($header === false) {
-            return [];
+            return 0;
         }
-        $header = array_map(function ($h) {
-            $h = trim((string) $h);
-            // Strip UTF-8 BOM often added by Excel on first column.
-            if (strncmp($h, "\xEF\xBB\xBF", 3) === 0) {
-                $h = substr($h, 3);
-            }
-            $h = preg_replace('/^\x{FEFF}/u', '', $h);
-            return strtolower(trim($h));
-        }, $header);
-        $rows = [];
+        $header = array_map([self::class, 'normalize_header_cell'], $header);
+        $index = 0;
         while (($line = fgetcsv($fh)) !== false) {
             if (count(array_filter($line, 'strlen')) === 0) {
                 continue;
@@ -96,106 +109,63 @@ class csv_parser {
             foreach ($header as $i => $key) {
                 $row[$key] = isset($line[$i]) ? trim((string) $line[$i]) : '';
             }
-            $row = self::normalize_course_id_column($row);
-            $rows[] = self::normalize_name_columns($row);
+            $callback($row, $index);
+            $index++;
         }
+        return $index;
+    }
+
+    /**
+     * Parse CSV from an open readable handle (e.g. {@see \stored_file::get_content_file_handle()}).
+     *
+     * @param resource $fh
+     * @return array<int, array<string, string>> List of associative rows
+     */
+    public static function parse_from_handle($fh): array {
+        $rows = [];
+        self::iterate_associative_rows_from_handle($fh, function (array $row, int $i) use (&$rows): void {
+            $rows[$i] = $row;
+        });
         return $rows;
     }
 
     /**
-     * Copy the first matching course/target id value to the canonical key "course id" (Day 3 column mapping).
+     * Value for one canonical header column (trimmed), or empty if missing.
      *
      * @param array<string, string> $row
-     * @return array<string, string>
      */
-    public static function normalize_course_id_column(array $row): array {
-        $aliases = [
-            'course id', 'courseid', 'course_id', 'target id', 'target_id', 'target course id',
-            'moodle course id', 'moodle id', 'courseidnumber',
-        ];
-        foreach ($aliases as $a) {
-            if (!empty($row[$a]) && is_numeric($row[$a])) {
-                $row['course id'] = trim((string) $row[$a]);
-                return $row;
-            }
-        }
-        if (!empty($row['id']) && is_numeric($row['id'])) {
-            $row['course id'] = trim((string) $row['id']);
-        }
-        return $row;
+    public static function cell(array $row, string $canonicalheader): string {
+        return isset($row[$canonicalheader]) ? trim((string) $row[$canonicalheader]) : '';
     }
 
     /**
-     * Map common export headers to canonical keys expected by {@see module_pair_resolver} (Day 3 flexible columns).
+     * First non-empty trimmed cell among the given header keys (order = preference).
      *
      * @param array<string, string> $row
-     * @return array<string, string>
      */
-    public static function normalize_name_columns(array $row): array {
-        $flatmap = [];
-        foreach ($row as $k => $v) {
-            $flat = preg_replace('/[^a-z0-9]/', '', strtolower((string) $k));
-            if ($flat !== '') {
-                $flatmap[$flat] = $v;
+    public static function cell_first(array $row, string ...$keys): string {
+        foreach ($keys as $key) {
+            $v = self::cell($row, $key);
+            if ($v !== '') {
+                return $v;
             }
         }
-
-        $fullflats = [
-            'fullname', 'fullnamecourse', 'coursefullname', 'coursename', 'longname', 'modulename',
-            'coursetitle', 'title', 'name', 'course', 'displayname',
-        ];
-        $shortflats = [
-            'shortname', 'courseshortname', 'coursecode', 'modulecode', 'code',
-            'shortcode', 'moduleshortname',
-        ];
-
-        if (!self::nonempty($row['full name'] ?? '')) {
-            foreach ($fullflats as $ff) {
-                if (isset($flatmap[$ff]) && self::nonempty((string) $flatmap[$ff])) {
-                    $row['full name'] = trim((string) $flatmap[$ff]);
-                    break;
-                }
-            }
-        }
-        if (!self::nonempty($row['short name'] ?? '')) {
-            foreach ($shortflats as $sf) {
-                if (isset($flatmap[$sf]) && self::nonempty((string) $flatmap[$sf])) {
-                    $row['short name'] = trim((string) $flatmap[$sf]);
-                    break;
-                }
-            }
-        }
-
-        $idflats = [
-            'idnumber', 'targetidentifier', 'targetidnumber', 'externalid', 'organisationid', 'organizationid',
-        ];
-        if (!self::nonempty($row['id number'] ?? '')) {
-            foreach ($idflats as $idf) {
-                if (isset($flatmap[$idf]) && self::nonempty((string) $flatmap[$idf])) {
-                    $row['id number'] = trim((string) $flatmap[$idf]);
-                    break;
-                }
-            }
-        }
-
-        $divflats = ['divisioncode', 'division'];
-        if (!self::nonempty($row['division code'] ?? '')) {
-            foreach ($divflats as $df) {
-                if (isset($flatmap[$df]) && self::nonempty((string) $flatmap[$df])) {
-                    $row['division code'] = trim((string) $flatmap[$df]);
-                    break;
-                }
-            }
-        }
-
-        return $row;
+        return '';
     }
 
     /**
-     * @param string $s
-     * @return bool
+     * Normalizes a CSV header cell key (trim, remove BOM, lowercase).
+     *
+     * @param mixed $headercell Raw header cell value from fgetcsv.
+     * @return string Normalized header key.
      */
-    protected static function nonempty(string $s): bool {
-        return trim($s) !== '';
+    protected static function normalize_header_cell($headercell): string {
+        $headercell = trim((string) $headercell);
+        // Strip UTF-8 BOM often added by Excel on first column.
+        if (strncmp($headercell, "\xEF\xBB\xBF", 3) === 0) {
+            $headercell = substr($headercell, 3);
+        }
+        $headercell = preg_replace('/^\x{FEFF}/u', '', $headercell);
+        return strtolower(trim((string) $headercell));
     }
 }

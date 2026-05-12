@@ -80,7 +80,7 @@ final class bulk_index_page {
      * @param int $userid
      * @param string $heading
      * @param string $formhtml Rendered form markup from {@see moodleform::display()}.
-     * @return array<string, mixed> keys: heading, statusurl, formhtml, activebulknotice, enableditems,
+     * @return array<string, mixed> keys: heading, statusurl, formhtml, csvheadinghelp, activebulknotice, enableditems,
      *         cansettings (bool), settingsurl (string, empty when cansettings is false).
      */
     public static function build_upload_template_context(int $userid, string $heading, string $formhtml): array {

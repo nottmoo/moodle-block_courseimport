@@ -33,74 +33,104 @@ defined('MOODLE_INTERNAL') || die();
  */
 class module_pair_resolver {
     /**
-     * @param array<int, array<string, string>> $rows
-     * @return array{resolved: array<int, array<string, mixed>>, errors: array<int, array<string, mixed>>}
+     * Resolves one CSV data row (same logic as one iteration of {@see self::resolve()}).
+     *
+     * @param int $index 0-based index among non-empty data rows (matches keys used by {@see self::resolve()}).
+     * @param array<string, string> $row
+     * @return array{pair: ?array<string, mixed>, error: ?array<string, mixed>} Exactly one of pair or error is non-null.
      */
-    public static function resolve(array $rows): array {
-        $resolved = [];
-        $errors = [];
-        foreach ($rows as $i => $row) {
-            $fullname = self::row_field($row, [
-                'fullname', 'full name', 'course full name', 'course name', 'long name',
-                'module name', 'course title', 'title', 'display name',
-            ]);
-            $shortname = self::row_field($row, [
-                'shortname', 'short name', 'course short name', 'course code', 'module code',
-                'code', 'short code',
-            ]);
-            $idnumber = self::row_field($row, [
-                'idnumber', 'id number', 'target identifier', 'targetidentifier', 'target id number',
-                'external id', 'externalid',
-            ]);
+    public static function resolve_row(int $index, array $row): array {
+        $fullname = csv_parser::cell($row, csv_parser::HEADER_FULL_NAME);
+        $shortname = csv_parser::cell($row, csv_parser::HEADER_SHORT_NAME);
+        $idnumber = csv_parser::cell_first(
+            $row,
+            csv_parser::HEADER_ID_NUMBER,
+            csv_parser::HEADER_ID_NUMBER_ALT
+        );
 
-            $target = self::find_target_course($row, $shortname, $fullname, $idnumber);
-            if ($target) {
-                $source = self::resolve_source_with_fallbacks($target, $shortname, $fullname);
-                if (!$source) {
-                    $errors[$i] = [
-                        'row' => $i + 1,
+        $target = self::find_target_course($row, $shortname, $fullname, $idnumber);
+        if ($target) {
+            $source = self::resolve_source_with_fallbacks($target, $shortname, $fullname);
+            if (!$source) {
+                return [
+                    'pair' => null,
+                    'error' => [
+                        'row' => $index + 1,
                         'error' => get_string('bulkerrorsourcenotfound', 'block_courseimport'),
                         'target_id' => (int) $target->id,
-                    ];
-                    continue;
-                }
+                    ],
+                ];
+            }
 
-                $resolved[$i] = [
+            return [
+                'pair' => [
                     'target_id' => (int) $target->id,
                     'source_id' => (int) $source->id,
                     'csv_fullname' => $fullname,
                     'csv_shortname' => $shortname,
                     'csv_idnumber' => $idnumber,
-                ];
-                continue;
-            }
+                ],
+                'error' => null,
+            ];
+        }
 
-            // No target: try prior-year course from CSV labels; create empty target on confirm if category is set.
-            $source = self::find_prior_year_source_from_csv_strings($shortname, $fullname);
-            if (!$source) {
-                $errors[$i] = [
-                    'row' => $i + 1,
-                    'error' => get_string('bulkerrortargetnotfound', 'block_courseimport' , $fullname),
-                ];
-                continue;
-            }
+        // No target: try prior-year course from CSV labels; create empty target on confirm if category is set.
+        $source = self::find_prior_year_source_from_csv_strings($shortname, $fullname);
+        if (!$source) {
+            return [
+                'pair' => null,
+                'error' => [
+                    'row' => $index + 1,
+                    'error' => get_string('bulkerrortargetnotfound', 'block_courseimport', $fullname),
+                ],
+            ];
+        }
 
-            if ($shortname === '' || $fullname === '') {
-                $errors[$i] = [
-                    'row' => $i + 1,
+        if ($shortname === '' || $fullname === '') {
+            return [
+                'pair' => null,
+                'error' => [
+                    'row' => $index + 1,
                     'error' => get_string('bulkinvalidcreaterow', 'block_courseimport'),
-                ];
-                continue;
-            }
+                ],
+            ];
+        }
 
-            $resolved[$i] = [
+        return [
+            'pair' => [
                 'target_id' => 0,
                 'source_id' => (int) $source->id,
                 'csv_fullname' => $fullname,
                 'csv_shortname' => $shortname,
                 'csv_idnumber' => $idnumber,
                 'pending_create' => true,
-            ];
+            ],
+            'error' => null,
+        ];
+    }
+
+    /**
+     * Resolves every CSV data row to either a source/target pair or an error entry.
+     *
+     * Array keys are preserved as row indices (same as {@see self::resolve_row()}).
+     *
+     * @param array<int, array<string, string>> $rows Parsed CSV rows keyed by 0-based row index.
+     * @return array{
+     *     resolved: array<int, array<string, mixed>>,
+     *     errors: array<int, array<string, mixed>>
+     * } Maps keyed by the same indices as the input rows: resolved pairs and per-row errors.
+     */
+    public static function resolve(array $rows): array {
+        $resolved = [];
+        $errors = [];
+        foreach ($rows as $i => $row) {
+            $r = self::resolve_row((int) $i, $row);
+            if ($r['pair'] !== null) {
+                $resolved[$i] = $r['pair'];
+            }
+            if ($r['error'] !== null) {
+                $errors[$i] = $r['error'];
+            }
         }
         return ['resolved' => $resolved, 'errors' => $errors];
     }
@@ -298,51 +328,29 @@ class module_pair_resolver {
     }
 
     /**
-     * @param array<string, string> $row
-     * @param array<int, string> $keys lower-case header keys
-     */
-    protected static function row_field(array $row, array $keys): string {
-        foreach ($keys as $k) {
-            if (isset($row[$k]) && trim((string) $row[$k]) !== '') {
-                return trim((string) $row[$k]);
-            }
-        }
-        return '';
-    }
-
-    /**
+     * Moodle internal course id when the CSV has a Course id column.
+     *
      * @param array<string, string> $row
      */
     protected static function row_target_id(array $row): int {
-        $keys = [
-            'course id', 'courseid', 'course_id', 'target id', 'target_id', 'target course id',
-            'moodle course id', 'moodle id',
-        ];
-        foreach ($keys as $k) {
-            if (!empty($row[$k]) && is_numeric($row[$k])) {
-                return (int) $row[$k];
-            }
-        }
-        if (!empty($row['id']) && is_numeric($row['id'])) {
-            return (int) $row['id'];
-        }
-        foreach ($row as $k => $v) {
-            if ($v === '' || $v === null || !is_numeric($v)) {
-                continue;
-            }
-            $norm = preg_replace('/\s+/', ' ', strtolower(str_replace(['_', '-'], ' ', trim((string) $k))));
-            if (preg_match('/^(course id|target id|moodle course id|moodle id)$/', $norm)) {
-                return (int) $v;
-            }
-            if ($norm === 'courseid' || $norm === 'targetid') {
-                return (int) $v;
-            }
+        $raw = csv_parser::cell($row, 'course id');
+        if ($raw !== '' && is_numeric($raw)) {
+            return (int) $raw;
         }
         return 0;
     }
 
     /**
-     * @param array<int, \stdClass> $candidates
+     * Chooses the best prior-year source course from module-code search candidates.
+     *
+     * Candidates whose academic year code is present and {@see $targetyear} is set are skipped when
+     * their year is greater than or equal to the target’s year (avoid same-year / newer intake).
+     * Among the remainder, the course with the highest year code wins; if none qualify, the first
+     * candidate is returned.
+     *
+     * @param array<int, \stdClass> $candidates Candidate courses from {@see search::get_shortnameresults()}.
+     * @param string|null $targetyear Target course module year code from {@see course_utils::get_module_details()}, or null.
+     * @return \stdClass|null The chosen course, or null when $candidates is empty.
      */
     protected static function pick_source_course(array $candidates, ?string $targetyear): ?\stdClass {
         if (!$candidates) {
