@@ -87,7 +87,7 @@ final class bulk_index_page {
         $activebulkjob = bulk_job::get_most_recent_queued_for_user($userid);
         $statusurl = (new url('/blocks/courseimport/bulk/results.php'))->out(false);
 
-        $labels = import_helper::enabled_profile_sidebar_labels();
+        $labels = import_helper::get_enabled_profile_sidebar_labels();
         $enableditems = [];
         foreach ($labels as $label) {
             $enableditems[] = ['label' => $label];

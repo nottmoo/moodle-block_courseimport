@@ -30,9 +30,10 @@ use block_courseimport\local\profile_defaults;
 
 defined('MOODLE_INTERNAL') || die();
 
-// Load backup core first (defines backup_exception) before settings classes extend it.
+// Backup/import APIs used below (e.g. backup_plan, backup_setting, base_setting).
 require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
 require_once($CFG->dirroot . '/backup/moodle2/backup_settingslib.php');
+
 /**
  * Helper for the import page.
  *
@@ -43,28 +44,24 @@ require_once($CFG->dirroot . '/backup/moodle2/backup_settingslib.php');
  */
 class import_helper {
     /**
-     * Default checkbox values for the import profile (admin settings and bulk UI summary).
+     * Fallback when no plugin config row exists for a toggle key.
      *
-     * @return array<string, bool>
+     * Install ({@see xmldb_block_courseimport_install}) and upgrade populate every key from
+     * {@see profile_defaults::get_toggle_defaults()}, so this should only apply briefly if ever.
      */
-    public static function profile_toggle_defaults(): array {
-        $defaults = [];
-        foreach (profile_defaults::get_toggle_defaults() as $key => $value) {
-            $defaults[$key] = ((int)$value) === 1;
-        }
-        return $defaults;
-    }
+    private const PROFILE_TOGGLE_UNSET_DEFAULT = true;
 
     /**
      * Whether a profile toggle is enabled (same interpretation as backup/import apply logic).
      *
-     * @param string $key
+     * Saved site values win; missing rows use {@see self::PROFILE_TOGGLE_UNSET_DEFAULT}
+     * instead of rebuilding per-key defaults from {@see profile_defaults::get_toggle_defaults()}.
+     *
+     * @param string $key Config key (same as profile_defaults keys).
      * @return bool
      */
-    public static function profile_toggle_enabled(string $key): bool {
-        $defaults = self::profile_toggle_defaults();
-        $default = $defaults[$key] ?? false;
-        return self::config_enabled($key, $default);
+    protected static function profile_toggle_enabled(string $key): bool {
+        return self::config_enabled($key, self::PROFILE_TOGGLE_UNSET_DEFAULT);
     }
 
     /**
@@ -72,10 +69,9 @@ class import_helper {
      *
      * @return string[] HTML-safe plain text lines
      */
-    public static function enabled_profile_sidebar_labels(): array {
-        $keys = array_keys(self::profile_toggle_defaults());
+    public static function get_enabled_profile_sidebar_labels(): array {
         $out = [];
-        foreach ($keys as $key) {
+        foreach (array_keys(profile_defaults::get_toggle_defaults()) as $key) {
             if (self::profile_toggle_enabled($key)) {
                 $out[] = get_string($key, 'block_courseimport');
             }
@@ -90,7 +86,7 @@ class import_helper {
      * @param bool $default
      * @return bool
      */
-    public static function config_enabled(string $key, bool $default = true): bool {
+    protected static function config_enabled(string $key, bool $default = true): bool {
         $value = get_config('block_courseimport', $key);
         if ($value === false) {
             return $default;
@@ -146,18 +142,18 @@ class import_helper {
             'includecontentbankcontent' => ['contentbankcontent'],
             'includelegacycoursefiles' => ['legacyfiles'],
         ];
+        $rootsettings = $plan->get_settings();
         foreach ($toggles as $configkey => $settingnames) {
             if (self::profile_toggle_enabled($configkey)) {
                 continue;
             }
             foreach ($settingnames as $settingname) {
-                try {
-                    $setting = $plan->get_setting($settingname);
-                    if ($setting instanceof \base_setting) {
-                        self::disable_setting($setting);
-                    }
-                } catch (\Throwable $e) {
-                    // Missing setting in a specific backup plan, ignore safely.
+                if (!isset($rootsettings[$settingname])) {
+                    continue;
+                }
+                $setting = $rootsettings[$settingname];
+                if ($setting instanceof \base_setting) {
+                    self::disable_setting($setting);
                 }
             }
         }
