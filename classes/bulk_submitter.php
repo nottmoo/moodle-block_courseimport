@@ -30,11 +30,12 @@ require_once($CFG->dirroot . '/course/lib.php');
  * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 class bulk_submitter {
     /**
-     * @param array<int, array<string, mixed>> $pairs
-     * @param int $userid
+     * Submits resolved pairs: creates pending targets if needed, then queues import jobs under a bulk job.
+     *
+     * @param array<int, array<string, mixed>> $pairs Resolved pairs from {@see module_pair_resolver::resolve()}.
+     * @param int $userid User submitting the bulk batch.
      * @return array{bulkjob: bulk_job, created: int, failed: int, failures: array<int, array<string, mixed>>}
      */
     public static function submit(array $pairs, int $userid): array {
@@ -120,10 +121,16 @@ class bulk_submitter {
     }
 
     /**
-     * @param array<string, mixed> $pair
-     * @param int $sourcecourseid
-     * @param int $userid
-     * @return int new course id
+     * Creates a new Moodle course from CSV labels for rows queued with a new target (pending_create in the pair).
+     *
+     * Reuses an existing course if the shortname already exists. Start/end dates come from the new shortname only
+     * ({@see course_utils::calculate_startdate()} / {@see course_utils::calculate_enddate()}).
+     *
+     * @param array<string, mixed> $pair Resolved pair with csv_fullname, csv_shortname, csv_idnumber, etc.
+     * @param int $sourcecourseid Source course id (used for default category when plugin default is unset).
+     * @param int $userid User creating the course; enrolled as editingteacher when possible.
+     * @return int New or existing target course id.
+     * @throws \moodle_exception On invalid row data or missing category.
      */
     protected static function create_target_from_csv_row(array $pair, int $sourcecourseid, int $userid): int {
         global $DB;

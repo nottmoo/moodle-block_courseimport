@@ -137,7 +137,16 @@ class module_pair_resolver {
     }
 
     /**
-     * Target lookup: course id → shortname → fullname (only when CSV shortname is set) → idnumber.
+     * Resolves the target course for a CSV row.
+     *
+     * Order: Moodle course id (optional column) → shortname (exact, then case-insensitive) → fullname
+     * (only when CSV shortname is non-empty) → idnumber.
+     *
+     * @param array<string, string> $row Parsed row with normalised header keys from {@see csv_parser}.
+     * @param string $shortname Value under {@see csv_parser::HEADER_SHORT_NAME}.
+     * @param string $fullname Value under {@see csv_parser::HEADER_FULL_NAME}.
+     * @param string $idnumber First non-empty of id number / course id number columns.
+     * @return \stdClass|null Course record, or null if none matched.
      */
     protected static function find_target_course(
         array $row,
@@ -197,7 +206,10 @@ class module_pair_resolver {
     }
 
     /**
-     * Find last year's course using rolled-back CSV shortname only (no target row required).
+     * Finds a prior-year source course when no target exists, using CSV shortname only.
+     *
+     * @param string $csvshort Current-year shortname from the CSV (convention-backed).
+     * @return \stdClass|null Prior-year course, or null if shortname empty or no unique match.
      */
     protected static function find_prior_year_source_from_csv_strings(string $csvshort): ?\stdClass {
         if ($csvshort === '') {
@@ -223,10 +235,14 @@ class module_pair_resolver {
     }
 
     /**
-     * Same rules as enrol_nottingham ancestor shortname search: exact prior-year code, case-insensitive,
-     * then {@see course_utils::shortname_match_sql()} with semester/offering relaxed.
+     * Looks up a course one academic year earlier than the given shortname.
      *
-     * @param int|null $excludecourseid When set, omit this course (e.g. target) from matches.
+     * Same rules as {@see \enrol_nottingham\relationship::ancestor_search()}: exact prior-year code,
+     * case-insensitive match, then {@see course_utils::shortname_match_sql()} with semester/offering relaxed.
+     *
+     * @param string $shortname Shortname for the newer intake (parsed by {@see course_utils::change_year()}).
+     * @param int|null $excludecourseid When set, omit this course id from matches (e.g. the target course).
+     * @return \stdClass|null Matching course, or null if no year in shortname, no match, or multiple ambiguous matches.
      */
     private static function find_course_by_rolled_back_shortname(string $shortname, ?int $excludecourseid = null): ?\stdClass {
         global $DB;
@@ -285,7 +301,11 @@ class module_pair_resolver {
     }
 
     /**
-     * Broader fallback: same module code as target, exclude target shortname, pick best prior year.
+     * Fallback source resolution: search by module code in shortname, then pick best prior year.
+     *
+     * @param \stdClass $target Target course (for module details and search context).
+     * @param string $csvshort Optional CSV shortname to parse module details when the target record is insufficient.
+     * @return \stdClass|null A candidate source course, or null.
      */
     protected static function resolve_source_by_module_search(\stdClass $target, string $csvshort): ?\stdClass {
         $details = course_utils::get_module_details($target);
@@ -306,9 +326,10 @@ class module_pair_resolver {
     }
 
     /**
-     * Moodle internal course id when the CSV has a Course id column.
+     * Moodle internal course id from the CSV “course id” column when present and numeric.
      *
-     * @param array<string, string> $row
+     * @param array<string, string> $row Parsed row with normalised header keys from {@see csv_parser}.
+     * @return int Course id, or 0 if missing or invalid.
      */
     protected static function row_target_id(array $row): int {
         $raw = csv_parser::cell($row, 'course id');

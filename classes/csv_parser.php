@@ -132,7 +132,9 @@ class csv_parser {
     /**
      * Value for one canonical header column (trimmed), or empty if missing.
      *
-     * @param array<string, string> $row
+     * @param array<string, string> $row Associative row keyed by normalised headers from {@see self::parse_from_handle()}.
+     * @param string $canonicalheader Key such as {@see self::HEADER_FULL_NAME}.
+     * @return string Trimmed cell value or ''.
      */
     public static function cell(array $row, string $canonicalheader): string {
         return isset($row[$canonicalheader]) ? trim((string) $row[$canonicalheader]) : '';
@@ -141,7 +143,9 @@ class csv_parser {
     /**
      * First non-empty trimmed cell among the given header keys (order = preference).
      *
-     * @param array<string, string> $row
+     * @param array<string, string> $row Associative row keyed by normalised headers.
+     * @param string ...$keys One or more canonical header keys (e.g. id number vs course id number).
+     * @return string First non-empty value, or '' if all empty or keys missing.
      */
     public static function cell_first(array $row, string ...$keys): string {
         foreach ($keys as $key) {
