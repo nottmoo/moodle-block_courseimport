@@ -134,11 +134,6 @@ final class bulk_results_list implements renderable, templatable {
             ],
             'jobrows' => $jobrows,
             'emptymessage' => get_string('bulkstatusnone', 'block_courseimport'),
-            'backlink' => \html_writer::link(
-                new url('/blocks/courseimport/bulk/index.php'),
-                get_string('bulkbacktoupload', 'block_courseimport'),
-                ['class' => 'badge badge-info']
-            ),
         ];
     }
 }

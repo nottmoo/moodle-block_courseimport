@@ -121,6 +121,7 @@ final class bulk_status implements renderable, templatable {
             'completed' => $completedonly,
         ]));
         $PAGE->set_title(get_string('bulkstatusid', 'block_courseimport', $bulkid));
+        $PAGE->navbar->add(get_string('bulkrollover', 'block_courseimport'), new url('/blocks/courseimport/bulk/index.php'));
         $PAGE->navbar->add(
             get_string('bulkresultsheading', 'block_courseimport'),
             new url('/blocks/courseimport/bulk/results.php')

@@ -159,14 +159,6 @@ final class bulk_submit_preview {
 
         $confirmurl = new url('/blocks/courseimport/bulk/submit.php', ['confirm' => 1]);
         $html .= $output->single_button($confirmurl, get_string('bulkconfirmsubmit', 'block_courseimport'));
-        $html .= \html_writer::div(
-            \html_writer::link(
-                new url('/blocks/courseimport/bulk/index.php'),
-                get_string('bulkbacktoupload', 'block_courseimport'),
-                ['class' => 'badge badge-info']
-            ),
-            'mt-2'
-        );
 
         return $html;
     }

@@ -34,7 +34,6 @@
     * tableheaders Array of column header strings (same length as columns in jobrows).
     * jobrows List of row objects: idlabel, total, completed, failed, status, progressdisplay, viewlink (raw HTML link).
     * emptymessage Message when hasjobs is false.
-    * backlink Raw HTML link back to the upload page.
 
     Example context (json):
     {
@@ -55,8 +54,7 @@
                 "viewlink": "<a href=\\"#\\">View</a>"
             }
         ],
-        "emptymessage": "No bulk jobs yet.",
-        "backlink": "<a href=\\"/blocks/courseimport/bulk/index.php\\">Back to upload</a>"
+        "emptymessage": "No bulk jobs yet."
     }
 }}
 <div class="block-courseimport-bulk-results-list">
@@ -92,8 +90,4 @@
     {{^hasjobs}}
         <div class="alert alert-info">{{emptymessage}}</div>
     {{/hasjobs}}
-
-    <div class="mt-3">
-        {{{backlink}}}
-    </div>
 </div>

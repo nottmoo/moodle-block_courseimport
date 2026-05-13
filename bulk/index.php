@@ -42,6 +42,7 @@ $PAGE->set_url(bulk_index_page::get_form_action_url());
 $PAGE->set_title($heading);
 $PAGE->set_heading($heading);
 $PAGE->set_pagelayout('admin');
+$PAGE->navbar->add(get_string('bulkrollover', 'block_courseimport'));
 
 $form = bulk_index_page::make_upload_form(bulk_index_page::get_form_action_url());
 if ($fromform = $form->get_data()) {

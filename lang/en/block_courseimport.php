@@ -50,7 +50,6 @@ $string['bulkpreviewresolved'] = 'Resolved pairs';
 $string['bulkpreviewerrors'] = 'Rows not matched to courses';
 $string['bulkpreviewnoerrors'] = 'No unmatched rows found.';
 $string['bulkconfirmsubmit'] = 'Confirm and create jobs';
-$string['bulkbacktoupload'] = 'Back to bulk course import upload';
 $string['bulkduplicatetargets'] = 'Duplicate target course IDs are not allowed in one submission.';
 $string['bulksubmitcreated'] = 'Bulk course import job #{$a->bulkid} created. Imports queued: {$a->created}, failed before queue: {$a->failed}.';
 $string['bulkenabledsettingstitle'] = 'Enabled import settings';

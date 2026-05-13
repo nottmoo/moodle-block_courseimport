@@ -27,6 +27,7 @@ require_once(dirname(__DIR__, 3) . '/config.php');
 
 use block_courseimport\output\bulk_results_list;
 use block_courseimport\output\bulk_status;
+use core\url;
 
 require_login();
 $systemcontext = context_system::instance();
@@ -54,6 +55,11 @@ if ($bulkid) {
     echo $OUTPUT->footer();
     exit;
 }
+
+$indexurl = new url('/blocks/courseimport/bulk/index.php');
+$PAGE->set_url(new url('/blocks/courseimport/bulk/results.php', ['page' => $page]));
+$PAGE->navbar->add(get_string('bulkrollover', 'block_courseimport'), $indexurl);
+$PAGE->navbar->add(get_string('bulkresultsheading', 'block_courseimport'));
 
 $listpage = bulk_results_list::fetch((int) $USER->id, $page, $perpage);
 

@@ -111,6 +111,9 @@ if ($pack && (isset($pack['pairs']) || isset($pack['errors']))) {
     $resolutionerrors = is_array($pack['errors'] ?? null) ? $pack['errors'] : [];
     $summarycounts = $pack['summary'] ?? ['rows' => 0, 'resolved' => 0, 'unmatched' => 0];
 
+    $PAGE->navbar->add(get_string('bulkrollover', 'block_courseimport'), new url('/blocks/courseimport/bulk/index.php'));
+    $PAGE->navbar->add(get_string('bulkpreviewheading', 'block_courseimport'));
+
     echo $OUTPUT->header();
     echo bulk_submit_preview::render_confirmation_preview(
         $OUTPUT,
