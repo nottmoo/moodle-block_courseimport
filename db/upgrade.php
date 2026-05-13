@@ -82,8 +82,6 @@ function xmldb_block_courseimport_upgrade($oldversion) {
         if (!$dbman->table_exists($bulktable)) {
             $bulktable->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
             $bulktable->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, 0);
-            $bulktable->add_field('source_year', XMLDB_TYPE_CHAR, '32', null, null, null, null);
-            $bulktable->add_field('target_year', XMLDB_TYPE_CHAR, '32', null, null, null, null);
             $bulktable->add_field('status', XMLDB_TYPE_CHAR, '32', null, XMLDB_NOTNULL, null, 'queued');
             $bulktable->add_field('total_count', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, 0);
             $bulktable->add_field('completed_count', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, 0);
