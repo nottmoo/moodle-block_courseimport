@@ -22,9 +22,10 @@ use local_uonlib\course_utils;
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Resolve CSV rows to source/target pairs: target by id → shortname → fullname → idnumber; source by year fallbacks + search.
- * If there is no target but a prior-year source matches the CSV (rolled-back short/full name), the pair may set
- * pending_create when bulk new-course category is configured in plugin settings.
+ * Resolve CSV rows to source/target pairs: target by id → shortname → fullname → idnumber; source by prior-year shortname + search.
+ * Rows without a CSV shortname do not use fullname to resolve the target (UoN courses use the naming convention on shortname).
+ * If there is no target but a prior-year source matches via rolled-back shortname, the pair may set pending_create when
+ * bulk new-course category is configured in plugin settings.
  *
  * @package    block_courseimport
  * @copyright  2026 University of Nottingham
@@ -50,7 +51,7 @@ class module_pair_resolver {
 
         $target = self::find_target_course($row, $shortname, $fullname, $idnumber);
         if ($target) {
-            $source = self::resolve_source_with_fallbacks($target, $shortname, $fullname);
+            $source = self::resolve_source_with_fallbacks($target, $shortname);
             if (!$source) {
                 return [
                     'pair' => null,
@@ -74,8 +75,8 @@ class module_pair_resolver {
             ];
         }
 
-        // No target: try prior-year course from CSV labels; create empty target on confirm if category is set.
-        $source = self::find_prior_year_source_from_csv_strings($shortname, $fullname);
+        // No target: try prior-year course from CSV shortname only; create empty target on confirm if category is set.
+        $source = self::find_prior_year_source_from_csv_strings($shortname);
         if (!$source) {
             return [
                 'pair' => null,
@@ -136,7 +137,7 @@ class module_pair_resolver {
     }
 
     /**
-     * Target lookup: course id → shortname → fullname → idnumber.
+     * Target lookup: course id → shortname → fullname (only when CSV shortname is set) → idnumber.
      */
     protected static function find_target_course(
         array $row,
@@ -168,20 +169,20 @@ class module_pair_resolver {
             if ($c) {
                 return $c;
             }
-        }
 
-        if ($fullname !== '') {
-            $recs = $DB->get_records_select(
-                'course',
-                $DB->sql_equal('LOWER(fullname)', ':fn', false, true) . ' AND id <> :siteid',
-                ['fn' => \core_text::strtolower($fullname), 'siteid' => SITEID],
-                'id ASC',
-                '*',
-                0,
-                1
-            );
-            if ($recs) {
-                return reset($recs);
+            if ($fullname !== '') {
+                $recs = $DB->get_records_select(
+                    'course',
+                    $DB->sql_equal('LOWER(fullname)', ':fn', false, true) . ' AND id <> :siteid',
+                    ['fn' => \core_text::strtolower($fullname), 'siteid' => SITEID],
+                    'id ASC',
+                    '*',
+                    0,
+                    1
+                );
+                if ($recs) {
+                    return reset($recs);
+                }
             }
         }
 
@@ -196,40 +197,24 @@ class module_pair_resolver {
     }
 
     /**
-     * Find last year's course using rolled-back CSV short name and full name (no target row required).
+     * Find last year's course using rolled-back CSV shortname only (no target row required).
      */
-    protected static function find_prior_year_source_from_csv_strings(string $csvshort, string $csvfull): ?\stdClass {
-        if ($csvshort !== '') {
-            $c = self::find_course_by_rolled_back_shortname($csvshort);
-            if ($c) {
-                return $c;
-            }
+    protected static function find_prior_year_source_from_csv_strings(string $csvshort): ?\stdClass {
+        if ($csvshort === '') {
+            return null;
         }
-        if ($csvfull !== '') {
-            $c = self::find_course_by_rolled_back_fullname($csvfull);
-            if ($c) {
-                return $c;
-            }
-        }
-        return null;
+        return self::find_course_by_rolled_back_shortname($csvshort);
     }
 
     /**
-     * Source: previous-year shortname → previous-year fullname → module shortname search.
+     * Source: previous-year shortname → module shortname search.
      */
     protected static function resolve_source_with_fallbacks(
         \stdClass $target,
-        string $csvshort,
-        string $csvfull
+        string $csvshort
     ): ?\stdClass {
         $snbase = $csvshort !== '' ? $csvshort : $target->shortname;
-        $c = self::find_course_by_rolled_back_shortname($snbase);
-        if ($c) {
-            return $c;
-        }
-
-        $fnbase = $csvfull !== '' ? $csvfull : $target->fullname;
-        $c = self::find_course_by_rolled_back_fullname($fnbase);
+        $c = self::find_course_by_rolled_back_shortname($snbase, (int) $target->id);
         if ($c) {
             return $c;
         }
@@ -238,72 +223,65 @@ class module_pair_resolver {
     }
 
     /**
-     * Roll back one year in a shortname and look up the course — exact match first, then case-insensitive.
+     * Same rules as enrol_nottingham ancestor shortname search: exact prior-year code, case-insensitive,
+     * then {@see course_utils::shortname_match_sql()} with semester/offering relaxed.
+     *
+     * @param int|null $excludecourseid When set, omit this course (e.g. target) from matches.
      */
-    private static function find_course_by_rolled_back_shortname(string $sn): ?\stdClass {
+    private static function find_course_by_rolled_back_shortname(string $shortname, ?int $excludecourseid = null): ?\stdClass {
         global $DB;
-        $prev = self::academic_year_rollback_string($sn);
-        if ($prev === null || $prev === $sn) {
+
+        $previousshortname = course_utils::change_year($shortname, -1);
+        if ($previousshortname === null) {
             return null;
         }
-        $c = $DB->get_record('course', ['shortname' => $prev], '*', IGNORE_MISSING);
+
+        $select = 'shortname = :sn AND id <> :siteid';
+        $params = ['sn' => $previousshortname, 'siteid' => SITEID];
+        if ($excludecourseid !== null && $excludecourseid > 0) {
+            $select .= ' AND id <> :excludeid';
+            $params['excludeid'] = $excludecourseid;
+        }
+        $c = $DB->get_record_select('course', $select, $params, '*', IGNORE_MULTIPLE);
         if ($c) {
             return $c;
         }
-        return $DB->get_record_sql(
-            'SELECT * FROM {course} WHERE ' . $DB->sql_equal('LOWER(shortname)', ':sn', false, true) . ' AND id <> :siteid',
-            ['sn' => \core_text::strtolower($prev), 'siteid' => SITEID],
-            IGNORE_MULTIPLE
-        ) ?: null;
-    }
 
-    /**
-     * Roll back one year in a fullname and look up the course (case-insensitive, oldest-first).
-     */
-    private static function find_course_by_rolled_back_fullname(string $fn): ?\stdClass {
-        global $DB;
-        $prev = self::academic_year_rollback_string($fn);
-        if ($prev === null || $prev === $fn) {
-            return null;
+        $selectlower = $DB->sql_equal('LOWER(shortname)', ':snlower', false, true) . ' AND id <> :siteid';
+        $paramslower = [
+            'snlower' => \core_text::strtolower($previousshortname),
+            'siteid' => SITEID,
+        ];
+        if ($excludecourseid !== null && $excludecourseid > 0) {
+            $selectlower .= ' AND id <> :excludeid';
+            $paramslower['excludeid'] = $excludecourseid;
         }
-        $recs = $DB->get_records_select(
-            'course',
-            $DB->sql_equal('LOWER(fullname)', ':fn', false, true) . ' AND id <> :siteid',
-            ['fn' => \core_text::strtolower($prev), 'siteid' => SITEID],
-            'id ASC',
-            '*',
-            0,
-            1
+        $c = $DB->get_record_select('course', $selectlower, $paramslower, '*', IGNORE_MULTIPLE);
+        if ($c) {
+            return $c;
+        }
+
+        list($similarlike, $similarparams) = course_utils::shortname_match_sql(
+            $previousshortname,
+            '',
+            true,
+            false,
+            true,
+            false
         );
-        return $recs ? reset($recs) : null;
-    }
-
-    /**
-     * Roll back one academic year in labels: 26-27 → 25-26, trailing 2627 → 2526.
-     */
-    protected static function academic_year_rollback_string(string $s): ?string {
-        $s = trim($s);
-        if ($s === '') {
+        $similarparams['siteid'] = SITEID;
+        $conds = ['id <> :siteid', $similarlike];
+        if ($excludecourseid !== null && $excludecourseid > 0) {
+            $similarparams['excludeid'] = $excludecourseid;
+            $conds[] = 'id <> :excludeid';
+        }
+        $sql = 'SELECT * FROM {course} WHERE ' . implode(' AND ', $conds);
+        $similarversions = $DB->get_records_sql($sql, $similarparams);
+        if (!$similarversions || count($similarversions) > 1) {
             return null;
         }
-        if (preg_match('/(\d{2})\s*-\s*(\d{2})/', $s, $m)) {
-            $a = (int) $m[1] - 1;
-            $b = (int) $m[2] - 1;
-            if ($a >= 0 && $b >= 0) {
-                return preg_replace('/(\d{2})\s*-\s*(\d{2})/', sprintf('%02d-%02d', $a, $b), $s, 1);
-            }
-        }
-        if (preg_match('/(\d{2})(\d{2})(?=\D*$)/', $s, $m, PREG_OFFSET_CAPTURE)) {
-            $a = (int) $m[1][0] - 1;
-            $b = (int) $m[2][0] - 1;
-            if ($a >= 0 && $b >= 0) {
-                $old = $m[0][0];
-                $pos = (int) $m[0][1];
-                $new = sprintf('%02d%02d', $a, $b);
-                return substr($s, 0, $pos) . $new . substr($s, $pos + strlen($old));
-            }
-        }
-        return null;
+
+        return reset($similarversions);
     }
 
     /**
