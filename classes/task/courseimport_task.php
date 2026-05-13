@@ -84,7 +84,11 @@ class courseimport_task extends \core\task\scheduled_task {
                 $this->backup($job);
                 $this->restore($job);
             } catch (job_failed $e) {
+                $prestatus = $job->status;
                 $job->set_status(job::STATE_FAILED);
+                if ($prestatus === job::STATE_PROCESSING) {
+                    bulk_job::record_child_finished($job->bulkjobid ?? null, false);
+                }
                 if (messenger::failure($e->subject, $e->getMessage(), $job->target)) {
                     mtrace("Error! Jobid: {$job->id}. Failed to send email to admin.");
                 }
@@ -159,8 +163,7 @@ class courseimport_task extends \core\task\scheduled_task {
         try {
             $rc->execute_plan();
         } catch (\Exception $e) {
-            // We need to abandon this job.
-            $job->set_status(job::STATE_FAILED);
+            // We need to abandon this job. Leave status as PROCESSING; process_job will set FAILED and record bulk.
             $message = $e->getMessage();
             $params = [
                 'timenow' => date('Y-m-d H:i:s'),
@@ -177,7 +180,11 @@ class courseimport_task extends \core\task\scheduled_task {
             fulldelete($tempdestination);
         }
 
+        $prestatus = $job->status;
         $job->set_status(job::STATE_FINISHED);
+        if ($prestatus === job::STATE_PROCESSING) {
+            bulk_job::record_child_finished($job->bulkjobid ?? null, true);
+        }
         mtrace("Success in Jobid: {$job->id}. Import from course {$job->source} to course {$job->target} completed.");
 
         // Send a message.

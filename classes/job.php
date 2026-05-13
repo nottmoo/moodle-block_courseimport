@@ -141,6 +141,7 @@ class job {
         foreach ($jobs as $abandon) {
             $job = static::create_from_record($abandon);
             $job->set_status(static::STATE_FAILED);
+            bulk_job::record_child_finished($job->bulkjobid ?? null, false);
             $clock = \core\di::get(\core\clock::class);
             $params = [
                 'timenow' => $clock->now()->format('Y-m-d H:i:s'),
@@ -165,7 +166,7 @@ class job {
      * @return job
      */
     public static function create_from_record(\stdClass $record): job {
-        $bulkid = isset($record->bulk_job_id) && $record->bulk_job_id !== null ? (int) $record->bulk_job_id : null;
+        $bulkid = $record->bulk_job_id !== null ? (int) $record->bulk_job_id : null;
         $job = new job($record->source, $record->target, $record->backupid, $record->userid, $bulkid);
         $job->id = $record->id;
         $job->status = $record->status;
@@ -288,10 +289,11 @@ class job {
     public static function get_queued_jobs(): \moodle_recordset {
         global $DB;
         // Do not inner-join course: deleted source/target would hide queued jobs forever.
-        $sql = "SELECT ci.*, tc.fullname AS fromname, sc.fullname AS toname
+        $sql = "SELECT ci.*, tc.fullname AS fromname,
+                       sc.fullname AS toname
                   FROM {block_courseimport} ci
-                  LEFT JOIN {course} tc ON tc.id = ci.source
-                  LEFT JOIN {course} sc ON sc.id = ci.target
+             LEFT JOIN {course} tc ON (tc.id = ci.source)
+             LEFT JOIN {course} sc ON (sc.id = ci.target)
                  WHERE ci.status = :status";
         $params = ['status' => self::STATE_WAITING];
         return $DB->get_recordset_sql($sql, $params);
@@ -306,7 +308,6 @@ class job {
      */
     public function set_status(string $status) {
         global $DB;
-        $previous = $this->status;
         $this->status = $status;
         if (!isset($this->id)) {
             // The job has not been saved to the database.
@@ -318,10 +319,6 @@ class job {
             'timemodified' => $this->clock->time(),
         ];
         $DB->update_record('block_courseimport', $record);
-        if ($previous === static::STATE_PROCESSING &&
-                ($status === static::STATE_FINISHED || $status === static::STATE_FAILED)) {
-            bulk_job::record_child_finished($this->bulkjobid ?? null, $status === static::STATE_FINISHED);
-        }
     }
 
     /**
