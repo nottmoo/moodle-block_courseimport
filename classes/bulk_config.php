@@ -16,8 +16,6 @@
 
 namespace block_courseimport;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Bulk CSV upload configuration helpers.
  *

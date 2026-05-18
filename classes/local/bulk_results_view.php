@@ -28,8 +28,6 @@ use block_courseimport\bulk_job;
 use block_courseimport\job;
 use core\url;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Builds template context fragments for bulk/results.php.
  */

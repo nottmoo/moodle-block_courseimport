@@ -29,8 +29,6 @@ use block_courseimport\local\form\csv_upload_form;
 use block_courseimport\import_helper;
 use core\url;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Builds data for {@see bulk_upload} template and related form wiring.
  */

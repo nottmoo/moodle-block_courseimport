@@ -121,6 +121,8 @@ class jobs extends \core_external\external_api {
     }
 
     /**
+     * Defines the inputs for the bulk progress web service method.
+     *
      * @return external_function_parameters
      */
     public static function bulk_progress_parameters(): external_function_parameters {
@@ -130,6 +132,8 @@ class jobs extends \core_external\external_api {
     }
 
     /**
+     * Defines the output of the bulk progress web service.
+     *
      * @return external_single_structure
      */
     public static function bulk_progress_returns(): external_single_structure {

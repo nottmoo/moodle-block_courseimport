@@ -24,8 +24,6 @@
  */
 namespace block_courseimport\local;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Percentage helpers for bulk parent jobs.
  */

@@ -71,7 +71,7 @@ class bulk_submitter {
                         'target_id'     => $target,
                         'source_id'     => $source,
                         'csv_shortname' => $pair['csv_shortname'] ?? '',
-                        'csv_fullname'  => $pair['csv_fullname']  ?? '',
+                        'csv_fullname'  => $pair['csv_fullname'] ?? '',
                         'error'         => $e->getMessage(),
                     ];
                     continue;
@@ -135,9 +135,9 @@ class bulk_submitter {
     protected static function create_target_from_csv_row(array $pair, int $sourcecourseid, int $userid): int {
         global $DB;
 
-        $fullname  = trim((string)($pair['csv_fullname']  ?? ''));
+        $fullname  = trim((string)($pair['csv_fullname'] ?? ''));
         $shortname = trim((string)($pair['csv_shortname'] ?? ''));
-        $idnumber  = trim((string)($pair['csv_idnumber']  ?? ''));
+        $idnumber  = trim((string)($pair['csv_idnumber'] ?? ''));
 
         if ($fullname === '' || $shortname === '') {
             throw new \moodle_exception('bulkinvalidcreaterow', 'block_courseimport');
@@ -174,7 +174,7 @@ class bulk_submitter {
         $data->format         = 'topics';
         $data->numsections    = 1;
         $data->visible        = 1;
-        // Match enrol_nottingham\course_helper::create_course(): academic dates from target shortname only
+        // Match enrol_nottingham\course_helper::create_course(): academic dates from target shortname only.
         $data->startdate = course_utils::calculate_startdate($shortname);
         $data->enddate = course_utils::calculate_enddate($shortname);
 

@@ -24,8 +24,6 @@
  */
 namespace block_courseimport\local;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Default values for import profile toggles.
  */

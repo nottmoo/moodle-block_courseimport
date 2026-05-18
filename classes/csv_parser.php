@@ -16,8 +16,6 @@
 
 namespace block_courseimport;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Minimal CSV parser for bulk rollover uploads.
  *
@@ -33,7 +31,9 @@ class csv_parser {
      * Typical files use three columns: full name, short name, id number (idnumber field).
      * You may also include a column titled Course id for Moodle’s numeric course id (normalised key “course id”).
      */
+    /** CSV header for the course full name column. */
     public const HEADER_FULL_NAME = 'full name';
+    /** CSV header for the course short name column. */
     public const HEADER_SHORT_NAME = 'short name';
     /** Moodle course idnumber value (same semantic as “course id number” in spreadsheets). */
     public const HEADER_ID_NUMBER = 'id number';
@@ -70,7 +70,7 @@ class csv_parser {
         if ($content === '') {
             return [];
         }
-        // php://temp spills to disk when large; avoids holding the whole parsed row list twice for big files.
+        // Large inputs use php://temp; may spill to disk, avoiding a second in-memory copy of all rows.
         $fh = fopen('php://temp', 'r+b');
         if ($fh === false) {
             return [];

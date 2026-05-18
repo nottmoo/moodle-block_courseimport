@@ -24,8 +24,6 @@ use core\output\renderer_base;
 use core\output\templatable;
 use core\url;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Data for the {@see bulk_status} Mustache template (single bulk job view on results.php).
  *
@@ -39,6 +37,8 @@ final class bulk_status implements renderable, templatable {
     private array $data;
 
     /**
+     * Creates bulk status output state.
+     *
      * @param array<string, mixed> $data JSON-serialisable context for block_courseimport/bulk_status
      */
     private function __construct(array $data) {
@@ -162,6 +162,8 @@ final class bulk_status implements renderable, templatable {
     }
 
     /**
+     * Exports Mustache context for the bulk status template.
+     *
      * @param renderer_base $output
      * @return array<string, mixed>
      */

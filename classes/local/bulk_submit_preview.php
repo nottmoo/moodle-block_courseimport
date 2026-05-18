@@ -26,8 +26,6 @@ namespace block_courseimport\local;
 
 use core\url;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Builds preview markup for the confirmation step.
  */
@@ -76,8 +74,9 @@ final class bulk_submit_preview {
             if ($pairtotal > $rowsperpage) {
                 $from = $previewpage * $rowsperpage + 1;
                 $to = min($previewpage * $rowsperpage + $rowsperpage, $pairtotal);
+                $pagination = (object) ['from' => $from, 'to' => $to, 'total' => $pairtotal];
                 $html .= \html_writer::div(
-                    get_string('bulkpagination', 'block_courseimport', (object) ['from' => $from, 'to' => $to, 'total' => $pairtotal]),
+                    get_string('bulkpagination', 'block_courseimport', $pagination),
                     'mb-2 text-muted'
                 );
                 $html .= $output->paging_bar($pairtotal, $previewpage, $rowsperpage, $pairnavurl, 'previewpage');
@@ -132,8 +131,9 @@ final class bulk_submit_preview {
             if ($errtotal > $rowsperpage) {
                 $from = $errorpage * $rowsperpage + 1;
                 $to = min($errorpage * $rowsperpage + $rowsperpage, $errtotal);
+                $pagination = (object) ['from' => $from, 'to' => $to, 'total' => $errtotal];
                 $html .= \html_writer::div(
-                    get_string('bulkpagination', 'block_courseimport', (object) ['from' => $from, 'to' => $to, 'total' => $errtotal]),
+                    get_string('bulkpagination', 'block_courseimport', $pagination),
                     'mb-2 text-muted'
                 );
                 $html .= $output->paging_bar($errtotal, $errorpage, $rowsperpage, $errnavurl, 'errorpage');

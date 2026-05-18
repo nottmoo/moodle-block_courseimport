@@ -19,8 +19,6 @@ namespace block_courseimport;
 use core\url;
 use local_uonlib\course_utils;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Resolve CSV rows to source/target pairs: target by id → shortname → fullname → idnumber; source by prior-year shortname + search.
  * Rows without a CSV shortname do not use fullname to resolve the target (UoN courses use the naming convention on shortname).

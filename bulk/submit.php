@@ -55,7 +55,8 @@ if ($confirm && confirm_sesskey()) {
     bulk_submit_confirmation_cache::delete_pack();
     if (empty($pack['pairs']) || !is_array($pack['pairs'])) {
         throw new \core\exception\coding_exception(
-            'Bulk rollover confirm: expected non-empty pairs array in session after confirm/sesskey; session pack missing or invalid.'
+            'Bulk rollover confirm: expected non-empty pairs array in session after confirm/sesskey; '
+            . 'session pack missing or invalid.'
         );
     }
     $result = bulk_submit_service::submit_confirmed_pairs($pack['pairs'], (int) $USER->id);

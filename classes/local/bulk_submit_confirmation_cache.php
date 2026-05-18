@@ -16,8 +16,6 @@
 
 namespace block_courseimport\local;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Bulk CSV preview / confirm payload stored via MUC ({@see cache_store::MODE_SESSION}), not $SESSION.
  *
@@ -28,10 +26,14 @@ defined('MOODLE_INTERNAL') || die();
  */
 final class bulk_submit_confirmation_cache {
 
+    /** Cache area name for bulk submit confirmation. */
     private const CACHE_AREA = 'bulk_submit_confirmation';
+    /** Cache key for the stored confirmation pack. */
     private const CACHE_KEY = 'pack';
 
     /**
+     * Returns the bulk confirmation payload from session cache.
+     *
      * @return array<string, mixed>|null Payload from last preview step, or null if none.
      */
     public static function get_pack(): ?array {
@@ -44,6 +46,8 @@ final class bulk_submit_confirmation_cache {
     }
 
     /**
+     * Stores the bulk confirmation payload in session cache.
+     *
      * @param array<string, mixed> $pack Keys: pairs, errors, summary.
      */
     public static function set_pack(array $pack): void {
@@ -51,6 +55,9 @@ final class bulk_submit_confirmation_cache {
         $cache->set(self::CACHE_KEY, $pack);
     }
 
+    /**
+     * Removes the bulk confirmation payload from session cache.
+     */
     public static function delete_pack(): void {
         $cache = \cache::make('block_courseimport', self::CACHE_AREA);
         $cache->delete(self::CACHE_KEY);

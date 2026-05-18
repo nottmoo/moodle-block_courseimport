@@ -29,8 +29,6 @@ use block_courseimport\bulk_submitter;
 use block_courseimport\csv_parser;
 use block_courseimport\module_pair_resolver;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Server-side bulk CSV processing used by bulk/submit.php.
  */
@@ -74,7 +72,7 @@ final class bulk_submit_service {
         $datacount = 0;
         $maxrows = bulk_config::MAX_CSV_ROWS;
 
-        csv_parser::iterate_associative_rows_from_handle($fh, function (array $row, int $i) use (&$resolved, &$errors, &$datacount, $maxrows): void {
+        $rowcallback = function (array $row, int $i) use (&$resolved, &$errors, &$datacount, $maxrows): void {
             $datacount++;
             if ($datacount > $maxrows) {
                 throw new \moodle_exception('bulkmaxrowsexceeded', 'block_courseimport', '', $maxrows);
@@ -86,7 +84,8 @@ final class bulk_submit_service {
             if ($r['error'] !== null) {
                 $errors[$i] = $r['error'];
             }
-        });
+        };
+        csv_parser::iterate_associative_rows_from_handle($fh, $rowcallback);
 
         if ($datacount === 0) {
             throw new \moodle_exception('bulkcsvrequired', 'block_courseimport');

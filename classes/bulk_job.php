@@ -16,8 +16,6 @@
 
 namespace block_courseimport;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Parent bulk rollover job metadata.
  *

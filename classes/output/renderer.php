@@ -49,7 +49,7 @@ class renderer extends \core_backup_renderer {
         $data->resultcount = $component->get_count();
         $data->hasinaccesibile = false;
         $data->othercourses = [];
-        $data->searchname = search::$VAR_SEARCH;
+        $data->searchname = $component->get_varsearch();
         $data->searchvalue = $component->get_search();
 
         $coursedetails = course_utils::get_module_details($COURSE);

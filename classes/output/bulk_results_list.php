@@ -23,8 +23,6 @@ use core\output\renderer_base;
 use core\output\templatable;
 use core\url;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Bulk job list on {@see results.php} (no bulkid): table + paging.
  *
@@ -35,15 +33,25 @@ defined('MOODLE_INTERNAL') || die();
  */
 final class bulk_results_list implements renderable, templatable {
 
-    /** @var array<int, \stdClass> */
+    /** @var array<int, \stdClass> Parent bulk job rows for the current page. */
     private array $jobs;
+    /** @var int Total parent bulk jobs for the user (all pages). */
     private int $totalcount;
+    /** @var int Zero-based page index for the list. */
     private int $page;
+    /** @var int Rows per page. */
     private int $perpage;
+    /** @var url Base URL for paging_bar on the list page. */
     private url $listbaseurl;
 
     /**
+     * Creates list output state (private; use {@see fetch()}).
+     *
      * @param array<int, \stdClass> $jobs Parent bulk job rows for this page
+     * @param int $totalcount Total jobs across all pages
+     * @param int $page Current page index
+     * @param int $perpage Rows per page
+     * @param url $listbaseurl Base URL for list paging
      */
     private function __construct(
         array $jobs,
@@ -79,6 +87,8 @@ final class bulk_results_list implements renderable, templatable {
     }
 
     /**
+     * Exports Mustache context for the bulk results list template.
+     *
      * @param renderer_base $output
      * @return array<string, mixed>
      */
