@@ -76,10 +76,11 @@ class block_courseimport extends block_base {
             return $this->content;
         }
 
+        $this->content = new stdClass;
+        $this->content->text = '';
+
         // Don't display content on the Site Home page.
         if ($this->page->category) {
-            $this->content = new stdClass;
-            $this->content->text = '';
             $coursecontext = context_course::instance($COURSE->id);
             $links = [];
 
@@ -98,9 +99,10 @@ class block_courseimport extends block_base {
 
             if (!empty($links)) {
                 $this->content->text = implode(html_writer::empty_tag('br'), $links);
-                return $this->content;
             }
         }
+
+        return $this->content;
     }
 
     /**
