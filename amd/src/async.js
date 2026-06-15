@@ -14,10 +14,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Polls import job progress (one independent timer per job). Removes the block when the job ends.
- *
- * Loaded from `blocks/courseimport/templates/import_status.mustache` 
- * when `block_courseimport\output\renderer::display_import_progress()` renders the import progress page
+ * This module updates the UI during an course import process.
  *
  * @module     block_courseimport/async
  * @author     Neill Magill <neill.magill@nottingham.ac.uk>
@@ -28,9 +25,15 @@ import Ajax from 'core/ajax';
 import {get_string} from 'core/str';
 import Notification from 'core/notification';
 
-const checkdelay = 15000; // The delay (in milliseconds) between requests.
-const timeout = 2000; // The timeout (in milliseconds) for AJAX requests.
+let checkdelay = 15000; // The delay (in milliseconds) between requests.
+let timeout = 2000; // The timeout (in milliseconds) for AJAX requests.
+let checkid; // The id of the interval timer.
+let jobid = 0; // The database id of the job we are monitoring progress for.
+let bar; // The progress bar element.
 
+/**
+ * Stores the class and string of the progress bar for each state.
+ */
 const status = {
     started: {
         'class': 'bg-success',
@@ -47,97 +50,90 @@ const status = {
 };
 
 /**
- * Stops polling for this job by clearing its interval id.
- *
- * @param {{jobid: number, bar: ?HTMLElement, container: ?HTMLElement, checkid: ?number}} state
+ * Starts checking progress of the job.
  */
-const stop = (state) => {
-    if (state.checkid !== null) {
-        clearInterval(state.checkid);
-        state.checkid = null;
-    }
+const start = () => {
+    checkid = setInterval(getProgress, checkdelay);
 };
 
 /**
- * Requests current progress for this job from `block_courseimport_get_job_progress` and applies it.
- *
- * @param {{jobid: number, bar: ?HTMLElement, container: ?HTMLElement, checkid: ?number}} state
+ * Stops checking of progress for the job.
  */
-const getProgress = (state) => {
-    const params = [{
+const stop = () => {
+    clearInterval(checkid);
+};
+
+/**
+ * Gets progress for the job, then updates the UI.
+ */
+const getProgress = () => {
+    let params = [{
+        // Get the backup progress via webservice.
         methodname: 'block_courseimport_get_job_progress',
-        args: {'id': state.jobid},
+        args: {'id': jobid},
     }];
-    const promises = Ajax.call(params, true, true, false, timeout);
-    promises[0].then((response) => updateProgress(response, state)).catch(Notification.exception);
+    let promises = Ajax.call(params, true, true, false, timeout);
+    promises[0].then(updateProgress).catch(Notification.exception);
 };
 
 /**
- * Updates the Bootstrap progress bar label, width, and status classes from the AJAX response.
- * When the job finishes or fails, polling is stopped and the progress UI container is removed from the page.
+ * Updates the progress of the import.
  *
- * @param {{jobid: number, bar: ?HTMLElement, container: ?HTMLElement, checkid: ?number}} state
+ * @param response Data returned from the progress web service.
  */
-const updateProgress = (response, state) => {
-    const bar = state.bar;
-    if (!bar) {
-        stop(state);
-        return;
-    }
-    const progress = Math.round(response.progress * 100);
+const updateProgress = (response) => {
+    let progress = Math.round(response.progress * 100);
     let removeClass = 'doesnotexist'; // Use a value that should not exist.
     let addClass = '';
-    let stringKey;
+    let string;
 
     if (response.failed) {
+        // The job has failed to complete.
         removeClass = status.started.class;
         addClass = status.failed.class;
-        stringKey = status.failed.string;
-        stop(state);
+        string = status.failed.string;
+        stop();
     } else if (response.finished) {
+        // The import has completed successfully.
         removeClass = status.started.class;
         addClass = status.finished.class;
-        stringKey = status.finished.string;
-        stop(state);
+        string = status.finished.string;
+        stop();
     } else if (response.started) {
+        // The job is processing.
         addClass = status.started.class;
-        stringKey = status.started.string;
+        string = status.started.string;
     } else {
+        // The job is waiting to start.
         return;
     }
 
-    get_string(stringKey, 'block_courseimport').then((label) => {
-        bar.innerHTML = label;
-    }).catch(Notification.exception);
+    // Update the text of the status bar.
+    get_string(string, 'block_courseimport').then(updateBarText).catch(Notification.exception);
+    // Ensure the correct class is present.
     bar.classList.remove(removeClass);
     bar.classList.add(addClass);
+    // Set the progress for the bar.
     bar.setAttribute('aria-valuenow', progress);
     bar.setAttribute('style', 'width:' + progress + '%');
-
-    if (response.failed || response.finished) {
-        const wrap = state.container;
-        if (wrap && wrap.parentNode) {
-            wrap.parentNode.removeChild(wrap);
-        }
-    }
 };
 
 /**
- * Starts polling import progress for a queued job: immediate fetch plus repeating interval.
+ * Updates the lable of the progress bar.
  *
- * @param {string|number} id Job row id (same as `block_courseimport.id` / template `backupid`).
+ * @param {String} label
+ */
+const updateBarText = (label) => {
+    bar.innerHTML = label;
+};
+
+/**
+ * Sets up the polling of the webservice.
+ *
+ * @param {Number} id
  */
 export const init = (id) => {
-    const idstr = String(id);
-    const jobid = parseInt(idstr, 10);
-    const bar = document.getElementById(idstr + '_bar');
-    const container = document.getElementById(idstr);
-    const state = {
-        jobid,
-        bar,
-        container,
-        checkid: null,
-    };
-    state.checkid = setInterval(() => getProgress(state), checkdelay);
-    getProgress(state);
+    jobid = id;
+    bar = document.getElementById(id + '_bar');
+    start();
 };
