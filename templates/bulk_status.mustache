@@ -33,6 +33,7 @@
     * failed Child jobs that failed.
     * status Raw status code/string for the parent bulk job.
     * progresspct Integer 0-100 for the progress bar width.
+    * barlabel Localised progress bar label (for example, "4 of 10").
     * bulkid Parent bulk job id (used for root element id and AMD init).
     * countstext Plain-text line for completed/total/failed counts (matches AJAX poll output).
     * isrunning When true, shows animated progress card and loads {@see block_courseimport/bulk_status_progress} to poll via web service.
@@ -94,7 +95,7 @@
     {{#isrunning}}
     <div class="card mb-4" data-region="bulk-running-card">
         <div class="card-body">
-            <h5 class="card-title mb-3">{{#str}} inprogress, block_courseimport {{/str}}</h5>
+            <h5 class="card-title mb-3" data-region="bulk-progress-title">{{#str}} inprogress, block_courseimport {{/str}}</h5>
 
             <div class="progress mb-2 block-courseimport-progress">
                 <div class="progress-bar progress-bar-striped progress-bar-animated bg-success block-courseimport-progress-bar"
@@ -104,13 +105,13 @@
                      aria-valuenow="{{progresspct}}"
                      aria-valuemin="0"
                      aria-valuemax="100">
-                    {{progresspct}}%
+                    {{barlabel}}
                 </div>
             </div>
 
             <div class="d-flex justify-content-between align-items-center mt-2">
                 <small class="text-muted" data-region="bulk-counts">{{countstext}}</small>
-                <small class="text-muted" aria-live="polite">{{#str}} bulkstatusrefreshing, block_courseimport {{/str}}</small>
+                <small class="text-muted" aria-live="polite" data-region="bulk-progress-refreshing">{{#str}} bulkstatusrefreshing, block_courseimport {{/str}}</small>
             </div>
         </div>
     </div>

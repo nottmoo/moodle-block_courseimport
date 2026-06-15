@@ -16,87 +16,147 @@
 /**
  * Polls bulk parent job progress via web service (no periodic full page reload).
  *
- * When the parent bulk job leaves the "queued" state, polling stops and the page
- * reloads once so the child-jobs table and final summary match the server.
+ * While the parent bulk job is still queued, only the progress bar and count line
+ * are updated. When the job finishes, the page reloads once so the child-jobs
+ * table and filter counts are rendered from the server.
  *
  * @module     block_courseimport/bulk_status_progress
+ * @author     Nisha Sarala <nisha.sarala@gmail.com>
  * @copyright  2026 University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-define(['core/ajax', 'core/notification'], function(Ajax, Notification) {
-    'use strict';
+import Ajax from 'core/ajax';
+import {get_string} from 'core/str';
+import Notification from 'core/notification';
 
-    const checkdelay = 10000;
-    const timeout = 5000;
+const checkdelay = 2000;
+const reloadDelay = 1500;
 
-    /**
-     * @param {{checkid: ?number}} state
-     */
-    const stop = function(state) {
-        if (state.checkid !== null) {
-            clearInterval(state.checkid);
-            state.checkid = null;
-        }
-    };
+/**
+ * Stops polling for this bulk job.
+ *
+ * @param {{checkid: ?number}} state Polling state for the current bulk job.
+ */
+const stop = (state) => {
+    if (state.checkid !== null) {
+        clearInterval(state.checkid);
+        state.checkid = null;
+    }
+};
 
-    /**
-     * @param {number} bulkid
-     * @param {{checkid: ?number, bar: ?HTMLElement, counts: ?HTMLElement}} state
-     */
-    const fetchProgress = function(bulkid, state) {
-        const requests = [{
-            methodname: 'block_courseimport_get_bulk_job_progress',
-            args: {bulkid: bulkid},
-        }];
-        const promises = Ajax.call(requests, true, true, false, timeout);
-        promises[0].then(function(response) {
-            applyResponse(response, state);
-        }).catch(Notification.exception);
-    };
+/**
+ * Handles a failed progress poll without surfacing benign navigation/transport errors.
+ *
+ * @param {*} error Rejected value from the AJAX call.
+ * @param {{finishing: boolean}} state Polling state for the current bulk job.
+ */
+const handleFetchError = (error, state) => {
+    if (state.finishing) {
+        return;
+    }
+    if (error === 'abort' || error === 'timeout') {
+        return;
+    }
+    const exception = error?.exception ?? error;
+    if (exception?.errorcode) {
+        Notification.exception(exception);
+    }
+};
 
-    /**
-     * @param {*} response
-     * @param {{checkid: ?number, bar: ?HTMLElement, counts: ?HTMLElement}} state
-     */
-    const applyResponse = function(response, state) {
-        const pct = Math.round(Number(response.progresspct));
-        if (state.bar) {
-            state.bar.style.width = pct + '%';
-            state.bar.setAttribute('aria-valuenow', String(pct));
-            state.bar.textContent = pct + '%';
-        }
-        if (state.counts) {
-            state.counts.textContent = response.countstext;
-        }
+/**
+ * Updates the progress bar label from a localised string.
+ *
+ * @param {HTMLElement} bar Progress bar element.
+ * @param {number} doneunits Number of terminal child imports.
+ * @param {number} total Total number of child imports.
+ * @param {{finishing: boolean}} state Polling state for the current bulk job.
+ */
+const updateBarLabel = (bar, doneunits, total, state) => {
+    get_string('bulkstatusbarlabel', 'block_courseimport', {
+        done: doneunits,
+        total: total,
+    }).then((label) => {
+        bar.textContent = label;
+    }).catch((error) => {
+        handleFetchError(error, state);
+    });
+};
 
-        if (!response.isrunning) {
-            stop(state);
+/**
+ * Requests the latest bulk parent progress from the web service.
+ *
+ * @param {number} bulkid Parent bulk job id.
+ * @param {{checkid: ?number, bar: ?HTMLElement, counts: ?HTMLElement, inflight: boolean, finishing: boolean}} state
+ *      Polling state for the current bulk job.
+ */
+const fetchProgress = (bulkid, state) => {
+    if (state.finishing || state.inflight) {
+        return;
+    }
+    state.inflight = true;
+    const requests = [{
+        methodname: 'block_courseimport_get_bulk_job_progress',
+        args: {bulkid: bulkid},
+    }];
+    const promises = Ajax.call(requests, true, true, false);
+    promises[0].then((response) => {
+        state.inflight = false;
+        applyResponse(response, state);
+    }).catch((error) => {
+        state.inflight = false;
+        handleFetchError(error, state);
+    });
+};
+
+/**
+ * Applies a bulk progress response to the progress bar and count summary.
+ *
+ * @param {*} response Web service response for the current bulk job.
+ * @param {{checkid: ?number, bar: ?HTMLElement, counts: ?HTMLElement, finishing: boolean}} state
+ *      Polling state for the current bulk job.
+ */
+const applyResponse = (response, state) => {
+    const pct = Math.round(Number(response.progresspct));
+    const doneunits = Number(response.completed) + Number(response.failed);
+    if (state.bar) {
+        state.bar.style.width = pct + '%';
+        state.bar.setAttribute('aria-valuenow', String(pct));
+        updateBarLabel(state.bar, doneunits, Number(response.total), state);
+    }
+    if (state.counts) {
+        state.counts.textContent = response.countstext;
+    }
+
+    if (!response.isrunning) {
+        state.finishing = true;
+        stop(state);
+        setTimeout(() => {
             window.location.reload();
-        }
-    };
+        }, reloadDelay);
+    }
+};
 
-    /**
-     * @param {number} bulkid
-     */
-    const init = function(bulkid) {
-        const root = document.getElementById('block-courseimport-bulk-root-' + bulkid);
-        if (!root) {
-            return;
-        }
-        const bar = root.querySelector('[data-region="bulk-progress-bar"]');
-        const counts = root.querySelector('[data-region="bulk-counts"]');
-        const state = {
-            checkid: null,
-            bar: bar,
-            counts: counts,
-        };
-        state.checkid = setInterval(function() {
-            fetchProgress(bulkid, state);
-        }, checkdelay);
+/**
+ * Starts polling progress for a bulk parent job.
+ *
+ * @param {number} bulkid Parent bulk job id.
+ */
+export const init = (bulkid) => {
+    const root = document.getElementById('block-courseimport-bulk-root-' + bulkid);
+    if (!root) {
+        return;
+    }
+    const bar = root.querySelector('[data-region="bulk-progress-bar"]');
+    const counts = root.querySelector('[data-region="bulk-counts"]');
+    const state = {
+        checkid: null,
+        bar: bar,
+        counts: counts,
+        inflight: false,
+        finishing: false,
+    };
+    state.checkid = setInterval(() => {
         fetchProgress(bulkid, state);
-    };
-
-    return {
-        init: init,
-    };
-});
+    }, checkdelay);
+    fetchProgress(bulkid, state);
+};

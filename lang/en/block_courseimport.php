@@ -65,6 +65,7 @@ $string['bulkstatuscompleted'] = 'Completed';
 $string['bulkstatusfailed'] = 'Failed';
 $string['bulkstatusstate'] = 'Status';
 $string['bulkstatusprogress'] = 'Progress';
+$string['bulkstatusbarlabel'] = '{$a->done} of {$a->total}';
 $string['bulkstatusrefreshing'] = 'Bulk course import in progress — progress updates automatically without reloading the page.';
 $string['bulkstatusajaxcounts'] = 'Completed: {$a->completed} / Total: {$a->total}{$a->failedsuffix}';
 $string['bulkstatuschildjobs'] = 'Course imports for this bulk course import';

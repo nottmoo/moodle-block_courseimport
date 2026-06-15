@@ -133,6 +133,7 @@ final class bulk_status implements renderable, templatable {
             (int) $bulk->total_count,
             (int) $bulk->failed_count
         );
+        $doneunits = (int) $bulk->completed_count + (int) $bulk->failed_count;
 
         $data = [
             'bulkid' => $bulkid,
@@ -140,6 +141,11 @@ final class bulk_status implements renderable, templatable {
             'total' => (int) $bulk->total_count,
             'completed' => (int) $bulk->completed_count,
             'failed' => (int) $bulk->failed_count,
+            'doneunits' => $doneunits,
+            'barlabel' => get_string('bulkstatusbarlabel', 'block_courseimport', (object) [
+                'done' => $doneunits,
+                'total' => (int) $bulk->total_count,
+            ]),
             'status' => $bulk->status,
             'progresspct' => $progresspercent,
             'isrunning' => $isrunning,
