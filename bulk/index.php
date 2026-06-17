@@ -45,8 +45,8 @@ $PAGE->set_pagelayout('admin');
 $PAGE->navbar->add(get_string('bulkrollover', 'block_courseimport'));
 
 $form = bulk_index_page::make_upload_form(bulk_index_page::get_form_action_url());
-if ($fromform = $form->get_data()) {
-    redirect(bulk_index_page::get_post_upload_redirect((int) $fromform->csvfile));
+if ($data = $form->get_data()) {
+    redirect(bulk_index_page::get_post_upload_redirect((int) $data->csvfile));
 }
 
 echo $OUTPUT->header();

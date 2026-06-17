@@ -100,13 +100,13 @@ final class bulk_results_view {
         $base = '/blocks/courseimport/bulk/results.php';
         return [
             [
-                'url' => (new url($base, ['bulkid' => $bulkid, 'cpage' => 0, 'completed' => 0]))->out(false),
+                'url' => (new url($base, ['bulkid' => $bulkid, 'page' => 0, 'completed' => 0]))->out(false),
                 'label' => get_string('bulkshowallchildjobs', 'block_courseimport'),
                 'count' => $countall,
                 'current' => !$completedonly,
             ],
             [
-                'url' => (new url($base, ['bulkid' => $bulkid, 'cpage' => 0, 'completed' => 1]))->out(false),
+                'url' => (new url($base, ['bulkid' => $bulkid, 'page' => 0, 'completed' => 1]))->out(false),
                 'label' => get_string('bulkshowcompletedchildjobs', 'block_courseimport'),
                 'count' => $countfinished,
                 'current' => $completedonly,

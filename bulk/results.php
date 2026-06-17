@@ -35,7 +35,6 @@ require_capability('block/courseimport:bulkrollover', $systemcontext);
 
 $bulkid = optional_param('bulkid', 0, PARAM_INT);
 $page = optional_param('page', 0, PARAM_INT);
-$childpage = optional_param('cpage', 0, PARAM_INT);
 $completedonly = optional_param('completed', 0, PARAM_INT);
 $perpage = 20;
 $childperpage = 20;
@@ -49,7 +48,7 @@ global $USER, $OUTPUT;
 $blockrenderer = $PAGE->get_renderer('block_courseimport');
 
 if ($bulkid) {
-    $bulkstatus = bulk_status::fetch($bulkid, $childpage, $completedonly, $childperpage);
+    $bulkstatus = bulk_status::fetch($bulkid, $page, $completedonly, $childperpage);
     echo $OUTPUT->header();
     echo $blockrenderer->render($bulkstatus);
     echo $OUTPUT->footer();

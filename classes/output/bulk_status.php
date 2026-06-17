@@ -111,13 +111,13 @@ final class bulk_status implements renderable, templatable {
                 get_string('bulkpagination', 'block_courseimport', (object) ['from' => $from, 'to' => $to, 'total' => $childtotal]),
                 'mb-2 text-muted'
             );
-            $childpagination .= $OUTPUT->paging_bar($childtotal, $childpage, $childperpage, $childnavurl, 'cpage');
+            $childpagination .= $OUTPUT->paging_bar($childtotal, $childpage, $childperpage, $childnavurl);
         }
         $childpaginationhtml = $childtotal > $childperpage ? $childpagination : '';
 
         $PAGE->set_url(new url('/blocks/courseimport/bulk/results.php', [
             'bulkid' => $bulkid,
-            'cpage' => $childpage,
+            'page' => $childpage,
             'completed' => $completedonly,
         ]));
         $PAGE->set_title(get_string('bulkstatusid', 'block_courseimport', $bulkid));
