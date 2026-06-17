@@ -63,27 +63,16 @@ final class bulk_status implements renderable, templatable {
     ): self {
         global $USER, $PAGE, $OUTPUT;
 
-        $bulk = bulk_job::get_record($bulkid);
-        if (!$bulk || !bulk_job::user_can_view($bulk, (int) $USER->id)) {
-            throw new \moodle_exception('bulkstatusinvalid', 'block_courseimport');
-        }
-
-        bulk_job::reconcile_queued_parent_if_stale($bulkid);
-        $bulk = bulk_job::get_record($bulkid);
-        if (!$bulk || !bulk_job::user_can_view($bulk, (int) $USER->id)) {
-            throw new \moodle_exception('bulkstatusinvalid', 'block_courseimport');
-        }
-
-        $totalunits = (int) $bulk->total_count;
-        $completedunits = (int) $bulk->completed_count + (int) $bulk->failed_count;
-        $progresspercent = bulk_progress::percentage_complete($completedunits, $totalunits);
-        $isrunning = $bulk->status === bulk_job::STATUS_QUEUED;
-        $hasfailed = (int) $bulk->failed_count > 0;
+        $bulk = bulk_job::load_viewable_bulk($bulkid, (int) $USER->id);
+        $snapshot = bulk_progress::snapshot_from_bulk_record($bulk, $bulkid);
 
         $completedonlybool = (bool) $completedonly;
-        $childcountall = bulk_job::count_import_jobs_for_bulk_job($bulkid, false);
-        $childcountfinished = bulk_job::count_import_jobs_for_bulk_job($bulkid, true);
+        $childcountall = $snapshot['childcountall'];
+        $childcountfinished = $snapshot['childcountfinished'];
         $childtotal = $completedonlybool ? $childcountfinished : $childcountall;
+
+        $maxchildpage = $childtotal > 0 ? (int) ceil($childtotal / $childperpage) - 1 : 0;
+        $childpage = min(max(0, $childpage), max(0, $maxchildpage));
 
         $childrecords = bulk_job::get_import_jobs_for_bulk_job_page(
             $bulkid,
@@ -91,7 +80,7 @@ final class bulk_status implements renderable, templatable {
             $childpage * $childperpage,
             $completedonlybool
         );
-        $childrows = bulk_results_view::build_child_job_table_rows($childrecords, false);
+        $childrows = bulk_results_view::build_child_job_table_rows($childrecords);
 
         $childslice = array_values($childrows);
         $rowoffset = $childpage * $childperpage;
@@ -128,29 +117,24 @@ final class bulk_status implements renderable, templatable {
         );
         $PAGE->navbar->add(get_string('bulkstatusid', 'block_courseimport', $bulkid));
 
-        $countstext = bulk_progress::format_count_summary_line(
-            (int) $bulk->completed_count,
-            (int) $bulk->total_count,
-            (int) $bulk->failed_count
-        );
-        $doneunits = (int) $bulk->completed_count + (int) $bulk->failed_count;
-
         $data = [
             'bulkid' => $bulkid,
             'heading' => get_string('bulkstatusid', 'block_courseimport', $bulkid),
-            'total' => (int) $bulk->total_count,
-            'completed' => (int) $bulk->completed_count,
-            'failed' => (int) $bulk->failed_count,
-            'doneunits' => $doneunits,
+            'total' => $snapshot['total'],
+            'completed' => $snapshot['completed'],
+            'failed' => $snapshot['failed'],
+            'doneunits' => $snapshot['doneunits'],
             'barlabel' => get_string('bulkstatusbarlabel', 'block_courseimport', (object) [
-                'done' => $doneunits,
-                'total' => (int) $bulk->total_count,
+                'done' => $snapshot['doneunits'],
+                'total' => $snapshot['total'],
             ]),
-            'status' => $bulk->status,
-            'progresspct' => $progresspercent,
-            'isrunning' => $isrunning,
-            'hasfailed' => $hasfailed,
-            'countstext' => $countstext,
+            'status' => $snapshot['status'],
+            'statuslabel' => bulk_job::format_status_label($snapshot['status']),
+            'progresstitle' => $snapshot['progresstitle'],
+            'progresspct' => $snapshot['progresspct'],
+            'isrunning' => $snapshot['isrunning'],
+            'hasfailed' => $snapshot['hasfailed'],
+            'countstext' => $snapshot['countstext'],
             'childpaginationtop' => $childpaginationhtml,
             'childjobs' => $childslice,
             'childheading' => get_string('bulkstatuschildjobs', 'block_courseimport'),

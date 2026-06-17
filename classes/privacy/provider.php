@@ -207,36 +207,9 @@ class provider implements
             'sourcecourse' => "$record->source : $record->sourcename",
             'targetcourse' => "$record->target : $record->targetname",
             'backupid' => $record->backupid,
-            'status' => static::transform_status($record->status),
+            'status' => job::format_status_label($record->status),
             'timecreated' => transform::datetime($record->timecreated),
             'timemodified' => transform::datetime($record->timemodified),
         ];
-    }
-
-    /**
-     * Converts the status code into a localised string.
-     *
-     * @param string $statuscode
-     * @return string
-     */
-    protected static function transform_status(string $statuscode): string {
-        switch ($statuscode) {
-            case job::STATE_WAITING:
-                $status = get_string('privacy:export:status:waiting', 'block_courseimport');
-                break;
-            case job::STATE_FINISHED:
-                $status = get_string('privacy:export:status:finished', 'block_courseimport');
-                break;
-            case job::STATE_PROCESSING:
-                $status = get_string('privacy:export:status:processing', 'block_courseimport');
-                break;
-            case job::STATE_FAILED:
-                $status = get_string('privacy:export:status:failed', 'block_courseimport');
-                break;
-            default:
-                $status = get_string('privacy:export:status:unknown', 'block_courseimport');
-                break;
-        }
-        return $status;
     }
 }

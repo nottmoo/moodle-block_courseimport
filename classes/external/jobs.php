@@ -17,7 +17,7 @@
 namespace block_courseimport\external;
 
 use block_courseimport\bulk_job;
-use block_courseimport\local\bulk_progress as BulkProgressCalc;
+use block_courseimport\local\bulk_progress;
 use block_courseimport\output\progress;
 use context_system;
 use core_external\external_function_parameters;
@@ -89,35 +89,9 @@ class jobs extends \core_external\external_api {
 
         require_capability('block/courseimport:bulkrollover', context_system::instance());
 
-        bulk_job::reconcile_queued_parent_if_stale($id);
-        $bulk = bulk_job::get_record($id);
-        if (!$bulk || !bulk_job::user_can_view($bulk, (int) $USER->id)) {
-            throw new \moodle_exception('bulkstatusinvalid', 'block_courseimport');
-        }
+        $bulk = bulk_job::load_viewable_bulk($id, (int) $USER->id);
 
-        $totalunits = (int) $bulk->total_count;
-        $completedunits = (int) $bulk->completed_count + (int) $bulk->failed_count;
-        $progresspct = BulkProgressCalc::percentage_complete($completedunits, $totalunits);
-        $isrunning = $bulk->status === bulk_job::STATUS_QUEUED;
-        $hasfailed = (int) $bulk->failed_count > 0;
-        $failed = (int) $bulk->failed_count;
-        $countstext = BulkProgressCalc::format_count_summary_line(
-            (int) $bulk->completed_count,
-            $totalunits,
-            $failed
-        );
-
-        return [
-            'progress' => $progresspct / 100.0,
-            'progresspct' => $progresspct,
-            'completed' => (int) $bulk->completed_count,
-            'failed' => $failed,
-            'total' => $totalunits,
-            'status' => (string) $bulk->status,
-            'isrunning' => $isrunning,
-            'hasfailed' => $hasfailed,
-            'countstext' => $countstext,
-        ];
+        return bulk_progress::snapshot_from_bulk_record($bulk, $id);
     }
 
     /**
@@ -144,7 +118,10 @@ class jobs extends \core_external\external_api {
             'failed' => new external_value(PARAM_INT, 'Child jobs failed'),
             'total' => new external_value(PARAM_INT, 'Total child jobs'),
             'status' => new external_value(PARAM_TEXT, 'Parent bulk status'),
-            'isrunning' => new external_value(PARAM_BOOL, 'True while parent status is queued'),
+            'progresstitle' => new external_value(PARAM_TEXT, 'Localised progress card title while running'),
+            'childcountall' => new external_value(PARAM_INT, 'Total child import jobs linked to this bulk job'),
+            'childcountfinished' => new external_value(PARAM_INT, 'Child import jobs in finished state'),
+            'isrunning' => new external_value(PARAM_BOOL, 'True while parent status is queued or processing'),
             'hasfailed' => new external_value(PARAM_BOOL, 'True if any child failed'),
             'countstext' => new external_value(PARAM_TEXT, 'Human-readable counts for the UI'),
         ]);

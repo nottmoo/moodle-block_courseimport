@@ -16,9 +16,9 @@
 /**
  * Polls bulk parent job progress via web service (no periodic full page reload).
  *
- * While the parent bulk job is still queued, only the progress bar and count line
- * are updated. When the job finishes, the page reloads once so the child-jobs
- * table and filter counts are rendered from the server.
+ * While the parent bulk job is still running, the progress card, filter counts, and
+ * title are updated from the web service. When the job finishes, the page reloads once
+ * so the child-jobs table is rendered from the server.
  *
  * @module     block_courseimport/bulk_status_progress
  * @author     Nisha Sarala <nisha.sarala@gmail.com>
@@ -83,10 +83,27 @@ const updateBarLabel = (bar, doneunits, total, state) => {
 };
 
 /**
+ * Updates child-job filter count badges from the latest poll response.
+ *
+ * @param {HTMLElement} root Bulk status root element.
+ * @param {*} response Web service response for the current bulk job.
+ */
+const updateFilterCounts = (root, response) => {
+    const allcount = root.querySelector('[data-region="bulk-filter-count"][data-filter="all"]');
+    const finishedcount = root.querySelector('[data-region="bulk-filter-count"][data-filter="finished"]');
+    if (allcount) {
+        allcount.textContent = String(response.childcountall);
+    }
+    if (finishedcount) {
+        finishedcount.textContent = String(response.childcountfinished);
+    }
+};
+
+/**
  * Requests the latest bulk parent progress from the web service.
  *
  * @param {number} bulkid Parent bulk job id.
- * @param {{checkid: ?number, bar: ?HTMLElement, counts: ?HTMLElement, inflight: boolean, finishing: boolean}} state
+ * @param {{checkid: ?number, root: ?HTMLElement, bar: ?HTMLElement, counts: ?HTMLElement, title: ?HTMLElement, inflight: boolean, finishing: boolean}} state
  *      Polling state for the current bulk job.
  */
 const fetchProgress = (bulkid, state) => {
@@ -109,10 +126,10 @@ const fetchProgress = (bulkid, state) => {
 };
 
 /**
- * Applies a bulk progress response to the progress bar and count summary.
+ * Applies a bulk progress response to the progress card and filter counts.
  *
  * @param {*} response Web service response for the current bulk job.
- * @param {{checkid: ?number, bar: ?HTMLElement, counts: ?HTMLElement, finishing: boolean}} state
+ * @param {{checkid: ?number, root: ?HTMLElement, bar: ?HTMLElement, counts: ?HTMLElement, title: ?HTMLElement, finishing: boolean}} state
  *      Polling state for the current bulk job.
  */
 const applyResponse = (response, state) => {
@@ -125,6 +142,12 @@ const applyResponse = (response, state) => {
     }
     if (state.counts) {
         state.counts.textContent = response.countstext;
+    }
+    if (state.title && response.progresstitle) {
+        state.title.textContent = response.progresstitle;
+    }
+    if (state.root) {
+        updateFilterCounts(state.root, response);
     }
 
     if (!response.isrunning) {
@@ -148,10 +171,13 @@ export const init = (bulkid) => {
     }
     const bar = root.querySelector('[data-region="bulk-progress-bar"]');
     const counts = root.querySelector('[data-region="bulk-counts"]');
+    const title = root.querySelector('[data-region="bulk-progress-title"]');
     const state = {
         checkid: null,
+        root: root,
         bar: bar,
         counts: counts,
+        title: title,
         inflight: false,
         finishing: false,
     };

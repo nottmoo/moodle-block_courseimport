@@ -96,15 +96,15 @@ final class bulk_results_list implements renderable, templatable {
         $jobrows = [];
         foreach ($this->jobs as $bj) {
             $listtotalunits = (int) $bj->total_count;
-            $listcompletedunits = (int) $bj->completed_count + (int) $bj->failed_count;
-            $listprogresspercent = bulk_progress::percentage_complete($listcompletedunits, $listtotalunits);
+            $listdoneunits = bulk_job::count_done_units($bj);
+            $listprogresspercent = bulk_progress::percentage_complete($listdoneunits, $listtotalunits);
             $viewurl = (new url('/blocks/courseimport/bulk/results.php', ['bulkid' => $bj->id]))->out(false);
             $jobrows[] = [
                 'idlabel' => '#' . (int) $bj->id,
                 'total' => (int) $bj->total_count,
                 'completed' => (int) $bj->completed_count,
                 'failed' => (int) $bj->failed_count,
-                'status' => $bj->status,
+                'status' => bulk_job::format_status_label($bj->status),
                 'progressdisplay' => $listprogresspercent . '%',
                 'viewlink' => \html_writer::link($viewurl, get_string('bulkstatusview', 'block_courseimport')),
             ];

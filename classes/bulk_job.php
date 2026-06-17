@@ -17,7 +17,10 @@
 namespace block_courseimport;
 
 /**
- * Parent bulk rollover job metadata.
+ * Parent bulk rollover job model and database interface.
+ *
+ * All reads and writes to the {@see block_courseimport_bulk_job} table should go through
+ * this class, matching the pattern used by {@see job} for child import rows.
  *
  * @property-read int|null $id The database id of the parent bulk job.
  * @property-read int $userid The id of the user who submitted the bulk job.
@@ -28,9 +31,11 @@ namespace block_courseimport;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class bulk_job {
-    /** @var string Non-terminal parent bulk batch : set at creation and kept until every child
-     * import has finished, including while children are actively processing. */
+    /** @var string Parent bulk batch created; no child import has started processing yet. */
     public const STATUS_QUEUED = 'queued';
+
+    /** @var string Parent bulk batch with at least one child import queued, running, or partially complete. */
+    public const STATUS_PROCESSING = 'processing';
 
     /** @var string Terminal outcome: all child imports finished successfully. */
     public const STATUS_COMPLETED = 'completed';
@@ -93,8 +98,8 @@ class bulk_job {
     /**
      * Sets the parent bulk status and persists immediately when already saved.
      *
-     * @param string $status One of {@see self::STATUS_QUEUED}, {@see self::STATUS_COMPLETED},
-     *                       {@see self::STATUS_FAILED}, {@see self::STATUS_PARTIAL}.
+     * @param string $status One of {@see self::STATUS_QUEUED}, {@see self::STATUS_PROCESSING},
+     *                       {@see self::STATUS_COMPLETED}, {@see self::STATUS_FAILED}, {@see self::STATUS_PARTIAL}.
      * @return void
      */
     public function set_status(string $status): void {
@@ -178,6 +183,198 @@ class bulk_job {
     }
 
     /**
+     * Whether a parent bulk status means the batch is still in progress.
+     *
+     * @param string $status Parent bulk status value.
+     * @return bool
+     */
+    public static function is_running_status(string $status): bool {
+        return in_array($status, self::non_terminal_statuses(), true);
+    }
+
+    /**
+     * Parent bulk statuses that mean the batch has not reached a terminal outcome.
+     *
+     * @return string[]
+     */
+    public static function non_terminal_statuses(): array {
+        return [self::STATUS_QUEUED, self::STATUS_PROCESSING];
+    }
+
+    /**
+     * Terminal child imports counted on the parent bulk row (completed + failed).
+     *
+     * @param \stdClass $bulk Parent bulk job DB row.
+     * @return int
+     */
+    public static function count_done_units(\stdClass $bulk): int {
+        return (int) $bulk->completed_count + (int) $bulk->failed_count;
+    }
+
+    /**
+     * Loads a bulk job after optional reconcile, throwing when missing or not viewable.
+     *
+     * @param int $bulkid Parent bulk job id.
+     * @param int $userid User id to authorise.
+     * @param bool $reconcile When true, run {@see self::reconcile_queued_parent_if_stale()} first.
+     * @return \stdClass
+     * @throws \moodle_exception
+     */
+    public static function load_viewable_bulk(int $bulkid, int $userid, bool $reconcile = true): \stdClass {
+        $bulk = self::get_record($bulkid);
+        if (!$bulk || !self::user_can_view($bulk, $userid)) {
+            throw new \moodle_exception('bulkstatusinvalid', 'block_courseimport');
+        }
+        if ($reconcile) {
+            self::reconcile_queued_parent_if_stale($bulkid);
+            $bulk = self::get_record($bulkid);
+            if (!$bulk || !self::user_can_view($bulk, $userid)) {
+                throw new \moodle_exception('bulkstatusinvalid', 'block_courseimport');
+            }
+        }
+        return $bulk;
+    }
+
+    /**
+     * SQL fragment and params restricting child rows to finished imports.
+     *
+     * @param bool $completedonly When true, only {@see job::STATE_FINISHED} rows match.
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    protected static function child_job_status_filter_sql(bool $completedonly): array {
+        if (!$completedonly) {
+            return ['', []];
+        }
+        return [' AND j.status = :finished', ['finished' => job::STATE_FINISHED]];
+    }
+
+    /**
+     * Base SELECT for child import rows joined to course names.
+     *
+     * @return string
+     */
+    protected static function child_job_select_from_sql(): string {
+        return "SELECT j.id, j.target, j.source, j.status, j.timecreated,
+                       tc.fullname AS targetname, sc.fullname AS sourcename
+                  FROM {block_courseimport} j
+             LEFT JOIN {course} tc ON tc.id = j.target
+             LEFT JOIN {course} sc ON sc.id = j.source
+                 WHERE j.bulk_job_id = :bid";
+    }
+
+    /**
+     * Whether the parent bulk batch should still show as running in the UI / AJAX polling.
+     *
+     * A row can remain {@see self::STATUS_PROCESSING} while counters already reflect every child
+     * import; treat that as finished so the progress card does not stick at 100%.
+     *
+     * @param \stdClass $bulk Parent bulk job DB row.
+     * @return bool
+     */
+    public static function is_parent_still_running(\stdClass $bulk): bool {
+        if (!self::is_running_status((string) $bulk->status)) {
+            return false;
+        }
+        $total = (int) $bulk->total_count;
+        $done = self::count_done_units($bulk);
+        return !($total > 0 && $done >= $total);
+    }
+
+    /**
+     * Sets a terminal parent status when success/failed counters already cover the batch total.
+     *
+     * @param int $bulkjobid Parent bulk job id.
+     * @return void
+     */
+    public static function finalize_parent_when_done(int $bulkjobid): void {
+        global $DB;
+        $record = self::get_record($bulkjobid);
+        if (!$record || !self::is_running_status((string) $record->status)) {
+            return;
+        }
+        $total = (int) $record->total_count;
+        $done = self::count_done_units($record);
+        if ($total < 1 || $done < $total) {
+            return;
+        }
+        self::apply_terminal_status_to_record($record);
+        $record->timemodified = time();
+        $DB->update_record('block_courseimport_bulk_job', $record);
+    }
+
+    /**
+     * Picks completed / failed / partial from parent counters (object is updated in place).
+     *
+     * @param \stdClass $record Parent bulk job DB row.
+     * @return void
+     */
+    protected static function apply_terminal_status_to_record(\stdClass $record): void {
+        if ((int) $record->failed_count > 0 && (int) $record->completed_count > 0) {
+            $record->status = self::STATUS_PARTIAL;
+        } else if ((int) $record->failed_count > 0) {
+            $record->status = self::STATUS_FAILED;
+        } else {
+            $record->status = self::STATUS_COMPLETED;
+        }
+    }
+
+    /**
+     * Localised label for a parent bulk status code.
+     *
+     * @param string $status Parent bulk status value.
+     * @return string
+     */
+    public static function format_status_label(string $status): string {
+        switch ($status) {
+            case self::STATUS_QUEUED:
+                return get_string('bulkstatusstatequeued', 'block_courseimport');
+            case self::STATUS_PROCESSING:
+                return get_string('bulkstatusstateprocessing', 'block_courseimport');
+            case self::STATUS_COMPLETED:
+                return get_string('bulkstatusstatecompleted', 'block_courseimport');
+            case self::STATUS_FAILED:
+                return get_string('bulkstatusstatefailed', 'block_courseimport');
+            case self::STATUS_PARTIAL:
+                return get_string('bulkstatusstatepartial', 'block_courseimport');
+            default:
+                return $status;
+        }
+    }
+
+    /**
+     * Localised progress card title while a parent bulk batch is still running.
+     *
+     * @param string $status Parent bulk status value.
+     * @return string
+     */
+    public static function get_running_progress_title(string $status): string {
+        if ($status === self::STATUS_QUEUED) {
+            return get_string('bulkstatusstatequeued', 'block_courseimport');
+        }
+        return get_string('bulkstatusprogresstitleprocessing', 'block_courseimport');
+    }
+
+    /**
+     * Marks a parent bulk job as processing once the first child import starts.
+     *
+     * @param int|null $bulkjobid Parent bulk job id.
+     * @return void
+     */
+    public static function mark_parent_processing_started(?int $bulkjobid): void {
+        if (!$bulkjobid) {
+            return;
+        }
+        global $DB;
+        $record = self::get_record($bulkjobid);
+        if (!$record || $record->status !== self::STATUS_QUEUED) {
+            return;
+        }
+        $record->status = self::STATUS_PROCESSING;
+        $record->timemodified = time();
+        $DB->update_record('block_courseimport_bulk_job', $record);
+    }
+
+    /**
      * Child import job rows for a bulk parent job (newest child first).
      *
      * For paginated UI, prefer {@see self::count_import_jobs_for_bulk_job()} and
@@ -188,13 +385,7 @@ class bulk_job {
      */
     public static function get_import_jobs_for_bulk_job(int $bulkjobid): array {
         global $DB;
-        $sql = "SELECT j.id, j.target, j.source, j.status, j.timecreated,
-                       tc.fullname AS targetname, sc.fullname AS sourcename
-                  FROM {block_courseimport} j
-             LEFT JOIN {course} tc ON tc.id = j.target
-             LEFT JOIN {course} sc ON sc.id = j.source
-                 WHERE j.bulk_job_id = :bid
-              ORDER BY j.id DESC";
+        $sql = self::child_job_select_from_sql() . ' ORDER BY j.id DESC';
         return $DB->get_records_sql($sql, ['bid' => $bulkjobid]);
     }
 
@@ -207,12 +398,8 @@ class bulk_job {
      */
     public static function count_import_jobs_for_bulk_job(int $bulkjobid, bool $completedonly): int {
         global $DB;
-        $params = ['bid' => $bulkjobid];
-        $statussql = '';
-        if ($completedonly) {
-            $statussql = ' AND j.status = :finished';
-            $params['finished'] = job::STATE_FINISHED;
-        }
+        [$statussql, $statusparams] = self::child_job_status_filter_sql($completedonly);
+        $params = ['bid' => $bulkjobid] + $statusparams;
         $sql = "SELECT COUNT(1)
                   FROM {block_courseimport} j
                  WHERE j.bulk_job_id = :bid
@@ -236,20 +423,9 @@ class bulk_job {
         bool $completedonly
     ): array {
         global $DB;
-        $params = ['bid' => $bulkjobid];
-        $statussql = '';
-        if ($completedonly) {
-            $statussql = ' AND j.status = :finished';
-            $params['finished'] = job::STATE_FINISHED;
-        }
-        $sql = "SELECT j.id, j.target, j.source, j.status, j.timecreated,
-                       tc.fullname AS targetname, sc.fullname AS sourcename
-                  FROM {block_courseimport} j
-             LEFT JOIN {course} tc ON tc.id = j.target
-             LEFT JOIN {course} sc ON sc.id = j.source
-                 WHERE j.bulk_job_id = :bid
-                       {$statussql}
-              ORDER BY j.id DESC";
+        [$statussql, $statusparams] = self::child_job_status_filter_sql($completedonly);
+        $params = ['bid' => $bulkjobid] + $statusparams;
+        $sql = self::child_job_select_from_sql() . "{$statussql} ORDER BY j.id DESC";
         return $DB->get_records_sql($sql, $params, $offset, $limit);
     }
 
@@ -257,31 +433,62 @@ class bulk_job {
      * Count child import rows by coarse lifecycle bucket.
      *
      * @param array<int, \stdClass> $childrecords Rows from {@see self::get_import_jobs_for_bulk_job()}.
-     * @return \stdClass Object with int fields: active, finished, failed.
+     * @return \stdClass Object with int fields: waiting, processing, active, finished, failed.
      */
     public static function summarize_child_import_states(array $childrecords): \stdClass {
-        $activecount = 0;
+        $waitingcount = 0;
+        $processingcount = 0;
         $finishedcount = 0;
         $failedcount = 0;
         foreach ($childrecords as $child) {
-            if ($child->status === job::STATE_WAITING || $child->status === job::STATE_PROCESSING) {
-                $activecount++;
-            } else if ($child->status === job::STATE_FINISHED) {
+            $status = (string) $child->status;
+            if ($status === job::STATE_WAITING) {
+                $waitingcount++;
+            } else if ($status === job::STATE_PROCESSING) {
+                $processingcount++;
+            } else if ($status === job::STATE_FINISHED) {
                 $finishedcount++;
             } else {
                 $failedcount++;
             }
         }
         $out = new \stdClass();
-        $out->active = $activecount;
+        $out->waiting = $waitingcount;
+        $out->processing = $processingcount;
+        $out->active = $waitingcount + $processingcount;
         $out->finished = $finishedcount;
         $out->failed = $failedcount;
         return $out;
     }
 
     /**
-     * If the parent bulk row is still {@see self::STATUS_QUEUED} but every child import is terminal,
-     * realign parent counts and status from the child rows.
+     * Keeps parent queued/processing aligned with whether any child is actually running.
+     *
+     * @param int $bulkjobid Parent bulk job id.
+     * @param \stdClass $summary Output from {@see self::summarize_child_import_states()}.
+     * @return void
+     */
+    protected static function realign_parent_running_status(int $bulkjobid, \stdClass $summary): void {
+        global $DB;
+        $record = self::get_record($bulkjobid);
+        if (!$record || !self::is_running_status((string) $record->status)) {
+            return;
+        }
+        if ($summary->processing > 0) {
+            self::mark_parent_processing_started($bulkjobid);
+            return;
+        }
+        if ($summary->active > 0 && (string) $record->status === self::STATUS_PROCESSING) {
+            $record->status = self::STATUS_QUEUED;
+            $record->timemodified = time();
+            $DB->update_record('block_courseimport_bulk_job', $record);
+        }
+    }
+
+    /**
+     * If the parent bulk row is still non-terminal but every child import is terminal,
+     * realign parent counts and status from the child rows. If child imports are active,
+     * ensure the parent has moved from queued to processing.
      *
      * This runs after each child job in the scheduled task (so the DB is corrected without opening the
      * results page) and when rendering bulk results as a safety net if incremental updates were missed.
@@ -290,9 +497,9 @@ class bulk_job {
      * @return void
      */
     public static function reconcile_queued_parent_if_stale(int $bulkjobid): void {
-        global $DB;
-        $bulk = $DB->get_record('block_courseimport_bulk_job', ['id' => $bulkjobid], '*', IGNORE_MISSING);
-        if (!$bulk || $bulk->status !== self::STATUS_QUEUED) {
+        self::finalize_parent_when_done($bulkjobid);
+        $bulk = self::get_record($bulkjobid);
+        if (!$bulk || !self::is_running_status((string) $bulk->status)) {
             return;
         }
         $children = self::get_import_jobs_for_bulk_job($bulkjobid);
@@ -300,6 +507,7 @@ class bulk_job {
             return;
         }
         $summary = self::summarize_child_import_states($children);
+        self::realign_parent_running_status($bulkjobid, $summary);
         if ($summary->active > 0) {
             return;
         }
@@ -344,31 +552,49 @@ class bulk_job {
     }
 
     /**
-     * Returns whether the user currently has at least one queued bulk job.
+     * Returns whether the user currently has at least one non-terminal bulk job.
      *
      * @param int $userid User id.
-     * @return bool True when the user has at least one parent row in queued state.
+     * @return bool True when the user has a queued or processing parent row.
      */
     public static function user_has_queued(int $userid): bool {
         global $DB;
-        return $DB->record_exists('block_courseimport_bulk_job', [
-            'userid' => $userid,
-            'status' => self::STATUS_QUEUED,
-        ]);
+        list($insql, $params) = $DB->get_in_or_equal(
+            self::non_terminal_statuses(),
+            SQL_PARAMS_NAMED,
+            'activestatus'
+        );
+        $params['userid'] = $userid;
+        return $DB->record_exists_select(
+            'block_courseimport_bulk_job',
+            "userid = :userid AND status $insql",
+            $params
+        );
     }
 
     /**
-     * Returns the user's most recent queued bulk job.
+     * Returns the user's most recent non-terminal bulk job.
      *
      * @param int $userid User id.
-     * @return \stdClass|null Most recent queued parent row, or null if none exists.
+     * @return \stdClass|null Most recent queued or processing parent row, or null if none exists.
      */
     public static function get_most_recent_queued_for_user(int $userid): ?\stdClass {
         global $DB;
-        $records = $DB->get_records('block_courseimport_bulk_job', [
-            'userid' => $userid,
-            'status' => self::STATUS_QUEUED,
-        ], 'timecreated DESC, id DESC', '*', 0, 1);
+        list($insql, $params) = $DB->get_in_or_equal(
+            self::non_terminal_statuses(),
+            SQL_PARAMS_NAMED,
+            'activestatus'
+        );
+        $params['userid'] = $userid;
+        $records = $DB->get_records_select(
+            'block_courseimport_bulk_job',
+            "userid = :userid AND status $insql",
+            $params,
+            'timecreated DESC, id DESC',
+            '*',
+            0,
+            1
+        );
         if (!$records) {
             return null;
         }
@@ -406,13 +632,7 @@ class bulk_job {
         $record->timemodified    = time();
         $done = $finishedcnt + $failedcnt;
         if ($done >= max(1, $totalcount)) {
-            if ($finishedcnt > 0 && $failedcnt > 0) {
-                $record->status = self::STATUS_PARTIAL;
-            } else if ($finishedcnt > 0) {
-                $record->status = self::STATUS_COMPLETED;
-            } else {
-                $record->status = self::STATUS_FAILED;
-            }
+            self::apply_terminal_status_to_record($record);
         }
         $DB->update_record('block_courseimport_bulk_job', $record);
     }
@@ -428,6 +648,7 @@ class bulk_job {
         if (!$bulkjobid) {
             return;
         }
+        self::mark_parent_processing_started($bulkjobid);
         global $DB;
         $record = self::get_record($bulkjobid);
         if (!$record) {
@@ -440,15 +661,8 @@ class bulk_job {
         }
         $record->timemodified = time();
         $total = (int) $record->total_count;
-        $done = (int) $record->completed_count + (int) $record->failed_count;
-        if ($total > 0 && $done >= $total) {
-            if ((int) $record->failed_count > 0 && (int) $record->completed_count > 0) {
-                $record->status = self::STATUS_PARTIAL;
-            } else if ((int) $record->failed_count > 0) {
-                $record->status = self::STATUS_FAILED;
-            } else {
-                $record->status = self::STATUS_COMPLETED;
-            }
+        if ($total > 0 && self::count_done_units($record) >= $total) {
+            self::apply_terminal_status_to_record($record);
         }
         $DB->update_record('block_courseimport_bulk_job', $record);
     }

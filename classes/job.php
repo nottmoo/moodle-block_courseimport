@@ -58,6 +58,27 @@ class job {
     /** The Job is waiting to be processed. */
     const STATE_WAITING = '222222';
 
+    /**
+     * Localised label for a child import job status code.
+     *
+     * @param string $status One of the {@see job} state constants.
+     * @return string
+     */
+    public static function format_status_label(string $status): string {
+        switch ((string) $status) {
+            case self::STATE_FINISHED:
+                return get_string('privacy:export:status:finished', 'block_courseimport');
+            case self::STATE_FAILED:
+                return get_string('privacy:export:status:failed', 'block_courseimport');
+            case self::STATE_PROCESSING:
+                return get_string('privacy:export:status:processing', 'block_courseimport');
+            case self::STATE_WAITING:
+                return get_string('privacy:export:status:waiting', 'block_courseimport');
+            default:
+                return get_string('privacy:export:status:unknown', 'block_courseimport');
+        }
+    }
+
     /** @var string The id of the backup controller for this import. */
     protected $bid;
 
@@ -141,7 +162,6 @@ class job {
         foreach ($jobs as $abandon) {
             $job = static::create_from_record($abandon);
             $job->set_status(static::STATE_FAILED);
-            bulk_job::record_child_finished($job->bulkjobid ?? null, false);
             $clock = \core\di::get(\core\clock::class);
             $params = [
                 'timenow' => $clock->now()->format('Y-m-d H:i:s'),
@@ -308,6 +328,7 @@ class job {
      */
     public function set_status(string $status) {
         global $DB;
+        $previous = $this->status;
         $this->status = $status;
         if (!isset($this->id)) {
             // The job has not been saved to the database.
@@ -319,6 +340,19 @@ class job {
             'timemodified' => $this->clock->time(),
         ];
         $DB->update_record('block_courseimport', $record);
+        if (!$this->bulkjobid) {
+            return;
+        }
+        $bulkjobid = (int) $this->bulkjobid;
+        if ($status === static::STATE_PROCESSING) {
+            bulk_job::mark_parent_processing_started($bulkjobid);
+        } else if ($previous === static::STATE_PROCESSING) {
+            if ($status === static::STATE_FINISHED) {
+                bulk_job::record_child_finished($bulkjobid, true);
+            } else if ($status === static::STATE_FAILED) {
+                bulk_job::record_child_finished($bulkjobid, false);
+            }
+        }
     }
 
     /**
