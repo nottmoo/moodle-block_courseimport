@@ -259,6 +259,41 @@ class job {
     }
 
     /**
+     * Whether a source→target import has already finished successfully.
+     *
+     * @param int $targetid Target course id.
+     * @param int $sourceid Source course id.
+     * @return bool
+     */
+    public static function has_successful_import(int $targetid, int $sourceid): bool {
+        global $DB;
+        return $DB->record_exists('block_courseimport', [
+            'target' => $targetid,
+            'source' => $sourceid,
+            'status' => self::STATE_FINISHED,
+        ]);
+    }
+
+    /**
+     * Lang string key when bulk submit should not queue this pair, or null to queue.
+     *
+     * Failed imports are not skipped so they can be retried.
+     *
+     * @param int $targetid Target course id.
+     * @param int $sourceid Source course id.
+     * @return string|null One of bulkskipalreadyimported / bulkskipalreadyimporting.
+     */
+    public static function bulk_skip_reason(int $targetid, int $sourceid): ?string {
+        if (self::has_successful_import($targetid, $sourceid)) {
+            return 'bulkskipalreadyimported';
+        }
+        if (self::job_queued($targetid)) {
+            return 'bulkskipalreadyimporting';
+        }
+        return null;
+    }
+
+    /**
      * Gets the context of the source course.
      *
      * @return \context_course

@@ -36,18 +36,19 @@ class bulk_submitter {
      *
      * @param array<int, array<string, mixed>> $pairs Resolved pairs from {@see module_pair_resolver::resolve()}.
      * @param int $userid User submitting the bulk batch.
-     * @return array{bulkjob: bulk_job, created: int, failed: int, failures: array<int, array<string, mixed>>}
+     * @return array{bulkjob: bulk_job, created: int, skipped: int, failed: int, failures: array<int, array<string, mixed>>, skips: array<int, array<string, mixed>>}
      */
     public static function submit(array $pairs, int $userid): array {
         global $DB;
 
         $bulkjob = new bulk_job($userid);
         $bulkjob->save();
-        $bulkjob->set_counts(count($pairs), 0, 0);
 
         $created = 0;
+        $skipped = 0;
         $failed = 0;
         $failures = [];
+        $skips = [];
 
         // Phase 1: Create any pending target courses OUTSIDE a transaction.
         // create_course() fires Moodle events that interact poorly with delegated transactions.
@@ -90,6 +91,17 @@ class bulk_submitter {
         foreach ($resolvedpairs as $pair) {
             $source = (int)($pair['source_id'] ?? 0);
             $target = (int)($pair['target_id'] ?? 0);
+            $skipreason = job::bulk_skip_reason($target, $source);
+            if ($skipreason !== null) {
+                $skipped++;
+                $skips[] = [
+                    'target_id'     => $target,
+                    'source_id'     => $source,
+                    'csv_shortname' => $pair['csv_shortname'] ?? '',
+                    'reason'        => $skipreason,
+                ];
+                continue;
+            }
             try {
                 $backupid = bulk_backup_helper::create_backup_controller($source, $userid);
                 $job = new job($source, $target, $backupid, $userid, $bulkjob->id);
@@ -101,11 +113,13 @@ class bulk_submitter {
             }
         }
 
-        $bulkjob->set_counts(count($pairs), 0, $failed);
+        $bulkjob->set_counts($created, 0, $failed);
         if ($created > 0 && $failed > 0) {
             $bulkjob->set_status(bulk_job::STATUS_PARTIAL);
         } else if ($created > 0) {
             $bulkjob->set_status(bulk_job::STATUS_QUEUED);
+        } else if ($skipped > 0 && $failed === 0) {
+            $bulkjob->set_status(bulk_job::STATUS_COMPLETED);
         } else {
             $bulkjob->set_status(bulk_job::STATUS_FAILED);
         }
@@ -115,8 +129,10 @@ class bulk_submitter {
         return [
             'bulkjob' => $bulkjob,
             'created' => $created,
+            'skipped' => $skipped,
             'failed' => $failed,
             'failures' => $failures,
+            'skips' => $skips,
         ];
     }
 

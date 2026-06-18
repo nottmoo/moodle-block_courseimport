@@ -24,6 +24,7 @@
  */
 namespace block_courseimport\local;
 
+use block_courseimport\job;
 use core\url;
 
 /**
@@ -56,7 +57,9 @@ final class bulk_submit_preview {
     ): string {
         $html = '';
         $html .= $output->heading(get_string('bulkpreviewheading', 'block_courseimport'), 2);
-        $html .= \html_writer::tag('p', get_string('bulkpreviewsummary', 'block_courseimport', (object) $summarycounts));
+        $skipcounts = self::count_skip_and_import($resolvedpairs);
+        $summarydisplay = (object) array_merge($summarycounts, $skipcounts);
+        $html .= \html_writer::tag('p', get_string('bulkpreviewsummary', 'block_courseimport', $summarydisplay));
 
         if ($resolvedpairs) {
             $html .= $output->heading(get_string('bulkpreviewresolved', 'block_courseimport'), 4);
@@ -87,6 +90,7 @@ final class bulk_submit_preview {
                 get_string('bulkpreviewnewtargetheading', 'block_courseimport'),
                 get_string('shortname'),
                 get_string('fullname'),
+                get_string('bulkpreviewaction', 'block_courseimport'),
             ];
             foreach ($pairslice as $pair) {
                 $sourceid = (int) ($pair['source_id'] ?? 0);
@@ -115,6 +119,7 @@ final class bulk_submit_preview {
                     $targetcol,
                     s($pair['csv_shortname'] ?? ''),
                     s($pair['csv_fullname'] ?? ''),
+                    s(self::format_pair_action($pair)),
                 ];
             }
             $html .= \html_writer::table($table);
@@ -161,5 +166,56 @@ final class bulk_submit_preview {
         $html .= $output->single_button($confirmurl, get_string('bulkconfirmsubmit', 'block_courseimport'));
 
         return $html;
+    }
+
+    /**
+     * Counts pairs that will be queued vs skipped on confirm.
+     *
+     * @param array<int, array<string, mixed>> $resolvedpairs
+     * @return array{toimport: int, skipped: int}
+     */
+    protected static function count_skip_and_import(array $resolvedpairs): array {
+        $toimport = 0;
+        $skipped = 0;
+        foreach ($resolvedpairs as $pair) {
+            if (self::pair_skip_reason($pair) !== null) {
+                $skipped++;
+            } else {
+                $toimport++;
+            }
+        }
+        return ['toimport' => $toimport, 'skipped' => $skipped];
+    }
+
+    /**
+     * Lang string key when this pair should be skipped on confirm, or null to queue.
+     *
+     * @param array<string, mixed> $pair
+     * @return string|null
+     */
+    protected static function pair_skip_reason(array $pair): ?string {
+        if (!empty($pair['pending_create'])) {
+            return null;
+        }
+        $targetid = (int) ($pair['target_id'] ?? 0);
+        $sourceid = (int) ($pair['source_id'] ?? 0);
+        if ($targetid < 1 || $sourceid < 1) {
+            return null;
+        }
+        return job::bulk_skip_reason($targetid, $sourceid);
+    }
+
+    /**
+     * Localised action label for a preview row.
+     *
+     * @param array<string, mixed> $pair
+     * @return string
+     */
+    protected static function format_pair_action(array $pair): string {
+        $skipreason = self::pair_skip_reason($pair);
+        if ($skipreason !== null) {
+            return get_string($skipreason, 'block_courseimport');
+        }
+        return get_string('bulkpreviewactionimport', 'block_courseimport');
     }
 }

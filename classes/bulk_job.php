@@ -25,6 +25,9 @@ namespace block_courseimport;
  * @property-read int|null $id The database id of the parent bulk job.
  * @property-read int $userid The id of the user who submitted the bulk job.
  * @property-read string $status Parent bulk status ({@see self::STATUS_QUEUED} etc.).
+ * @property-read int $totalcount Total child imports expected for this bulk batch.
+ * @property-read int $completedcount Child imports finished successfully.
+ * @property-read int $failedcount Child imports that reached a failed terminal state.
  * @package    block_courseimport
  * @copyright  2026 University of Nottingham
  * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
@@ -40,7 +43,7 @@ class bulk_job {
     /** @var string Terminal outcome: all child imports finished successfully. */
     public const STATUS_COMPLETED = 'completed';
 
-    /** @var string Terminal outcome: all child imports failed (or no child imports could be queued). */
+    /** @var string Terminal outcome: all child imports failed, or no imports were queued due to errors. */
     public const STATUS_FAILED = 'failed';
 
     /** @var string Terminal outcome: batch finished with a mix of successful and failed child imports.*/
@@ -91,6 +94,12 @@ class bulk_job {
                 return $this->userid;
             case 'status':
                 return $this->status;
+            case 'totalcount':
+                return $this->totalcount;
+            case 'completedcount':
+                return $this->completedcount;
+            case 'failedcount':
+                return $this->failedcount;
         }
         throw new \coding_exception('Invalid bulk_job property');
     }
