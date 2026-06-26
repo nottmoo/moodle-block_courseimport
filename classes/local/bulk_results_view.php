@@ -35,7 +35,7 @@ final class bulk_results_view {
     /**
      * Rows for the child-jobs table in bulk_status template.
      *
-     * @param array<int, \stdClass> $childrecords Rows already filtered by the caller query.
+     * @param array<int, job> $childrecords Child jobs already filtered by the caller query.
      * @return array<int, array<string, mixed>>
      */
     public static function build_child_job_table_rows(array $childrecords): array {
@@ -43,11 +43,12 @@ final class bulk_results_view {
         $rows = [];
         foreach ($childrecords as $child) {
             $status = (string) $child->status;
-            $targetname = $child->targetname ?? '';
-            $sourcename = $child->sourcename ?? '';
-            $targetcontext = \context_course::instance($child->target, IGNORE_MISSING);
-            $sourcecontext = \context_course::instance($child->source, IGNORE_MISSING);
+            $targetname = (string) $child->targetname;
+            $sourcename = (string) $child->sourcename;
             $targetcourseid = (int) $child->target;
+            $sourcecourseid = (int) $child->source;
+            $targetcontext = \context_course::instance($targetcourseid, IGNORE_MISSING);
+            $sourcecontext = \context_course::instance($sourcecourseid, IGNORE_MISSING);
             $targetlabel = $targetcontext
                 ? $formatter->format_string($targetname, true, $targetcontext)
                 : get_string('bulkcoursedeleted', 'block_courseimport');
@@ -61,7 +62,7 @@ final class bulk_results_view {
                 'source' => $sourcecontext
                     ? $formatter->format_string($sourcename, true, $sourcecontext)
                     : get_string('bulkcoursedeleted', 'block_courseimport'),
-                'sourceid' => (int) $child->source,
+                'sourceid' => $sourcecourseid,
                 'statelabel' => job::format_status_label($status),
             ];
         }

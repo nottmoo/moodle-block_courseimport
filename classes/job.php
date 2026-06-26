@@ -355,6 +355,148 @@ class job {
     }
 
     /**
+     * SQL fragment restricting bulk child rows to finished imports.
+     *
+     * @param bool $completedonly When true, only {@see self::STATE_FINISHED} rows match.
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    protected static function import_jobs_status_filter_sql(bool $completedonly): array {
+        if (!$completedonly) {
+            return ['', []];
+        }
+        return [' AND j.status = :finished', ['finished' => self::STATE_FINISHED]];
+    }
+
+    /**
+     * Base SELECT for child import rows of a bulk parent ({@see create_from_record()} field names).
+     *
+     * @return string
+     */
+    protected static function import_jobs_select_sql(): string {
+        return "SELECT j.*, tc.fullname AS fromname, sc.fullname AS toname
+                  FROM {block_courseimport} j
+             LEFT JOIN {course} tc ON tc.id = j.source
+             LEFT JOIN {course} sc ON sc.id = j.target
+                 WHERE j.bulk_job_id = :bid";
+    }
+
+    /**
+     * Child import jobs for a bulk parent (newest first).
+     *
+     * For an unbounded list use {@see get_import_jobs_recordset()} or
+     * {@see summarize_import_states_for_bulk()}. For counts use {@see count_import_jobs()}.
+     *
+     * @param int $bulkjobid Parent bulk job id.
+     * @param int $limit Max rows per page; must be &gt; 0.
+     * @param int $page Zero-based page index ({@see $limit} rows per page).
+     * @param bool $completedonly When true, only {@see self::STATE_FINISHED} rows match.
+     * @return array<int, self> Job instances keyed by id.
+     * @throws \coding_exception When {@see $limit} is less than 1.
+     */
+    public static function get_import_jobs(
+        int $bulkjobid,
+        int $limit,
+        int $page = 0,
+        bool $completedonly = false
+    ): array {
+        global $DB;
+        if ($limit < 1) {
+            throw new \coding_exception(
+                'Use job::get_import_jobs_recordset() or job::summarize_import_states_for_bulk() for unbounded bulk job lists.'
+            );
+        }
+        $offset = max(0, $page) * $limit;
+        [$statussql, $statusparams] = self::import_jobs_status_filter_sql($completedonly);
+        $params = ['bid' => $bulkjobid] + $statusparams;
+        $sql = self::import_jobs_select_sql() . "{$statussql} ORDER BY j.id DESC";
+        $records = $DB->get_records_sql($sql, $params, $offset, $limit);
+        $jobs = [];
+        foreach ($records as $record) {
+            $jobs[(int) $record->id] = self::create_from_record($record);
+        }
+        return $jobs;
+    }
+
+    /**
+     * Count child import jobs for a bulk parent.
+     *
+     * @param int $bulkjobid Parent bulk job id.
+     * @param bool $completedonly When true, only {@see self::STATE_FINISHED} rows match.
+     * @return int
+     */
+    public static function count_import_jobs(int $bulkjobid, bool $completedonly = false): int {
+        global $DB;
+        [$statussql, $statusparams] = self::import_jobs_status_filter_sql($completedonly);
+        $params = ['bid' => $bulkjobid] + $statusparams;
+        $sql = "SELECT COUNT(1)
+                  FROM {block_courseimport} j
+                 WHERE j.bulk_job_id = :bid
+                       {$statussql}";
+        return (int) $DB->count_records_sql($sql, $params);
+    }
+
+    /**
+     * Streams child import rows for a bulk parent without loading every row into memory.
+     *
+     * The caller must close the recordset. Convert each row with {@see create_from_record()} before use.
+     *
+     * @param int $bulkjobid Parent bulk job id.
+     * @param bool $completedonly When true, only {@see self::STATE_FINISHED} rows match.
+     * @return \moodle_recordset
+     */
+    public static function get_import_jobs_recordset(int $bulkjobid, bool $completedonly = false): \moodle_recordset {
+        global $DB;
+        [$statussql, $statusparams] = self::import_jobs_status_filter_sql($completedonly);
+        $params = ['bid' => $bulkjobid] + $statusparams;
+        $sql = self::import_jobs_select_sql() . "{$statussql} ORDER BY j.id DESC";
+        return $DB->get_recordset_sql($sql, $params);
+    }
+
+    /**
+     * Count child import rows by coarse lifecycle bucket for a bulk parent.
+     *
+     * Counts are fetched directly from the database grouped by status; no job rows are loaded.
+     *
+     * @param int $bulkjobid Parent bulk job id.
+     * @return \stdClass Object with int fields: waiting, processing, active, finished, failed.
+     */
+    public static function summarize_import_states_for_bulk(int $bulkjobid): \stdClass {
+        global $DB;
+        $sql = "SELECT j.status, COUNT(1) AS cnt
+                  FROM {block_courseimport} j
+                 WHERE j.bulk_job_id = :bid
+              GROUP BY j.status";
+        $rows = $DB->get_records_sql($sql, ['bid' => $bulkjobid]);
+        $waitingcount = 0;
+        $processingcount = 0;
+        $finishedcount = 0;
+        $failedcount = 0;
+        foreach ($rows as $row) {
+            $count = (int) $row->cnt;
+            switch ((string) $row->status) {
+                case self::STATE_WAITING:
+                    $waitingcount = $count;
+                    break;
+                case self::STATE_PROCESSING:
+                    $processingcount = $count;
+                    break;
+                case self::STATE_FINISHED:
+                    $finishedcount = $count;
+                    break;
+                default:
+                    $failedcount += $count;
+            }
+        }
+        $out = new \stdClass();
+        $out->waiting = $waitingcount;
+        $out->processing = $processingcount;
+        $out->active = $waitingcount + $processingcount;
+        $out->finished = $finishedcount;
+        $out->failed = $failedcount;
+        return $out;
+    }
+
+    /**
      * Updates the status of the job.
      *
      * @param string $status One of the job::STATE_* constants.

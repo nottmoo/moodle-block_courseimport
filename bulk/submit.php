@@ -15,7 +15,12 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Bulk rollover submit page: thin routing (params → services → output).
+ * Bulk rollover confirmation and queueing page.
+ *
+ * Receives a CSV upload (POST from {@see csv_upload_form}) 
+ * (redirect from bulk/index.php after upload), resolves source/target course pairs,
+ * stores the preview in session, and on confirm queues the bulk parent job and child
+ * import jobs before redirecting to bulk/results.php.
  *
  * @package    block_courseimport
  * @copyright  2026 University of Nottingham
@@ -31,15 +36,13 @@ use block_courseimport\local\bulk_submit_preview;
 use block_courseimport\local\bulk_submit_service;
 use core\url;
 
-global $USER, $OUTPUT, $DB;
-
 require_login();
 $systemcontext = context_system::instance();
 require_capability('block/courseimport:bulkrollover', $systemcontext);
 
 $previewpage = optional_param('previewpage', 0, PARAM_INT);
 $errorpage = optional_param('errorpage', 0, PARAM_INT);
-$confirm = optional_param('confirm', 0, PARAM_INT);
+$confirm = optional_param('confirm', false, PARAM_BOOL);
 $draftidparam = optional_param('draftid', 0, PARAM_INT);
 $rowsperpage = 25;
 
@@ -59,13 +62,25 @@ if ($confirm && confirm_sesskey()) {
             . 'session pack missing or invalid.'
         );
     }
+    /* @global stdClass $USER */
     $result = bulk_submit_service::submit_confirmed_pairs($pack['pairs'], (int) $USER->id);
     $bulkid = $result['bulkjob']->id;
     \core\notification::success(get_string('bulksubmitcreated', 'block_courseimport', [
         'bulkid' => $bulkid,
         'created' => $result['created'],
+        'skipped' => $result['skipped'],
         'failed'  => $result['failed'],
     ]));
+    foreach ($result['skips'] as $skip) {
+        $name = $skip['csv_shortname'] ?? null;
+        if ($name === null && !empty($skip['target_id'])) {
+            $name = '#' . (int) $skip['target_id'];
+        }
+        \core\notification::info(get_string('bulkqueueskip', 'block_courseimport', (object) [
+            'name'   => s($name ?? '?'),
+            'reason' => get_string($skip['reason'] ?? 'bulkskipalreadyimported', 'block_courseimport'),
+        ]));
+    }
     foreach ($result['failures'] as $failure) {
         $name = $failure['csv_shortname'] ?? $failure['shortname'] ?? null;
         if ($name === null && !empty($failure['source_id'])) {
@@ -87,7 +102,7 @@ if ($form->is_cancelled()) {
 }
 
 $payload = null;
-if ($fromform = $form->get_data()) {
+if ($form->get_data()) {
     $csvcontent = $form->get_file_content('csvfile');
     if ($csvcontent === false || $csvcontent === '') {
         throw new \moodle_exception('bulkcsvrequired', 'block_courseimport');
@@ -115,6 +130,8 @@ if ($pack && (isset($pack['pairs']) || isset($pack['errors']))) {
     $PAGE->navbar->add(get_string('bulkrollover', 'block_courseimport'), new url('/blocks/courseimport/bulk/index.php'));
     $PAGE->navbar->add(get_string('bulkpreviewheading', 'block_courseimport'));
 
+    /* @global core_renderer $OUTPUT */
+    /* @global moodle_database $DB */
     echo $OUTPUT->header();
     echo bulk_submit_preview::render_confirmation_preview(
         $OUTPUT,

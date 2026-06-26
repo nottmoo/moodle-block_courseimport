@@ -17,6 +17,7 @@
 namespace block_courseimport\output;
 
 use block_courseimport\bulk_job;
+use block_courseimport\job;
 use block_courseimport\local\bulk_progress;
 use block_courseimport\local\bulk_results_view;
 use core\output\renderable;
@@ -74,10 +75,10 @@ final class bulk_status implements renderable, templatable {
         $maxchildpage = $childtotal > 0 ? (int) ceil($childtotal / $childperpage) - 1 : 0;
         $childpage = min(max(0, $childpage), max(0, $maxchildpage));
 
-        $childrecords = bulk_job::get_import_jobs_for_bulk_job_page(
+        $childrecords = job::get_import_jobs(
             $bulkid,
             $childperpage,
-            $childpage * $childperpage,
+            $childpage,
             $completedonlybool
         );
         $childrows = bulk_results_view::build_child_job_table_rows($childrecords);

@@ -25,6 +25,7 @@
 namespace block_courseimport\local;
 
 use block_courseimport\bulk_job;
+use block_courseimport\job;
 
 /**
  * Percentage helpers for bulk parent jobs.
@@ -70,17 +71,17 @@ final class bulk_progress {
     /**
      * Progress snapshot for bulk status page render and AJAX polling.
      *
-     * @param \stdClass $bulk Parent bulk job DB row.
+     * @param bulk_job $bulk Parent bulk job.
      * @param int $bulkjobid Parent bulk job id (for child-job counts).
      * @return array<string, mixed>
      */
-    public static function snapshot_from_bulk_record(\stdClass $bulk, int $bulkjobid): array {
-        $completed = (int) $bulk->completed_count;
-        $failed = (int) $bulk->failed_count;
-        $total = (int) $bulk->total_count;
+    public static function snapshot_from_bulk_record(bulk_job $bulk, int $bulkjobid): array {
+        $completed = $bulk->completedcount;
+        $failed = $bulk->failedcount;
+        $total = $bulk->totalcount;
         $doneunits = bulk_job::count_done_units($bulk);
         $progresspct = self::percentage_complete($doneunits, $total);
-        $status = (string) $bulk->status;
+        $status = $bulk->status;
 
         return [
             'completed' => $completed,
@@ -94,8 +95,8 @@ final class bulk_progress {
             'hasfailed' => $failed > 0,
             'status' => $status,
             'progresstitle' => bulk_job::get_running_progress_title($status),
-            'childcountall' => bulk_job::count_import_jobs_for_bulk_job($bulkjobid, false),
-            'childcountfinished' => bulk_job::count_import_jobs_for_bulk_job($bulkjobid, true),
+            'childcountall' => job::count_import_jobs($bulkjobid),
+            'childcountfinished' => job::count_import_jobs($bulkjobid, true),
         ];
     }
 }
