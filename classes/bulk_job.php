@@ -317,7 +317,10 @@ class bulk_job {
     }
 
     /**
-     * Sets a terminal status from current success/failure counters.
+     * Sets a final status from current success/failure counters.
+     *
+     * Used when every queued child import has finished ({@see finalize_parent_when_done()},
+     * {@see record_child_finished()}, {@see sync_status_from_children()}).
      *
      * @return void
      */
@@ -328,6 +331,26 @@ class bulk_job {
             $this->set_status(self::STATUS_FAILED);
         } else {
             $this->set_status(self::STATUS_COMPLETED);
+        }
+    }
+
+    /**
+     * Sets parent status immediately after bulk submit, from queue outcome only.
+     *
+     * Pre-queue failures do not affect status here. {@see STATUS_PARTIAL} is only set via
+     * {@see apply_terminal_status()} once all queued child imports have finished.
+     *
+     * @param int $queuedcount Child import jobs successfully queued.
+     * @param int $skippedcount Rows skipped at submit (e.g. already imported).
+     * @return void
+     */
+    public function apply_status_after_submit(int $queuedcount, int $skippedcount): void {
+        if ($queuedcount > 0) {
+            $this->set_status(self::STATUS_QUEUED);
+        } else if ($skippedcount > 0) {
+            $this->set_status(self::STATUS_COMPLETED);
+        } else {
+            $this->set_status(self::STATUS_FAILED);
         }
     }
 

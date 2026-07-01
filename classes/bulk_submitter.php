@@ -113,16 +113,9 @@ class bulk_submitter {
             }
         }
 
-        $bulkjob->set_counts($created, 0, $failed);
-        if ($created > 0 && $failed > 0) {
-            $bulkjob->set_status(bulk_job::STATUS_PARTIAL);
-        } else if ($created > 0) {
-            $bulkjob->set_status(bulk_job::STATUS_QUEUED);
-        } else if ($skipped > 0 && $failed === 0) {
-            $bulkjob->set_status(bulk_job::STATUS_COMPLETED);
-        } else {
-            $bulkjob->set_status(bulk_job::STATUS_FAILED);
-        }
+        // Parent counters track queued child jobs only; pre-queue failures stay in $failures / notifications.
+        $bulkjob->set_counts($created, 0, 0);
+        $bulkjob->apply_status_after_submit($created, $skipped);
 
         $transaction->allow_commit();
 
