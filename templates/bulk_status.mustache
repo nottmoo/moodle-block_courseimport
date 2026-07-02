@@ -37,7 +37,7 @@
     * progresspct Integer 0-100 for the progress bar width.
     * barlabel Localised progress bar label (for example, "4 of 10").
     * bulkid Parent bulk job id (used for root element id and AMD init).
-    * countstext Plain-text line for completed/total/failed counts (matches AJAX poll output).
+    * countstext Plain-text line for completed/total/failed counts (initial server render; AJAX polls build client-side).
     * isrunning When true, shows animated progress card and loads {@see block_courseimport/bulk_status_progress} to poll via web service.
     * hasfailed When isrunning is false, selects warning vs success alert styling.
     * showchildjobfilters When true, renders childjobfilteritems navigation.

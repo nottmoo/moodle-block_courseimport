@@ -33,7 +33,7 @@ use block_courseimport\job;
 final class bulk_progress {
 
     /**
-     * Single-line counts summary for bulk status UI and AJAX polling (plain text).
+     * Single-line counts summary for bulk status initial page render (plain text).
      *
      * @param int $completed Successful child jobs.
      * @param int $total Planned child jobs.
@@ -69,7 +69,7 @@ final class bulk_progress {
     }
 
     /**
-     * Progress snapshot for bulk status page render and AJAX polling.
+     * Progress snapshot for bulk status page render and AJAX polling (numeric fields only).
      *
      * @param bulk_job $bulk Parent bulk job.
      * @param int $bulkjobid Parent bulk job id (for child-job counts).
@@ -89,8 +89,6 @@ final class bulk_progress {
             'total' => $total,
             'doneunits' => $doneunits,
             'progresspct' => $progresspct,
-            'progress' => $progresspct / 100.0,
-            'countstext' => self::format_count_summary_line($completed, $total, $failed),
             'isrunning' => bulk_job::is_parent_still_running($bulk),
             'hasfailed' => $failed > 0,
             'status' => $status,

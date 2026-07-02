@@ -135,7 +135,11 @@ final class bulk_status implements renderable, templatable {
             'progresspct' => $snapshot['progresspct'],
             'isrunning' => $snapshot['isrunning'],
             'hasfailed' => $snapshot['hasfailed'],
-            'countstext' => $snapshot['countstext'],
+            'countstext' => bulk_progress::format_count_summary_line(
+                $snapshot['completed'],
+                $snapshot['total'],
+                $snapshot['failed']
+            ),
             'childpaginationtop' => $childpaginationhtml,
             'childjobs' => $childslice,
             'childheading' => get_string('bulkstatuschildjobs', 'block_courseimport'),

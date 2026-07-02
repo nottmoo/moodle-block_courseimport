@@ -41,53 +41,9 @@ class csv_parser {
     public const HEADER_ID_NUMBER_ALT = 'course id number';
 
     /**
-     * Parses CSV rows from a file path.
-     *
-     * @param string $path Absolute filesystem path to a CSV file.
-     * @return array<int, array<string, string>> List of associative rows.
-     */
-    public static function parse_file(string $path): array {
-        $fh = fopen($path, 'r');
-        if ($fh === false) {
-            return [];
-        }
-        try {
-            return self::parse_from_handle($fh);
-        } finally {
-            fclose($fh);
-        }
-    }
-
-    /**
-     * Parse CSV from raw file contents (e.g. {@see \moodleform::get_file_content()}).
-     *
-     * Uses php://temp so large inputs may spill to disk (PHP default behaviour).
-     *
-     * @param string $content
-     * @return array<int, array<string, string>> List of associative rows
-     */
-    public static function parse_string(string $content): array {
-        if ($content === '') {
-            return [];
-        }
-        // Large inputs use php://temp; may spill to disk, avoiding a second in-memory copy of all rows.
-        $fh = fopen('php://temp', 'r+b');
-        if ($fh === false) {
-            return [];
-        }
-        fwrite($fh, $content);
-        rewind($fh);
-        try {
-            return self::parse_from_handle($fh);
-        } finally {
-            fclose($fh);
-        }
-    }
-
-    /**
      * Reads header + data rows from a handle and invokes the callback once per non-empty data row.
      *
-     * Does not build an array of all rows in memory (unlike {@see self::parse_from_handle()}).
+     * Does not build an array of all rows in memory.
      * The handle must be positioned at the start of the file; the method reads until EOF.
      *
      * @param resource $fh
@@ -116,23 +72,9 @@ class csv_parser {
     }
 
     /**
-     * Parse CSV from an open readable handle (e.g. {@see \stored_file::get_content_file_handle()}).
-     *
-     * @param resource $fh
-     * @return array<int, array<string, string>> List of associative rows
-     */
-    public static function parse_from_handle($fh): array {
-        $rows = [];
-        self::iterate_associative_rows_from_handle($fh, function (array $row, int $i) use (&$rows): void {
-            $rows[$i] = $row;
-        });
-        return $rows;
-    }
-
-    /**
      * Value for one canonical header column (trimmed), or empty if missing.
      *
-     * @param array<string, string> $row Associative row keyed by normalised headers from {@see self::parse_from_handle()}.
+     * @param array<string, string> $row Associative row keyed by normalised headers from {@see iterate_associative_rows_from_handle()}.
      * @param string $canonicalheader Key such as {@see self::HEADER_FULL_NAME}.
      * @return string Trimmed cell value or ''.
      */
@@ -149,9 +91,9 @@ class csv_parser {
      */
     public static function cell_first(array $row, string ...$keys): string {
         foreach ($keys as $key) {
-            $v = self::cell($row, $key);
-            if ($v !== '') {
-                return $v;
+            $value = self::cell($row, $key);
+            if ($value !== '') {
+                return $value;
             }
         }
         return '';

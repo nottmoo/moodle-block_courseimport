@@ -35,9 +35,9 @@ $functions = [
         'ajax' => true,
     ],
     'block_courseimport_get_bulk_job_progress' => [
-        'classname' => '\block_courseimport\external\jobs',
-        'methodname' => 'bulk_progress',
-        'classpath' => '/blocks/courseimport/classes/external/jobs.php',
+        'classname' => '\block_courseimport\external\bulk_jobs',
+        'methodname' => 'progress',
+        'classpath' => '/blocks/courseimport/classes/external/bulk_jobs.php',
         'description' => 'Gets aggregate progress for a bulk rollover parent job',
         'type' => 'read',
         'ajax' => true,
