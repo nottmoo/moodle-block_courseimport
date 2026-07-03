@@ -44,24 +44,28 @@ require_once($CFG->dirroot . '/backup/moodle2/backup_settingslib.php');
  */
 class import_helper {
     /**
-     * Fallback when no plugin config row exists for a toggle key.
+     * Fallback when no plugin config row exists for a profile setting.
      *
-     * Install ({@see xmldb_block_courseimport_install}) and upgrade populate every key from
+     * Install ({@see xmldb_block_courseimport_install}) and upgrade populate every setting from
      * {@see profile_defaults::get_toggle_defaults()}, so this should only apply briefly if ever.
      */
     private const PROFILE_TOGGLE_UNSET_DEFAULT = true;
 
     /**
-     * Whether a profile toggle is enabled (same interpretation as backup/import apply logic).
+     * Whether a profile setting is enabled (same interpretation as backup/import apply logic).
      *
      * Saved site values win; missing rows use {@see self::PROFILE_TOGGLE_UNSET_DEFAULT}
-     * instead of rebuilding per-key defaults from {@see profile_defaults::get_toggle_defaults()}.
+     * instead of rebuilding per-setting defaults from {@see profile_defaults::get_toggle_defaults()}.
      *
-     * @param string $key Config key (same as profile_defaults keys).
+     * @param string $key Profile setting name (without plugin prefix; same as profile_defaults keys).
      * @return bool
      */
-    protected static function profile_toggle_enabled(string $key): bool {
-        return self::config_enabled($key, self::PROFILE_TOGGLE_UNSET_DEFAULT);
+    protected static function config_enabled(string $key): bool {
+        $value = get_config('block_courseimport', $key);
+        if ($value === false) {
+            return self::PROFILE_TOGGLE_UNSET_DEFAULT;
+        }
+        return ((int) $value) === 1;
     }
 
     /**
@@ -72,26 +76,11 @@ class import_helper {
     public static function get_enabled_profile_sidebar_labels(): array {
         $out = [];
         foreach (array_keys(profile_defaults::get_toggle_defaults()) as $key) {
-            if (self::profile_toggle_enabled($key)) {
+            if (self::config_enabled($key)) {
                 $out[] = get_string($key, 'block_courseimport');
             }
         }
         return $out;
-    }
-
-    /**
-     * Gets a boolean plugin config value.
-     *
-     * @param string $key
-     * @param bool $default
-     * @return bool
-     */
-    protected static function config_enabled(string $key, bool $default = true): bool {
-        $value = get_config('block_courseimport', $key);
-        if ($value === false) {
-            return $default;
-        }
-        return ((int)$value) === 1;
     }
 
     /**
@@ -124,27 +113,19 @@ class import_helper {
     }
 
     /**
-     * Applies include/exclude profile toggles from plugin settings.
+     * Applies include/exclude profile settings from plugin config to the backup plan.
+     *
+     * When a profile setting is enabled, the corresponding plan settings are left unchanged
+     * (Moodle core/general import locks and values still apply). When disabled, plan settings
+     * are forced off and locked.
      *
      * @param \backup_plan $plan
      * @return void
      */
     public static function apply_plan_setting_toggles(\backup_plan $plan): void {
-        $toggles = [
-            'includepermissionoverrides' => ['role_assignments'],
-            'includeblocks' => ['blocks'],
-            'includefiles' => ['files'],
-            'includefilters' => ['filters'],
-            'includecalendarevents' => ['calendarevents'],
-            'includequestionbank' => ['questionbank'],
-            'includegroupsgroupings' => ['groups', 'groupings'],
-            'includecustomfields' => ['customfields'],
-            'includecontentbankcontent' => ['contentbankcontent'],
-            'includelegacycoursefiles' => ['legacyfiles'],
-        ];
         $rootsettings = $plan->get_settings();
-        foreach ($toggles as $configkey => $settingnames) {
-            if (self::profile_toggle_enabled($configkey)) {
+        foreach (profile_defaults::get_plan_setting_map() as $configkey => $settingnames) {
+            if (self::config_enabled($configkey)) {
                 continue;
             }
             foreach ($settingnames as $settingname) {
@@ -208,7 +189,7 @@ class import_helper {
      * @return void
      */
     public static function filter_task(\base_task $task) {
-        $includeactivities = self::profile_toggle_enabled('includeactivitiesresources');
+        $includeactivities = self::config_enabled('includeactivitiesresources');
         foreach ($task->get_settings() as $setting) {
             $settingname = $setting->get_name();
 
