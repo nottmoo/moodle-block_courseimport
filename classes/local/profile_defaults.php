@@ -49,4 +49,27 @@ class profile_defaults {
             'includelegacycoursefiles' => '0',
         ];
     }
+
+    /**
+     * Maps profile setting names to backup plan root setting names.
+     *
+     * Keys are a subset of {@see get_toggle_defaults()}. includeactivitiesresources is
+     * applied per-activity in {@see \block_courseimport\import_helper::filter_task()}.
+     *
+     * @return array<string, string[]>
+     */
+    public static function get_plan_setting_map(): array {
+        return [
+            'includepermissionoverrides' => ['role_assignments'],
+            'includeblocks' => ['blocks'],
+            'includefiles' => ['files'],
+            'includefilters' => ['filters'],
+            'includecalendarevents' => ['calendarevents'],
+            'includequestionbank' => ['questionbank'],
+            'includegroupsgroupings' => ['groups', 'groupings'],
+            'includecustomfields' => ['customfields'],
+            'includecontentbankcontent' => ['contentbankcontent'],
+            'includelegacycoursefiles' => ['legacyfiles'],
+        ];
+    }
 }

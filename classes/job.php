@@ -186,15 +186,14 @@ class job {
      * @return job
      */
     public static function create_from_record(\stdClass $record): job {
-        $bulkid = $record->bulk_job_id !== null ? (int) $record->bulk_job_id : null;
-        $job = new job($record->source, $record->target, $record->backupid, $record->userid, $bulkid);
+        $job = new job($record->source, $record->target, $record->backupid, $record->userid, $record->bulk_job_id);
         $job->id = $record->id;
         $job->status = $record->status;
-        if (isset($record->fromname)) {
-            $job->sourcename = $record->fromname;
+        if (property_exists($record, 'fromname')) {
+            $job->sourcename = (string) ($record->fromname ?? '');
         }
-        if (isset($record->toname)) {
-            $job->targetname = $record->toname;
+        if (property_exists($record, 'toname')) {
+            $job->targetname = (string) ($record->toname ?? '');
         }
         // Backup and import progress are stored separately, so we need to combine them.
         $job->progress = (($record->backupprogress + $record->restoreprogress) / 2);
@@ -296,10 +295,10 @@ class job {
     /**
      * Gets the context of the source course.
      *
-     * @return \context_course
+     * @return \context_course|false
      */
-    protected function get_sourcecontext(): \context_course {
-        return \context_course::instance($this->source);
+    protected function get_sourcecontext(): \context_course|false {
+        return \context_course::instance($this->source, IGNORE_MISSING);
     }
 
     /**
@@ -309,7 +308,8 @@ class job {
      */
     protected function get_sourcename(): string {
         if (!isset($this->sourcename)) {
-            $this->sourcename = $this->get_sourcecontext()->get_context_name(false);
+            $context = $this->get_sourcecontext();
+            $this->sourcename = $context ? $context->get_context_name(false) : '';
         }
         return $this->sourcename;
     }
@@ -317,10 +317,10 @@ class job {
     /**
      * Gets the context of the target course.
      *
-     * @return \context_course
+     * @return \context_course|false
      */
-    protected function get_targetcontext(): \context_course {
-        return \context_course::instance($this->target);
+    protected function get_targetcontext(): \context_course|false {
+        return \context_course::instance($this->target, IGNORE_MISSING);
     }
 
     /**
@@ -330,28 +330,59 @@ class job {
      */
     protected function get_targetname(): string {
         if (!isset($this->targetname)) {
-            $this->targetname = $this->get_targetcontext()->get_context_name(false);
+            $context = $this->get_targetcontext();
+            $this->targetname = $context ? $context->get_context_name(false) : '';
         }
         return $this->targetname;
     }
 
     /**
-     * Gets all the queued import jobs.
+     * Gets all the queued import jobs with both source and target courses present.
+     *
+     * Queued rows whose source or target course was deleted are handled by
+     * {@see close_orphaned_queued_jobs()} before the cron task processes the queue.
      *
      * @return \moodle_recordset
      * @throws \dml_exception
      */
     public static function get_queued_jobs(): \moodle_recordset {
         global $DB;
-        // Do not inner-join course: deleted source/target would hide queued jobs forever.
-        $sql = "SELECT ci.*, tc.fullname AS fromname,
-                       sc.fullname AS toname
+        $sql = "SELECT ci.*, tc.fullname AS fromname, sc.fullname AS toname
                   FROM {block_courseimport} ci
-             LEFT JOIN {course} tc ON (tc.id = ci.source)
-             LEFT JOIN {course} sc ON (sc.id = ci.target)
+                  JOIN {course} tc ON tc.id = ci.source
+                  JOIN {course} sc ON sc.id = ci.target
                  WHERE ci.status = :status";
         $params = ['status' => self::STATE_WAITING];
         return $DB->get_recordset_sql($sql, $params);
+    }
+
+    /**
+     * Marks queued imports terminal when their source or target course no longer exists.
+     *
+     * Source missing: failed. Target missing (source still present): finished successfully.
+     *
+     * @return void
+     */
+    public static function close_orphaned_queued_jobs(): void {
+        global $DB;
+        $sql = "SELECT ci.*
+                  FROM {block_courseimport} ci
+                 WHERE ci.status = :waiting
+                   AND (
+                        NOT EXISTS (SELECT 1 FROM {course} c WHERE c.id = ci.source)
+                        OR NOT EXISTS (SELECT 1 FROM {course} c WHERE c.id = ci.target)
+                   )";
+        $records = $DB->get_records_sql($sql, ['waiting' => self::STATE_WAITING]);
+        foreach ($records as $record) {
+            $job = self::create_from_record($record);
+            if (!$DB->record_exists('course', ['id' => $job->source])) {
+                mtrace("Jobid: {$job->id}. Source course {$job->source} no longer exists; marking failed.");
+                $job->set_status(self::STATE_FAILED);
+            } else if (!$DB->record_exists('course', ['id' => $job->target])) {
+                mtrace("Jobid: {$job->id}. Target course {$job->target} no longer exists; marking finished.");
+                $job->set_status(self::STATE_FINISHED);
+            }
+        }
     }
 
     /**
@@ -524,6 +555,12 @@ class job {
         if ($status === static::STATE_PROCESSING) {
             bulk_job::mark_parent_processing_started($bulkjobid);
         } else if ($previous === static::STATE_PROCESSING) {
+            if ($status === static::STATE_FINISHED) {
+                bulk_job::record_child_finished($bulkjobid, true);
+            } else if ($status === static::STATE_FAILED) {
+                bulk_job::record_child_finished($bulkjobid, false);
+            }
+        } else if ($previous === static::STATE_WAITING) {
             if ($status === static::STATE_FINISHED) {
                 bulk_job::record_child_finished($bulkjobid, true);
             } else if ($status === static::STATE_FAILED) {
