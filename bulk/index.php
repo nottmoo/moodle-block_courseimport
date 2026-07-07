@@ -28,7 +28,9 @@
 
 require_once(dirname(__DIR__, 3) . '/config.php');
 
-use block_courseimport\local\bulk_index_page;
+use block_courseimport\local\form\csv_upload_form;
+use block_courseimport\output\bulk_upload;
+use core\url;
 
 global $USER, $OUTPUT;
 
@@ -36,26 +38,26 @@ $systemcontext = context_system::instance();
 require_login();
 require_capability('block/courseimport:bulkrollover', $systemcontext);
 
-$heading = bulk_index_page::get_page_heading();
+$heading = get_string('bulkrolloverheading', 'block_courseimport');
+$formurl = new url('/blocks/courseimport/bulk/index.php');
 $PAGE->set_context($systemcontext);
-$PAGE->set_url(bulk_index_page::get_form_action_url());
+$PAGE->set_url($formurl);
 $PAGE->set_title($heading);
 $PAGE->set_heading($heading);
 $PAGE->set_pagelayout('admin');
 $PAGE->navbar->add(get_string('bulkrollover', 'block_courseimport'));
 
-$form = bulk_index_page::make_upload_form(bulk_index_page::get_form_action_url());
+$form = new csv_upload_form($formurl);
 if ($data = $form->get_data()) {
-    redirect(bulk_index_page::get_post_upload_redirect((int) $data->csvfile));
+    redirect(new url('/blocks/courseimport/bulk/submit.php', ['draftid' => (int) $data->csvfile]));
 }
+
+$blockrenderer = $PAGE->get_renderer('block_courseimport');
 
 echo $OUTPUT->header();
 ob_start();
 $form->display();
 $formhtml = ob_get_clean();
 
-echo $OUTPUT->render_from_template(
-    'block_courseimport/bulk_upload',
-    bulk_index_page::build_upload_template_context((int) $USER->id, $heading, $formhtml)
-);
+echo $blockrenderer->render(bulk_upload::fetch((int) $USER->id, $heading, $formhtml));
 echo $OUTPUT->footer();
