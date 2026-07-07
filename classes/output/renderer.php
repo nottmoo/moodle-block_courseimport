@@ -165,6 +165,17 @@ class renderer extends \core_backup_renderer {
     }
 
     /**
+     * Renders the bulk CSV upload page body ({@see bulk_upload} template).
+     *
+     * @param bulk_upload $bulkupload
+     * @return string
+     */
+    public function render_bulk_upload(bulk_upload $bulkupload): string {
+        $data = $bulkupload->export_for_template($this);
+        return $this->render_from_template('block_courseimport/bulk_upload', $data);
+    }
+
+    /**
      * Renders the bulk job status page body ({@see bulk_status} template).
      *
      * @param bulk_status $bulkstatus
