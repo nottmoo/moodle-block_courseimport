@@ -64,22 +64,19 @@ const handleFetchError = (error, state) => {
 };
 
 /**
- * Updates the counts summary line from localised strings (failed label cached at init).
+ * Updates the counts summary line from a localised string.
  *
  * @param {HTMLElement} counts Counts element.
  * @param {number} completed Successful child jobs.
  * @param {number} total Total child jobs.
  * @param {number} failed Failed child jobs.
- * @param {{failedLabel: string, finishing: boolean}} state Polling state for the current bulk job.
+ * @param {{finishing: boolean}} state Polling state for the current bulk job.
  */
 const updateCountsText = (counts, completed, total, failed, state) => {
-    const failedsuffix = failed > 0
-        ? ' · ' + state.failedLabel + ': ' + failed
-        : '';
     get_string('bulkstatusajaxcounts', 'block_courseimport', {
         completed: completed,
         total: total,
-        failedsuffix: failedsuffix,
+        failed: failed,
     }).then((text) => {
         counts.textContent = text;
     }).catch((error) => {
@@ -127,7 +124,7 @@ const updateFilterCounts = (root, response) => {
  * Requests the latest bulk parent progress from the web service.
  *
  * @param {number} bulkid Parent bulk job id.
- * @param {{checkid: ?number, root: ?HTMLElement, bar: ?HTMLElement, counts: ?HTMLElement, title: ?HTMLElement, inflight: boolean, finishing: boolean, failedLabel: ?string}} state
+ * @param {{checkid: ?number, root: ?HTMLElement, bar: ?HTMLElement, counts: ?HTMLElement, title: ?HTMLElement, inflight: boolean, finishing: boolean}} state
  *      Polling state for the current bulk job.
  */
 const fetchProgress = (bulkid, state) => {
@@ -153,7 +150,7 @@ const fetchProgress = (bulkid, state) => {
  * Applies a bulk progress response to the progress card and filter counts.
  *
  * @param {*} response Web service response for the current bulk job.
- * @param {{checkid: ?number, root: ?HTMLElement, bar: ?HTMLElement, counts: ?HTMLElement, title: ?HTMLElement, finishing: boolean, failedLabel: ?string}} state
+ * @param {{checkid: ?number, root: ?HTMLElement, bar: ?HTMLElement, counts: ?HTMLElement, title: ?HTMLElement, finishing: boolean}} state
  *      Polling state for the current bulk job.
  */
 const applyResponse = (response, state) => {
@@ -164,7 +161,7 @@ const applyResponse = (response, state) => {
         state.bar.setAttribute('aria-valuenow', String(pct));
         updateBarLabel(state.bar, doneunits, Number(response.total), state);
     }
-    if (state.counts && state.failedLabel !== null) {
+    if (state.counts) {
         updateCountsText(
             state.counts,
             Number(response.completed),
@@ -210,15 +207,9 @@ export const init = (bulkid) => {
         title: title,
         inflight: false,
         finishing: false,
-        failedLabel: null,
     };
-    get_string('bulkstatusfailed', 'block_courseimport').then((failedLabel) => {
-        state.failedLabel = failedLabel;
-        state.checkid = setInterval(() => {
-            fetchProgress(bulkid, state);
-        }, checkdelay);
+    state.checkid = setInterval(() => {
         fetchProgress(bulkid, state);
-    }).catch((error) => {
-        handleFetchError(error, state);
-    });
+    }, checkdelay);
+    fetchProgress(bulkid, state);
 };

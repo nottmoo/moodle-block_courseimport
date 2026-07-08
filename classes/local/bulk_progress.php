@@ -14,14 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Bulk job progress calculations (unit-testable).
- *
- * @package    block_courseimport
- * @copyright  2026 University of Nottingham
- * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 namespace block_courseimport\local;
 
 use block_courseimport\bulk_job;
@@ -29,6 +21,11 @@ use block_courseimport\job;
 
 /**
  * Percentage helpers for bulk parent jobs.
+ *
+ * @package    block_courseimport
+ * @copyright  2026 University of Nottingham
+ * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class bulk_progress {
 
@@ -41,13 +38,10 @@ final class bulk_progress {
      * @return string
      */
     public static function format_count_summary_line(int $completed, int $total, int $failed): string {
-        $failedsuffix = $failed > 0
-            ? ' · ' . get_string('bulkstatusfailed', 'block_courseimport') . ': ' . $failed
-            : '';
         return get_string('bulkstatusajaxcounts', 'block_courseimport', (object) [
             'completed' => $completed,
             'total' => $total,
-            'failedsuffix' => $failedsuffix,
+            'failed' => $failed,
         ]);
     }
 
