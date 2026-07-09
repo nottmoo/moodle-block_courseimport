@@ -51,7 +51,7 @@ final class bulk_status implements renderable, templatable {
      *
      * @param int $bulkid Parent bulk job id
      * @param int $childpage Child table page index
-     * @param int $completedonly 1 to list finished child jobs only
+     * @param string $filter Child list {@see job::FILTER_*} key (empty = all)
      * @param int $childperpage Rows per page for child table
      * @return self
      * @throws \moodle_exception
@@ -59,7 +59,7 @@ final class bulk_status implements renderable, templatable {
     public static function fetch(
         int $bulkid,
         int $childpage,
-        int $completedonly,
+        string $filter = job::FILTER_ALL,
         int $childperpage = 20
     ): self {
         global $USER, $PAGE, $OUTPUT;
@@ -67,10 +67,17 @@ final class bulk_status implements renderable, templatable {
         $bulk = bulk_job::load_viewable_bulk($bulkid, (int) $USER->id);
         $snapshot = bulk_progress::snapshot_from_bulk_record($bulk, $bulkid);
 
-        $completedonlybool = (bool) $completedonly;
+        $filter = job::normalise_import_jobs_filter($filter);
         $childcountall = $snapshot['childcountall'];
         $childcountfinished = $snapshot['childcountfinished'];
-        $childtotal = $completedonlybool ? $childcountfinished : $childcountall;
+        $childcountfailed = $snapshot['childcountfailed'];
+        $childcountincomplete = $snapshot['childcountincomplete'];
+        $childtotal = match ($filter) {
+            job::FILTER_FINISHED => $childcountfinished,
+            job::FILTER_FAILED => $childcountfailed,
+            job::FILTER_INCOMPLETE => $childcountincomplete,
+            default => $childcountall,
+        };
 
         $maxchildpage = $childtotal > 0 ? (int) ceil($childtotal / $childperpage) - 1 : 0;
         $childpage = min(max(0, $childpage), max(0, $maxchildpage));
@@ -79,7 +86,7 @@ final class bulk_status implements renderable, templatable {
             $bulkid,
             $childperpage,
             $childpage,
-            $completedonlybool
+            $filter
         );
         $childrows = bulk_results_view::build_child_job_table_rows($childrecords);
 
@@ -91,7 +98,7 @@ final class bulk_status implements renderable, templatable {
 
         $childnavurl = new url('/blocks/courseimport/bulk/results.php', [
             'bulkid' => $bulkid,
-            'completed' => $completedonly,
+            'filter' => $filter,
         ]);
         $childpagination = '';
         if ($childtotal > $childperpage) {
@@ -108,7 +115,7 @@ final class bulk_status implements renderable, templatable {
         $PAGE->set_url(new url('/blocks/courseimport/bulk/results.php', [
             'bulkid' => $bulkid,
             'page' => $childpage,
-            'completed' => $completedonly,
+            'filter' => $filter,
         ]));
         $PAGE->set_title(get_string('bulkstatusid', 'block_courseimport', $bulkid));
         $PAGE->navbar->add(get_string('bulkrollover', 'block_courseimport'), new url('/blocks/courseimport/bulk/index.php'));
@@ -147,9 +154,11 @@ final class bulk_status implements renderable, templatable {
             'showchildjobfilters' => true,
             'childjobfilteritems' => bulk_results_view::child_job_filter_items(
                 $bulkid,
-                $completedonlybool,
+                $filter,
                 $childcountall,
-                $childcountfinished
+                $childcountfinished,
+                $childcountfailed,
+                $childcountincomplete
             ),
         ];
 

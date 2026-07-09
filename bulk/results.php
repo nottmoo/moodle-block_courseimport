@@ -35,7 +35,12 @@ require_capability('block/courseimport:bulkrollover', $systemcontext);
 
 $bulkid = optional_param('bulkid', 0, PARAM_INT);
 $page = optional_param('page', 0, PARAM_INT);
-$completedonly = optional_param('completed', 0, PARAM_INT);
+// Legacy `completed=1` maps to the finished filter for old bookmarks/links.
+$legacycompleted = optional_param('completed', 0, PARAM_INT);
+$filter = optional_param('filter', '', PARAM_ALPHA);
+if ($filter === '' && $legacycompleted) {
+    $filter = \block_courseimport\job::FILTER_FINISHED;
+}
 $perpage = 20;
 $childperpage = 20;
 
@@ -48,7 +53,7 @@ global $USER, $OUTPUT;
 $blockrenderer = $PAGE->get_renderer('block_courseimport');
 
 if ($bulkid) {
-    $bulkstatus = bulk_status::fetch($bulkid, $page, $completedonly, $childperpage);
+    $bulkstatus = bulk_status::fetch($bulkid, $page, $filter, $childperpage);
     echo $OUTPUT->header();
     echo $blockrenderer->render($bulkstatus);
     echo $OUTPUT->footer();

@@ -32,8 +32,8 @@ require_once(dirname(__DIR__, 3) . '/config.php');
 
 use block_courseimport\local\form\csv_upload_form;
 use block_courseimport\local\bulk_submit_confirmation_cache;
-use block_courseimport\local\bulk_submit_preview;
 use block_courseimport\local\bulk_submit_service;
+use block_courseimport\output\bulk_submit_preview;
 use core\url;
 
 require_login();
@@ -130,12 +130,8 @@ if ($pack && (isset($pack['pairs']) || isset($pack['errors']))) {
     $PAGE->navbar->add(get_string('bulkrollover', 'block_courseimport'), new url('/blocks/courseimport/bulk/index.php'));
     $PAGE->navbar->add(get_string('bulkpreviewheading', 'block_courseimport'));
 
-    /* @global core_renderer $OUTPUT */
-    /* @global moodle_database $DB */
-    echo $OUTPUT->header();
-    echo bulk_submit_preview::render_confirmation_preview(
-        $OUTPUT,
-        $DB,
+    $blockrenderer = $PAGE->get_renderer('block_courseimport');
+    $preview = bulk_submit_preview::fetch(
         $resolvedpairs,
         $resolutionerrors,
         $summarycounts,
@@ -143,6 +139,9 @@ if ($pack && (isset($pack['pairs']) || isset($pack['errors']))) {
         $errorpage,
         $rowsperpage
     );
+
+    echo $OUTPUT->header();
+    echo $blockrenderer->render($preview);
     echo $OUTPUT->footer();
     exit;
 }

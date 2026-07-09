@@ -59,6 +59,8 @@ class bulk_jobs extends \core_external\external_api {
             'progresstitle' => $snapshot['progresstitle'],
             'childcountall' => $snapshot['childcountall'],
             'childcountfinished' => $snapshot['childcountfinished'],
+            'childcountfailed' => $snapshot['childcountfailed'],
+            'childcountincomplete' => $snapshot['childcountincomplete'],
             'isrunning' => $snapshot['isrunning'],
         ];
     }
@@ -88,6 +90,8 @@ class bulk_jobs extends \core_external\external_api {
             'progresstitle' => new external_value(PARAM_TEXT, 'Localised progress card title while running'),
             'childcountall' => new external_value(PARAM_INT, 'Total child import jobs linked to this bulk job'),
             'childcountfinished' => new external_value(PARAM_INT, 'Child import jobs in finished state'),
+            'childcountfailed' => new external_value(PARAM_INT, 'Child import jobs in failed state'),
+            'childcountincomplete' => new external_value(PARAM_INT, 'Child import jobs still waiting or processing'),
             'isrunning' => new external_value(PARAM_BOOL, 'True while parent status is queued or processing'),
         ]);
     }

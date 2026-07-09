@@ -58,6 +58,18 @@ class job {
     /** The Job is waiting to be processed. */
     const STATE_WAITING = '222222';
 
+    /** Child list filter: every status. */
+    public const FILTER_ALL = 'all';
+
+    /** Child list filter: {@see self::STATE_FINISHED} only. */
+    public const FILTER_FINISHED = 'finished';
+
+    /** Child list filter: {@see self::STATE_FAILED} only. */
+    public const FILTER_FAILED = 'failed';
+
+    /** Child list filter: waiting or processing (not yet terminal). */
+    public const FILTER_INCOMPLETE = 'incomplete';
+
     /**
      * Localised label for a child import job status code.
      *
@@ -386,16 +398,45 @@ class job {
     }
 
     /**
-     * SQL fragment restricting bulk child rows to finished imports.
+     * Normalises a child-list status filter to a known {@see self::FILTER_*} value.
      *
-     * @param bool $completedonly When true, only {@see self::STATE_FINISHED} rows match.
+     * @param string $filter Requested filter key.
+     * @return string One of FILTER_ALL, FILTER_FINISHED, FILTER_FAILED, FILTER_INCOMPLETE.
+     */
+    public static function normalise_import_jobs_filter(string $filter): string {
+        $allowed = [
+            self::FILTER_ALL,
+            self::FILTER_FINISHED,
+            self::FILTER_FAILED,
+            self::FILTER_INCOMPLETE,
+        ];
+        return in_array($filter, $allowed, true) ? $filter : self::FILTER_ALL;
+    }
+
+    /**
+     * SQL fragment restricting bulk child rows by status filter.
+     *
+     * @param string $filter One of {@see self::FILTER_*}; unknown values behave as FILTER_ALL.
      * @return array{0: string, 1: array<string, mixed>}
      */
-    protected static function import_jobs_status_filter_sql(bool $completedonly): array {
-        if (!$completedonly) {
-            return ['', []];
+    protected static function import_jobs_status_filter_sql(string $filter): array {
+        global $DB;
+        $filter = self::normalise_import_jobs_filter($filter);
+        if ($filter === self::FILTER_FINISHED) {
+            return [' AND j.status = :finished', ['finished' => self::STATE_FINISHED]];
         }
-        return [' AND j.status = :finished', ['finished' => self::STATE_FINISHED]];
+        if ($filter === self::FILTER_FAILED) {
+            return [' AND j.status = :failed', ['failed' => self::STATE_FAILED]];
+        }
+        if ($filter === self::FILTER_INCOMPLETE) {
+            [$insql, $inparams] = $DB->get_in_or_equal(
+                [self::STATE_WAITING, self::STATE_PROCESSING],
+                SQL_PARAMS_NAMED,
+                'incompl'
+            );
+            return [' AND j.status ' . $insql, $inparams];
+        }
+        return ['', []];
     }
 
     /**
@@ -420,7 +461,7 @@ class job {
      * @param int $bulkjobid Parent bulk job id.
      * @param int $limit Max rows per page; must be &gt; 0.
      * @param int $page Zero-based page index ({@see $limit} rows per page).
-     * @param bool $completedonly When true, only {@see self::STATE_FINISHED} rows match.
+     * @param string $filter One of {@see self::FILTER_*}.
      * @return array<int, self> Job instances keyed by id.
      * @throws \coding_exception When {@see $limit} is less than 1.
      */
@@ -428,7 +469,7 @@ class job {
         int $bulkjobid,
         int $limit,
         int $page = 0,
-        bool $completedonly = false
+        string $filter = self::FILTER_ALL
     ): array {
         global $DB;
         if ($limit < 1) {
@@ -437,7 +478,7 @@ class job {
             );
         }
         $offset = max(0, $page) * $limit;
-        [$statussql, $statusparams] = self::import_jobs_status_filter_sql($completedonly);
+        [$statussql, $statusparams] = self::import_jobs_status_filter_sql($filter);
         $params = ['bid' => $bulkjobid] + $statusparams;
         $sql = self::import_jobs_select_sql() . "{$statussql} ORDER BY j.id DESC";
         $records = $DB->get_records_sql($sql, $params, $offset, $limit);
@@ -452,15 +493,15 @@ class job {
      * Count child import jobs for a bulk parent.
      *
      * @param int $bulkjobid Parent bulk job id.
-     * @param bool $completedonly When true, only {@see self::STATE_FINISHED} rows match.
+     * @param string $filter One of {@see self::FILTER_*}.
      * @return int
      */
-    public static function count_import_jobs(int $bulkjobid, bool $completedonly = false): int {
+    public static function count_import_jobs(int $bulkjobid, string $filter = self::FILTER_ALL): int {
         global $DB;
-        [$statussql, $statusparams] = self::import_jobs_status_filter_sql($completedonly);
+        [$statussql, $statusparams] = self::import_jobs_status_filter_sql($filter);
         $params = ['bid' => $bulkjobid] + $statusparams;
         $sql = "SELECT COUNT(1)
-                  FROM {block_courseimport} j
+                  from {block_courseimport} j
                  WHERE j.bulk_job_id = :bid
                        {$statussql}";
         return (int) $DB->count_records_sql($sql, $params);
@@ -472,12 +513,12 @@ class job {
      * The caller must close the recordset. Convert each row with {@see create_from_record()} before use.
      *
      * @param int $bulkjobid Parent bulk job id.
-     * @param bool $completedonly When true, only {@see self::STATE_FINISHED} rows match.
+     * @param string $filter One of {@see self::FILTER_*}.
      * @return \moodle_recordset
      */
-    public static function get_import_jobs_recordset(int $bulkjobid, bool $completedonly = false): \moodle_recordset {
+    public static function get_import_jobs_recordset(int $bulkjobid, string $filter = self::FILTER_ALL): \moodle_recordset {
         global $DB;
-        [$statussql, $statusparams] = self::import_jobs_status_filter_sql($completedonly);
+        [$statussql, $statusparams] = self::import_jobs_status_filter_sql($filter);
         $params = ['bid' => $bulkjobid] + $statusparams;
         $sql = self::import_jobs_select_sql() . "{$statussql} ORDER BY j.id DESC";
         return $DB->get_recordset_sql($sql, $params);

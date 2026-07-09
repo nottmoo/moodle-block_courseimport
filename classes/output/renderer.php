@@ -176,6 +176,17 @@ class renderer extends \core_backup_renderer {
     }
 
     /**
+     * Renders the bulk CSV confirmation preview ({@see bulk_submit_preview} template).
+     *
+     * @param bulk_submit_preview $preview
+     * @return string
+     */
+    public function render_bulk_submit_preview(bulk_submit_preview $preview): string {
+        $data = $preview->export_for_template($this);
+        return $this->render_from_template('block_courseimport/bulk_submit_preview', $data);
+    }
+
+    /**
      * Renders the bulk job status page body ({@see bulk_status} template).
      *
      * @param bulk_status $bulkstatus

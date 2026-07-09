@@ -1,0 +1,152 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template block_courseimport/bulk_submit_preview
+
+    Bulk CSV confirmation preview (bulk/submit.php after upload).
+
+    Context variables required for this template:
+    * summarytext Localised summary line (rows, resolved, unmatched, to import, skipped).
+    * haserrors When true, shows the unmatched rows table (displayed before resolved pairs).
+    * errorrows List of error row objects: rowlabel, errormessage.
+    * errorpaginationtop Raw HTML for pagination above the errors table (may be empty).
+    * errorpaginationbottom Raw HTML for pagination below the errors table (may be empty).
+    * haspairs When true, shows the resolved pairs table (after errors).
+    * pairrows List of resolved pair row objects.
+    * pairpaginationtop Raw HTML for pagination above the pairs table (may be empty).
+    * pairpaginationbottom Raw HTML for pagination below the pairs table (may be empty).
+    * cancelurl URL back to bulk upload when there are no pairs to confirm.
+    * confirmbaseurl Form action URL for confirm submit (when haspairs).
+    * sesskey Session key for confirm submit.
+
+    Example context (json):
+    {
+        "summarytext": "Rows: 2, resolved: 2, unmatched: 0, to import: 2, skipped: 0",
+        "haspairs": true,
+        "pairrows": [
+            {
+                "hassourcecourse": true,
+                "sourceshortname": "SRC101",
+                "sourcefullname": "Source course",
+                "sourceid": 5,
+                "targetisnew": true,
+                "targetid": 0,
+                "csvshortname": "TGT101",
+                "csvfullname": "Target course",
+                "actionlabel": "Will import"
+            }
+        ],
+        "pairpaginationtop": "",
+        "pairpaginationbottom": "",
+        "haserrors": false,
+        "errorrows": [],
+        "errorpaginationtop": "",
+        "errorpaginationbottom": "",
+        "cancelurl": "/blocks/courseimport/bulk/index.php",
+        "confirmbaseurl": "/blocks/courseimport/bulk/submit.php",
+        "sesskey": "abc123"
+    }
+}}
+<div class="block-courseimport-bulk-submit-preview container-fluid">
+    <h2 class="mb-3">{{#str}} bulkpreviewheading, block_courseimport {{/str}}</h2>
+    <p>{{summarytext}}</p>
+
+    {{#haserrors}}
+    <h4 class="mt-4">{{#str}} bulkpreviewerrors, block_courseimport {{/str}}</h4>
+    {{{errorpaginationtop}}}
+    <div class="table-responsive">
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th>{{#str}} bulkpreviewcolrow, block_courseimport {{/str}}</th>
+                    <th>{{#str}} error {{/str}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#errorrows}}
+                <tr>
+                    <td>{{rowlabel}}</td>
+                    <td>{{errormessage}}</td>
+                </tr>
+                {{/errorrows}}
+            </tbody>
+        </table>
+    </div>
+    {{{errorpaginationbottom}}}
+    {{/haserrors}}
+    {{^haserrors}}
+    <p class="mt-4">{{#str}} bulkpreviewnoerrors, block_courseimport {{/str}}</p>
+    {{/haserrors}}
+
+    {{#haspairs}}
+    <h4 class="mt-4">{{#str}} bulkpreviewresolved, block_courseimport {{/str}}</h4>
+    {{{pairpaginationtop}}}
+    <div class="table-responsive">
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th>{{#str}} bulkstatussource, block_courseimport {{/str}}</th>
+                    <th>{{#str}} bulkpreviewnewtargetheading, block_courseimport {{/str}}</th>
+                    <th>{{#str}} shortname {{/str}}</th>
+                    <th>{{#str}} fullname {{/str}}</th>
+                    <th>{{#str}} bulkpreviewaction, block_courseimport {{/str}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#pairrows}}
+                <tr>
+                    <td>
+                        {{#hassourcecourse}}
+                        <span class="font-weight-bold">{{sourceshortname}}</span><br>
+                        <small class="text-muted">{{sourcefullname}}</small>
+                        {{/hassourcecourse}}
+                        {{^hassourcecourse}}
+                        <span class="text-muted">#{{sourceid}}</span>
+                        {{/hassourcecourse}}
+                    </td>
+                    <td>
+                        {{#targetisnew}}
+                        <span class="badge badge-info">{{#str}} bulkpreviewtargetnew, block_courseimport {{/str}}</span>
+                        {{/targetisnew}}
+                        {{^targetisnew}}
+                        <span class="text-muted">#{{targetid}}</span>
+                        {{/targetisnew}}
+                    </td>
+                    <td>{{csvshortname}}</td>
+                    <td>{{csvfullname}}</td>
+                    <td>{{actionlabel}}</td>
+                </tr>
+                {{/pairrows}}
+            </tbody>
+        </table>
+    </div>
+    {{{pairpaginationbottom}}}
+    {{/haspairs}}
+
+    <div class="mt-4">
+        {{^haspairs}}
+        <a class="btn btn-primary" href="{{cancelurl}}">{{#str}} continue {{/str}}</a>
+        {{/haspairs}}
+        {{#haspairs}}
+        <form method="get" action="{{confirmbaseurl}}" class="d-inline">
+            <input type="hidden" name="confirm" value="1">
+            <input type="hidden" name="sesskey" value="{{sesskey}}">
+            <button type="submit" class="btn btn-primary">{{#str}} bulkconfirmsubmit, block_courseimport {{/str}}</button>
+        </form>
+        {{/haspairs}}
+    </div>
+</div>

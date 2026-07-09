@@ -110,14 +110,18 @@ const updateBarLabel = (bar, doneunits, total, state) => {
  * @param {*} response Web service response for the current bulk job.
  */
 const updateFilterCounts = (root, response) => {
-    const allcount = root.querySelector('[data-region="bulk-filter-count"][data-filter="all"]');
-    const finishedcount = root.querySelector('[data-region="bulk-filter-count"][data-filter="finished"]');
-    if (allcount) {
-        allcount.textContent = String(response.childcountall);
-    }
-    if (finishedcount) {
-        finishedcount.textContent = String(response.childcountfinished);
-    }
+    const mappings = [
+        ['all', response.childcountall],
+        ['finished', response.childcountfinished],
+        ['failed', response.childcountfailed],
+        ['incomplete', response.childcountincomplete],
+    ];
+    mappings.forEach(([filterkey, count]) => {
+        const el = root.querySelector('[data-region="bulk-filter-count"][data-filter="' + filterkey + '"]');
+        if (el && typeof count !== 'undefined') {
+            el.textContent = String(count);
+        }
+    });
 };
 
 /**

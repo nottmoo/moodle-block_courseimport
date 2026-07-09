@@ -88,7 +88,9 @@ final class bulk_progress {
             'status' => $status,
             'progresstitle' => bulk_job::get_running_progress_title($status),
             'childcountall' => job::count_import_jobs($bulkjobid),
-            'childcountfinished' => job::count_import_jobs($bulkjobid, true),
+            'childcountfinished' => job::count_import_jobs($bulkjobid, job::FILTER_FINISHED),
+            'childcountfailed' => job::count_import_jobs($bulkjobid, job::FILTER_FAILED),
+            'childcountincomplete' => job::count_import_jobs($bulkjobid, job::FILTER_INCOMPLETE),
         ];
     }
 }

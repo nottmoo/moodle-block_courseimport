@@ -40,6 +40,7 @@ final class bulk_results_view {
      */
     public static function build_child_job_table_rows(array $childrecords): array {
         $formatter = \core\di::get(\core\formatting::class);
+        $deletedlabel = get_string('bulkcoursedeleted', 'block_courseimport');
         $rows = [];
         foreach ($childrecords as $child) {
             $status = (string) $child->status;
@@ -47,21 +48,36 @@ final class bulk_results_view {
             $sourcename = (string) $child->sourcename;
             $targetcourseid = (int) $child->target;
             $sourcecourseid = (int) $child->source;
-            $targetcontext = \context_course::instance($targetcourseid, IGNORE_MISSING);
-            $sourcecontext = \context_course::instance($sourcecourseid, IGNORE_MISSING);
-            $targetlabel = $targetcontext
-                ? $formatter->format_string($targetname, true, $targetcontext)
-                : get_string('bulkcoursedeleted', 'block_courseimport');
-            $targetlinkurl = ($targetcontext && $targetcourseid > 0)
-                ? (new url('/course/view.php', ['id' => $targetcourseid]))->out(false)
-                : '';
+
+            // Empty names come from the course LEFT JOIN when the course no longer exists;
+            // skip context lookup in that case.
+            if ($targetname === '') {
+                $targetlabel = $deletedlabel;
+                $targetlinkurl = '';
+            } else {
+                $targetcontext = \context_course::instance($targetcourseid, IGNORE_MISSING);
+                $targetlabel = $targetcontext
+                    ? $formatter->format_string($targetname, true, $targetcontext)
+                    : $deletedlabel;
+                $targetlinkurl = ($targetcontext && $targetcourseid > 0)
+                    ? (new url('/course/view.php', ['id' => $targetcourseid]))->out(false)
+                    : '';
+            }
+
+            if ($sourcename === '') {
+                $sourcelabel = $deletedlabel;
+            } else {
+                $sourcecontext = \context_course::instance($sourcecourseid, IGNORE_MISSING);
+                $sourcelabel = $sourcecontext
+                    ? $formatter->format_string($sourcename, true, $sourcecontext)
+                    : $deletedlabel;
+            }
+
             $rows[] = [
                 'target' => $targetlabel,
                 'targetid' => $targetcourseid,
                 'targetlinkurl' => $targetlinkurl,
-                'source' => $sourcecontext
-                    ? $formatter->format_string($sourcename, true, $sourcecontext)
-                    : get_string('bulkcoursedeleted', 'block_courseimport'),
+                'source' => $sourcelabel,
                 'sourceid' => $sourcecourseid,
                 'statelabel' => job::format_status_label($status),
             ];
@@ -73,33 +89,51 @@ final class bulk_results_view {
      * Child-job list filters: standard text links with counts (plugins-overview style), not badge buttons.
      *
      * @param int $bulkid Parent bulk job id.
-     * @param bool $completedonly Whether the "completed imports only" filter is active.
+     * @param string $currentfilter Active {@see job::FILTER_*} key.
      * @param int $countall Number of child jobs (all statuses).
      * @param int $countfinished Number of child jobs in {@see job::STATE_FINISHED}.
+     * @param int $countfailed Number of child jobs in {@see job::STATE_FAILED}.
+     * @param int $countincomplete Number of child jobs still waiting or processing.
      * @return array<int, array{url: string, label: string, count: int, filterkey: string, current: bool}>
      */
     public static function child_job_filter_items(
         int $bulkid,
-        bool $completedonly,
+        string $currentfilter,
         int $countall,
-        int $countfinished
+        int $countfinished,
+        int $countfailed,
+        int $countincomplete
     ): array {
         $base = '/blocks/courseimport/bulk/results.php';
-        return [
-            [
-                'url' => (new url($base, ['bulkid' => $bulkid, 'page' => 0, 'completed' => 0]))->out(false),
+        $currentfilter = job::normalise_import_jobs_filter($currentfilter);
+        $filters = [
+            job::FILTER_ALL => [
                 'label' => get_string('bulkshowallchildjobs', 'block_courseimport'),
                 'count' => $countall,
-                'filterkey' => 'all',
-                'current' => !$completedonly,
             ],
-            [
-                'url' => (new url($base, ['bulkid' => $bulkid, 'page' => 0, 'completed' => 1]))->out(false),
+            job::FILTER_FINISHED => [
                 'label' => get_string('bulkshowcompletedchildjobs', 'block_courseimport'),
                 'count' => $countfinished,
-                'filterkey' => 'finished',
-                'current' => $completedonly,
+            ],
+            job::FILTER_FAILED => [
+                'label' => get_string('bulkshowfailedchildjobs', 'block_courseimport'),
+                'count' => $countfailed,
+            ],
+            job::FILTER_INCOMPLETE => [
+                'label' => get_string('bulkshowincompletechildjobs', 'block_courseimport'),
+                'count' => $countincomplete,
             ],
         ];
+        $items = [];
+        foreach ($filters as $filterkey => $filter) {
+            $items[] = [
+                'url' => (new url($base, ['bulkid' => $bulkid, 'page' => 0, 'filter' => $filterkey]))->out(false),
+                'label' => $filter['label'],
+                'count' => $filter['count'],
+                'filterkey' => $filterkey,
+                'current' => $currentfilter === $filterkey,
+            ];
+        }
+        return $items;
     }
 }

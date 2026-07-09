@@ -63,15 +63,31 @@
         "showchildjobfilters": true,
         "childjobfilteritems": [
             {
-                "url": "/blocks/courseimport/bulk/results.php?bulkid=42&completed=0",
-                "label": "All imports",
+                "url": "/blocks/courseimport/bulk/results.php?bulkid=42&filter=all",
+                "label": "Show all jobs for this bulk course import",
                 "count": 10,
+                "filterkey": "all",
                 "current": true
             },
             {
-                "url": "/blocks/courseimport/bulk/results.php?bulkid=42&completed=1",
-                "label": "Completed only",
+                "url": "/blocks/courseimport/bulk/results.php?bulkid=42&filter=finished",
+                "label": "Show completed jobs only",
                 "count": 4,
+                "filterkey": "finished",
+                "current": false
+            },
+            {
+                "url": "/blocks/courseimport/bulk/results.php?bulkid=42&filter=failed",
+                "label": "Show failed jobs only",
+                "count": 1,
+                "filterkey": "failed",
+                "current": false
+            },
+            {
+                "url": "/blocks/courseimport/bulk/results.php?bulkid=42&filter=incomplete",
+                "label": "Show jobs that have not completed",
+                "count": 5,
+                "filterkey": "incomplete",
                 "current": false
             }
         ],
