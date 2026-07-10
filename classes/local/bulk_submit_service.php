@@ -14,14 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Bulk submit flow: draft file → confirmation session payload, and confirm → submit.
- *
- * @package    block_courseimport
- * @copyright  2026 University of Nottingham
- * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 namespace block_courseimport\local;
 
 use block_courseimport\bulk_config;
@@ -31,13 +23,16 @@ use block_courseimport\module_pair_resolver;
 
 /**
  * Server-side bulk CSV processing used by bulk/submit.php.
+ *
+ * @package    block_courseimport
+ * @copyright  2026 University of Nottingham
+ * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class bulk_submit_service {
 
     /**
      * Parses CSV from raw bytes (e.g. {@see \moodleform::get_file_content()}).
-     *
-     * Uses a stream and row-by-row parsing so parsed rows are not all held in memory at once.
      *
      * @param string $csvcontent
      * @return array{pairs: array, errors: array, summary: array}
@@ -47,45 +42,34 @@ final class bulk_submit_service {
         if ($csvcontent === '') {
             throw new \moodle_exception('bulkcsvrequired', 'block_courseimport');
         }
-        $fh = fopen('php://temp', 'r+b');
-        if ($fh === false) {
-            throw new \moodle_exception('bulkcsvrequired', 'block_courseimport');
-        }
-        fwrite($fh, $csvcontent);
-        rewind($fh);
-        try {
-            return self::build_confirmation_payload_from_handle($fh);
-        } finally {
-            fclose($fh);
-        }
+        return self::build_confirmation_payload_from_parser(csv_parser::from_string($csvcontent));
     }
 
     /**
-     * Builds confirmation payload by streaming one CSV row at a time (bounded memory for row parsing).
+     * Builds confirmation payload by resolving each standard CSV row.
      *
-     * @param resource $fh Readable handle at start of CSV (caller closes).
+     * @param csv_parser $csv Parser positioned before the first data row.
      * @return array{pairs: array, errors: array, summary: array}
      */
-    private static function build_confirmation_payload_from_handle($fh): array {
+    private static function build_confirmation_payload_from_parser(csv_parser $csv): array {
         $resolved = [];
         $errors = [];
         $datacount = 0;
         $maxrows = bulk_config::MAX_CSV_ROWS;
 
-        $rowcallback = function (array $row, int $i) use (&$resolved, &$errors, &$datacount, $maxrows): void {
+        foreach ($csv as $rowindex => $row) {
             $datacount++;
             if ($datacount > $maxrows) {
                 throw new \moodle_exception('bulkmaxrowsexceeded', 'block_courseimport', '', $maxrows);
             }
-            $r = module_pair_resolver::resolve_row($i, $row);
-            if ($r['pair'] !== null) {
-                $resolved[$i] = $r['pair'];
+            $resolution = module_pair_resolver::resolve_row($rowindex, $row);
+            if ($resolution['pair'] !== null) {
+                $resolved[$rowindex] = $resolution['pair'];
             }
-            if ($r['error'] !== null) {
-                $errors[$i] = $r['error'];
+            if ($resolution['error'] !== null) {
+                $errors[$rowindex] = $resolution['error'];
             }
-        };
-        csv_parser::iterate_associative_rows_from_handle($fh, $rowcallback);
+        }
 
         if ($datacount === 0) {
             throw new \moodle_exception('bulkcsvrequired', 'block_courseimport');
@@ -143,7 +127,7 @@ final class bulk_submit_service {
             throw new \moodle_exception('bulkcsvinvalidtype', 'block_courseimport');
         }
         try {
-            return self::build_confirmation_payload_from_handle($handle);
+            return self::build_confirmation_payload_from_parser(csv_parser::from_handle($handle));
         } finally {
             fclose($handle);
         }

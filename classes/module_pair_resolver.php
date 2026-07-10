@@ -35,19 +35,15 @@ class module_pair_resolver {
      * Resolves one CSV data row (same logic as one iteration of {@see self::resolve()}).
      *
      * @param int $index 0-based index among non-empty data rows (matches keys used by {@see self::resolve()}).
-     * @param array<string, string> $row
+     * @param array{fullname: string, shortname: string, idnumber: string} $row Standard row from {@see csv_parser}.
      * @return array{pair: ?array<string, mixed>, error: ?array<string, mixed>} Exactly one of pair or error is non-null.
      */
     public static function resolve_row(int $index, array $row): array {
-        $fullname = csv_parser::cell($row, csv_parser::HEADER_FULL_NAME);
-        $shortname = csv_parser::cell($row, csv_parser::HEADER_SHORT_NAME);
-        $idnumber = csv_parser::cell_first(
-            $row,
-            csv_parser::HEADER_ID_NUMBER,
-            csv_parser::HEADER_ID_NUMBER_ALT
-        );
+        $fullname = $row[csv_parser::FIELD_FULLNAME];
+        $shortname = $row[csv_parser::FIELD_SHORTNAME];
+        $idnumber = $row[csv_parser::FIELD_IDNUMBER];
 
-        $target = self::find_target_course($row, $shortname, $fullname, $idnumber);
+        $target = self::find_target_course($shortname, $fullname, $idnumber);
         if ($target) {
             $source = self::resolve_source_with_fallbacks($target, $shortname);
             if (!$source) {
@@ -113,7 +109,7 @@ class module_pair_resolver {
      *
      * Array keys are preserved as row indices (same as {@see self::resolve_row()}).
      *
-     * @param array<int, array<string, string>> $rows Parsed CSV rows keyed by 0-based row index.
+     * @param array<int, array{fullname: string, shortname: string, idnumber: string}> $rows Parsed CSV rows keyed by 0-based row index.
      * @return array{
      *     resolved: array<int, array<string, mixed>>,
      *     errors: array<int, array<string, mixed>>
@@ -122,13 +118,13 @@ class module_pair_resolver {
     public static function resolve(array $rows): array {
         $resolved = [];
         $errors = [];
-        foreach ($rows as $i => $row) {
-            $r = self::resolve_row((int) $i, $row);
-            if ($r['pair'] !== null) {
-                $resolved[$i] = $r['pair'];
+        foreach ($rows as $rowindex => $row) {
+            $resolution = self::resolve_row((int) $rowindex, $row);
+            if ($resolution['pair'] !== null) {
+                $resolved[$rowindex] = $resolution['pair'];
             }
-            if ($r['error'] !== null) {
-                $errors[$i] = $r['error'];
+            if ($resolution['error'] !== null) {
+                $errors[$rowindex] = $resolution['error'];
             }
         }
         return ['resolved' => $resolved, 'errors' => $errors];
@@ -137,31 +133,19 @@ class module_pair_resolver {
     /**
      * Resolves the target course for a CSV row.
      *
-     * Order: Moodle course id (optional column) → shortname (exact, then case-insensitive) → fullname
-     * (only when CSV shortname is non-empty) → idnumber.
+     * Order: shortname (exact, then case-insensitive) → fullname → idnumber.
      *
-     * @param array<string, string> $row Parsed row with normalised header keys from {@see csv_parser}.
-     * @param string $shortname Value under {@see csv_parser::HEADER_SHORT_NAME}.
-     * @param string $fullname Value under {@see csv_parser::HEADER_FULL_NAME}.
-     * @param string $idnumber First non-empty of id number / course id number columns.
+     * @param string $shortname Target course short name from the CSV row.
+     * @param string $fullname Target course full name from the CSV row.
+     * @param string $idnumber Target course idnumber from the CSV row.
      * @return \stdClass|null Course record, or null if none matched.
      */
     protected static function find_target_course(
-        array $row,
         string $shortname,
         string $fullname,
         string $idnumber
     ): ?\stdClass {
         global $DB;
-
-        $tid = self::row_target_id($row);
-        if ($tid > 0) {
-            try {
-                return get_course($tid);
-            } catch (\Throwable $e) {
-                return null;
-            }
-        }
 
         if ($shortname !== '') {
             $c = $DB->get_record('course', ['shortname' => $shortname], '*', IGNORE_MISSING);
@@ -321,20 +305,6 @@ class module_pair_resolver {
         $search = new search(['url' => $dummyurl], (int) $target->id);
         $candidates = $search->get_shortnameresults($modulecode, \core_text::strtolower($target->shortname));
         return self::pick_source_course($candidates, $details['yearcode'] ?? null);
-    }
-
-    /**
-     * Moodle internal course id from the CSV “course id” column when present and numeric.
-     *
-     * @param array<string, string> $row Parsed row with normalised header keys from {@see csv_parser}.
-     * @return int Course id, or 0 if missing or invalid.
-     */
-    protected static function row_target_id(array $row): int {
-        $raw = csv_parser::cell($row, 'course id');
-        if ($raw !== '' && is_numeric($raw)) {
-            return (int) $raw;
-        }
-        return 0;
     }
 
     /**
