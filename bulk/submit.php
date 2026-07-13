@@ -30,6 +30,7 @@
 
 require_once(dirname(__DIR__, 3) . '/config.php');
 
+use block_courseimport\bulk_submitter;
 use block_courseimport\local\form\csv_upload_form;
 use block_courseimport\local\bulk_submit_confirmation_cache;
 use block_courseimport\local\bulk_submit_service;
@@ -63,7 +64,7 @@ if ($confirm && confirm_sesskey()) {
         );
     }
     /* @global stdClass $USER */
-    $result = bulk_submit_service::submit_confirmed_pairs($pack['pairs'], (int) $USER->id);
+    $result = bulk_submitter::submit($pack['pairs'], (int) $USER->id);
     $bulkid = $result['bulkjob']->id;
     \core\notification::success(get_string('bulksubmitcreated', 'block_courseimport', [
         'bulkid' => $bulkid,

@@ -51,8 +51,8 @@ class module_pair_resolver {
                     'pair' => null,
                     'error' => [
                         'row' => $index + 1,
-                        'error' => get_string('bulkerrorsourcenotfound', 'block_courseimport'),
-                        'target_id' => (int) $target->id,
+                        'errortype' => 'bulkerrorsourcenotfound',
+                        'params' => (object) ['targetid' => (int) $target->id],
                     ],
                 ];
             }
@@ -76,7 +76,8 @@ class module_pair_resolver {
                 'pair' => null,
                 'error' => [
                     'row' => $index + 1,
-                    'error' => get_string('bulkerrortargetnotfound', 'block_courseimport', $fullname),
+                    'errortype' => 'bulkerrortargetnotfound',
+                    'params' => (object) ['fullname' => $fullname],
                 ],
             ];
         }
@@ -86,7 +87,7 @@ class module_pair_resolver {
                 'pair' => null,
                 'error' => [
                     'row' => $index + 1,
-                    'error' => get_string('bulkinvalidcreaterow', 'block_courseimport'),
+                    'errortype' => 'bulkinvalidcreaterow',
                 ],
             ];
         }

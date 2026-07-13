@@ -138,7 +138,9 @@ final class bulk_submit_preview implements renderable, templatable {
             foreach ($errslice as $err) {
                 $errorrows[] = [
                     'rowlabel' => isset($err['row']) ? (string) $err['row'] : '',
-                    'errormessage' => s(bulk_submit_service::format_preview_error($err)),
+                    'errortype' => (string) ($err['errortype'] ?? 'bulkunknownerror'),
+                    'errorparams' => !empty($err['params']) ? $err['params'] : null,
+                    'errormessage' => bulk_submit_service::format_preview_error($err),
                 ];
             }
         }

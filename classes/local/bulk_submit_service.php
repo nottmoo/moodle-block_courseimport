@@ -17,7 +17,6 @@
 namespace block_courseimport\local;
 
 use block_courseimport\bulk_config;
-use block_courseimport\bulk_submitter;
 use block_courseimport\csv_parser;
 use block_courseimport\module_pair_resolver;
 
@@ -134,30 +133,16 @@ final class bulk_submit_service {
     }
 
     /**
-     * Queues import jobs for the confirmed pair list.
+     * Formats a preview error row using its lang string identifier and parameters.
      *
-     * @param array<int, array<string, mixed>> $pairs
-     * @param int $userid
-     * @return array<string, mixed> Same shape as {@see bulk_submitter::submit()}.
-     */
-    public static function submit_confirmed_pairs(array $pairs, int $userid): array {
-        return bulk_submitter::submit($pairs, $userid);
-    }
-
-    /**
-     * Unmatched row message for preview.
-     *
-     * @param array<string, mixed> $errorrow
+     * @param array<string, mixed> $errorrow Keys: errortype (string), optional params (object|array).
      * @return string
      */
     public static function format_preview_error(array $errorrow): string {
-        $msg = (string) ($errorrow['error'] ?? get_string('bulkunknownerror', 'block_courseimport'));
-        $parts = [$msg];
-        foreach (['target_id', 'modulecode', 'shortname'] as $key) {
-            if (!empty($errorrow[$key])) {
-                $parts[] = $key . ': ' . $errorrow[$key];
-            }
+        $errortype = (string) ($errorrow['errortype'] ?? 'bulkunknownerror');
+        if (!empty($errorrow['params'])) {
+            return get_string($errortype, 'block_courseimport', $errorrow['params']);
         }
-        return implode(' — ', $parts);
+        return get_string($errortype, 'block_courseimport');
     }
 }
