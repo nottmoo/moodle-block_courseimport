@@ -16,14 +16,12 @@
 
 namespace block_courseimport;
 
-use core\url;
-use local_uonlib\course_utils;
+use enrol_nottingham\relationship;
 
 /**
- * Resolve CSV rows to source/target pairs: target by id → shortname → fullname → idnumber; source by prior-year shortname + search.
- * Rows without a CSV shortname do not use fullname to resolve the target (UoN courses use the naming convention on shortname).
- * If there is no target but a prior-year source matches via rolled-back shortname, the pair may set pending_create when
- * bulk new-course category is configured in plugin settings.
+ * Resolve CSV rows to source/target pairs: target by shortname (verified with fullname and idnumber);
+ * source from the existing enrol_nottingham ancestor link only.
+ * Both the source and target courses must already exist; bulk import never creates courses.
  *
  * @package    block_courseimport
  * @copyright  2026 University of Nottingham
@@ -35,7 +33,8 @@ class module_pair_resolver {
      * Resolves one CSV data row (same logic as one iteration of {@see self::resolve()}).
      *
      * @param int $index 0-based index among non-empty data rows (matches keys used by {@see self::resolve()}).
-     * @param array{fullname: string, shortname: string, idnumber: string} $row Standard row from {@see csv_parser}.
+     * @param array{fullname: string, shortname: string, idnumber: string} $row
+     *      Standard non-empty row from {@see csv_parser} (missing values are rejected by the parser).
      * @return array{pair: ?array<string, mixed>, error: ?array<string, mixed>} Exactly one of pair or error is non-null.
      */
     public static function resolve_row(int $index, array $row): array {
@@ -43,63 +42,42 @@ class module_pair_resolver {
         $shortname = $row[csv_parser::FIELD_SHORTNAME];
         $idnumber = $row[csv_parser::FIELD_IDNUMBER];
 
-        $target = self::find_target_course($shortname, $fullname, $idnumber);
-        if ($target) {
-            $source = self::resolve_source_with_fallbacks($target, $shortname);
-            if (!$source) {
-                return [
-                    'pair' => null,
-                    'error' => [
-                        'row' => $index + 1,
-                        'errortype' => 'bulkerrorsourcenotfound',
-                        'params' => (object) ['targetid' => (int) $target->id],
-                    ],
-                ];
-            }
-
+        $targetlookup = self::find_target_course($shortname, $fullname, $idnumber);
+        if ($targetlookup['error'] !== null) {
             return [
-                'pair' => [
-                    'target_id' => (int) $target->id,
-                    'source_id' => (int) $source->id,
-                    'csv_fullname' => $fullname,
-                    'csv_shortname' => $shortname,
-                    'csv_idnumber' => $idnumber,
+                'pair' => null,
+                'error' => [
+                    'row' => $index + 1,
+                    'errortype' => $targetlookup['error'],
+                    'params' => (object) [
+                        'shortname' => $shortname,
+                        'fullname' => $fullname,
+                        'idnumber' => $idnumber,
+                    ],
                 ],
-                'error' => null,
             ];
         }
+        $target = $targetlookup['course'];
 
-        // No target: try prior-year course from CSV shortname only; create empty target on confirm if category is set.
-        $source = self::find_prior_year_source_from_csv_strings($shortname);
+        $source = self::resolve_source($target);
         if (!$source) {
             return [
                 'pair' => null,
                 'error' => [
                     'row' => $index + 1,
-                    'errortype' => 'bulkerrortargetnotfound',
-                    'params' => (object) ['fullname' => $fullname],
-                ],
-            ];
-        }
-
-        if ($shortname === '' || $fullname === '') {
-            return [
-                'pair' => null,
-                'error' => [
-                    'row' => $index + 1,
-                    'errortype' => 'bulkinvalidcreaterow',
+                    'errortype' => 'bulkerrorsourcenotfound',
+                    'params' => (object) ['targetid' => (int) $target->id],
                 ],
             ];
         }
 
         return [
             'pair' => [
-                'target_id' => 0,
+                'target_id' => (int) $target->id,
                 'source_id' => (int) $source->id,
                 'csv_fullname' => $fullname,
                 'csv_shortname' => $shortname,
                 'csv_idnumber' => $idnumber,
-                'pending_create' => true,
             ],
             'error' => null,
         ];
@@ -132,211 +110,54 @@ class module_pair_resolver {
     }
 
     /**
-     * Resolves the target course for a CSV row.
+     * Finds the target course by shortname, then verifies fullname and idnumber from the CSV.
      *
-     * Order: shortname (exact, then case-insensitive) → fullname → idnumber.
+     * Caller must pass a parser-validated row: fullname, shortname and idnumber are all non-empty.
      *
      * @param string $shortname Target course short name from the CSV row.
      * @param string $fullname Target course full name from the CSV row.
      * @param string $idnumber Target course idnumber from the CSV row.
-     * @return \stdClass|null Course record, or null if none matched.
+     * @return array{course: ?\stdClass, error: ?string} Course on success; error lang string id on failure.
      */
     protected static function find_target_course(
         string $shortname,
         string $fullname,
         string $idnumber
-    ): ?\stdClass {
+    ): array {
         global $DB;
 
-        if ($shortname !== '') {
-            $c = $DB->get_record('course', ['shortname' => $shortname], '*', IGNORE_MISSING);
-            if ($c) {
-                return $c;
-            }
-            $c = $DB->get_record_sql(
-                'SELECT * FROM {course} WHERE ' . $DB->sql_equal('LOWER(shortname)', ':sn', false, true) . ' AND id <> :siteid',
-                ['sn' => \core_text::strtolower($shortname), 'siteid' => SITEID],
-                IGNORE_MULTIPLE
-            );
-            if ($c) {
-                return $c;
-            }
-
-            if ($fullname !== '') {
-                $recs = $DB->get_records_select(
-                    'course',
-                    $DB->sql_equal('LOWER(fullname)', ':fn', false, true) . ' AND id <> :siteid',
-                    ['fn' => \core_text::strtolower($fullname), 'siteid' => SITEID],
-                    'id ASC',
-                    '*',
-                    0,
-                    1
-                );
-                if ($recs) {
-                    return reset($recs);
-                }
-            }
-        }
-
-        if ($idnumber !== '') {
-            $c = $DB->get_record('course', ['idnumber' => $idnumber], '*', IGNORE_MISSING);
-            if ($c) {
-                return $c;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Finds a prior-year source course when no target exists, using CSV shortname only.
-     *
-     * @param string $csvshort Current-year shortname from the CSV (convention-backed).
-     * @return \stdClass|null Prior-year course, or null if shortname empty or no unique match.
-     */
-    protected static function find_prior_year_source_from_csv_strings(string $csvshort): ?\stdClass {
-        if ($csvshort === '') {
-            return null;
-        }
-        return self::find_course_by_rolled_back_shortname($csvshort);
-    }
-
-    /**
-     * Source: previous-year shortname → module shortname search.
-     */
-    protected static function resolve_source_with_fallbacks(
-        \stdClass $target,
-        string $csvshort
-    ): ?\stdClass {
-        $snbase = $csvshort !== '' ? $csvshort : $target->shortname;
-        $c = self::find_course_by_rolled_back_shortname($snbase, (int) $target->id);
-        if ($c) {
-            return $c;
-        }
-
-        return self::resolve_source_by_module_search($target, $csvshort);
-    }
-
-    /**
-     * Looks up a course one academic year earlier than the given shortname.
-     *
-     * Same rules as {@see \enrol_nottingham\relationship::ancestor_search()}: exact prior-year code,
-     * case-insensitive match, then {@see course_utils::shortname_match_sql()} with semester/offering relaxed.
-     *
-     * @param string $shortname Shortname for the newer intake (parsed by {@see course_utils::change_year()}).
-     * @param int|null $excludecourseid When set, omit this course id from matches (e.g. the target course).
-     * @return \stdClass|null Matching course, or null if no year in shortname, no match, or multiple ambiguous matches.
-     */
-    private static function find_course_by_rolled_back_shortname(string $shortname, ?int $excludecourseid = null): ?\stdClass {
-        global $DB;
-
-        $previousshortname = course_utils::change_year($shortname, -1);
-        if ($previousshortname === null) {
-            return null;
-        }
-
-        $select = 'shortname = :sn AND id <> :siteid';
-        $params = ['sn' => $previousshortname, 'siteid' => SITEID];
-        if ($excludecourseid !== null && $excludecourseid > 0) {
-            $select .= ' AND id <> :excludeid';
-            $params['excludeid'] = $excludecourseid;
-        }
-        $c = $DB->get_record_select('course', $select, $params, '*', IGNORE_MULTIPLE);
-        if ($c) {
-            return $c;
-        }
-
-        $selectlower = $DB->sql_equal('LOWER(shortname)', ':snlower', false, true) . ' AND id <> :siteid';
-        $paramslower = [
-            'snlower' => \core_text::strtolower($previousshortname),
-            'siteid' => SITEID,
-        ];
-        if ($excludecourseid !== null && $excludecourseid > 0) {
-            $selectlower .= ' AND id <> :excludeid';
-            $paramslower['excludeid'] = $excludecourseid;
-        }
-        $c = $DB->get_record_select('course', $selectlower, $paramslower, '*', IGNORE_MULTIPLE);
-        if ($c) {
-            return $c;
-        }
-
-        list($similarlike, $similarparams) = course_utils::shortname_match_sql(
-            $previousshortname,
-            '',
-            true,
-            false,
-            true,
-            false
+        $course = $DB->get_record(
+            'course',
+            ['shortname' => $shortname],
+            'id, fullname, shortname, idnumber',
+            IGNORE_MISSING
         );
-        $similarparams['siteid'] = SITEID;
-        $conds = ['id <> :siteid', $similarlike];
-        if ($excludecourseid !== null && $excludecourseid > 0) {
-            $similarparams['excludeid'] = $excludecourseid;
-            $conds[] = 'id <> :excludeid';
-        }
-        $sql = 'SELECT * FROM {course} WHERE ' . implode(' AND ', $conds);
-        $similarversions = $DB->get_records_sql($sql, $similarparams);
-        if (!$similarversions || count($similarversions) > 1) {
-            return null;
+        if (!$course) {
+            return ['course' => null, 'error' => 'bulkerrortargetnotfound'];
         }
 
-        return reset($similarversions);
+        if ($course->fullname !== $fullname || (string) $course->idnumber !== $idnumber) {
+            return ['course' => null, 'error' => 'bulkerrortargetmismatch'];
+        }
+
+        return ['course' => $course, 'error' => null];
     }
 
     /**
-     * Fallback source resolution: search by module code in shortname, then pick best prior year.
+     * Resolves the source course from the existing enrol_nottingham ancestor link.
      *
-     * @param \stdClass $target Target course (for module details and search context).
-     * @param string $csvshort Optional CSV shortname to parse module details when the target record is insufficient.
-     * @return \stdClass|null A candidate source course, or null.
+     * Uses {@see relationship::ancestor()} only. If a prior-year course can be linked,
+     * {@see relationship::ancestor_search()} will already have done so (including any
+     * semester/offering relaxation). Bulk must not re-search or relax matching itself.
+     *
+     * @param \stdClass $target Target course already matched from the CSV.
+     * @return \stdClass|null
      */
-    protected static function resolve_source_by_module_search(\stdClass $target, string $csvshort): ?\stdClass {
-        $details = course_utils::get_module_details($target);
-        if ($details === false && $csvshort !== '') {
-            $details = course_utils::get_module_details((object) ['shortname' => $csvshort]);
-        }
-        if ($details === false) {
+    protected static function resolve_source(\stdClass $target): ?\stdClass {
+        $ancestor = relationship::ancestor((int) $target->id);
+        if ($ancestor === false) {
             return null;
         }
-        $modulecode = $details['modulecode'] ?? '';
-        if ($modulecode === '') {
-            return null;
-        }
-        $dummyurl = new url('/blocks/courseimport/import.php', ['id' => (int) $target->id]);
-        $search = new search(['url' => $dummyurl], (int) $target->id);
-        $candidates = $search->get_shortnameresults($modulecode, \core_text::strtolower($target->shortname));
-        return self::pick_source_course($candidates, $details['yearcode'] ?? null);
-    }
-
-    /**
-     * Chooses the best prior-year source course from module-code search candidates.
-     *
-     * Candidates whose academic year code is present and {@see $targetyear} is set are skipped when
-     * their year is greater than or equal to the target’s year (avoid same-year / newer intake).
-     * Among the remainder, the course with the highest year code wins; if none qualify, the first
-     * candidate is returned.
-     *
-     * @param array<int, \stdClass> $candidates Candidate courses from {@see search::get_shortnameresults()}.
-     * @param string|null $targetyear Target course module year code from {@see course_utils::get_module_details()}, or null.
-     * @return \stdClass|null The chosen course, or null when $candidates is empty.
-     */
-    protected static function pick_source_course(array $candidates, ?string $targetyear): ?\stdClass {
-        if (!$candidates) {
-            return null;
-        }
-        $best = null;
-        $bestyear = -1;
-        foreach ($candidates as $c) {
-            $d = course_utils::get_module_details($c);
-            $y = isset($d['yearcode']) ? (int) $d['yearcode'] : 0;
-            if ($targetyear !== null && (int) $targetyear > 0 && $y > 0 && $y >= (int) $targetyear) {
-                continue;
-            }
-            if ($y > $bestyear) {
-                $bestyear = $y;
-                $best = $c;
-            }
-        }
-        return $best ?? reset($candidates);
+        return $ancestor;
     }
 }

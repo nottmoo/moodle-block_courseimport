@@ -32,8 +32,8 @@
     * formhtml Raw HTML for the Moodle form (from moodleform::display()).
     * activebulknotice Optional object when the user has a queued bulk job: url (string), jobid (int).
     * enableditems List of objects with key label (string) for the sidebar checklist.
-    * cansettings When true, the import profile sidebar is shown; omitted users see no sidebar.
-    * settingsurl Block admin settings URL; set only when cansettings is true.
+    * showsettings When true, the import profile sidebar is shown; omitted users see no sidebar.
+    * settingsurl Block admin settings URL; set only when showsettings is true.
 
     Example context (json):
     {
@@ -48,13 +48,13 @@
             {"label": "Activities"},
             {"label": "Blocks"}
         ],
-        "cansettings": true,
+        "showsettings": true,
         "settingsurl": "/admin/settings.php?section=blocksettingcourseimport"
     }
 }}
 <div class="block-courseimport-bulk-upload container-fluid">
     <div class="row">
-        <div class="{{#cansettings}}col-lg-8 col-md-7{{/cansettings}}{{^cansettings}}col-12{{/cansettings}}">
+        <div class="{{#showsettings}}col-lg-8 col-md-7{{/showsettings}}{{^showsettings}}col-12{{/showsettings}}">
             <h2 class="mb-2">{{heading}}</h2>
             {{#statusurl}}
             <div class="mb-3">
@@ -75,7 +75,7 @@
                 </div>
             </div>
         </div>
-        {{#cansettings}}
+        {{#showsettings}}
         <div class="col-lg-4 col-md-5 mt-4 mt-md-0">
             <div class="card h-100 border-secondary">
                 <div class="card-header">
@@ -95,6 +95,6 @@
                 </div>
             </div>
         </div>
-        {{/cansettings}}
+        {{/showsettings}}
     </div>
 </div>

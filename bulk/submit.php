@@ -56,15 +56,21 @@ $PAGE->set_title(get_string('bulkrolloverheading', 'block_courseimport'));
 // Handle confirm before instantiating the form to avoid session writes from form registration.
 if ($confirm && confirm_sesskey()) {
     $pack = bulk_submit_confirmation_cache::get_pack();
-    bulk_submit_confirmation_cache::delete_pack();
-    if (empty($pack['pairs']) || !is_array($pack['pairs'])) {
-        throw new \core\exception\coding_exception(
-            'Bulk rollover confirm: expected non-empty pairs array in session after confirm/sesskey; '
-            . 'session pack missing or invalid.'
-        );
+    if ($pack === null) {
+        \core\notification::error(get_string('bulkconfirmexpired', 'block_courseimport'));
+        redirect(new url('/blocks/courseimport/bulk/index.php'));
     }
+    if (empty($pack['pairs']) || !is_array($pack['pairs'])) {
+        bulk_submit_confirmation_cache::delete_pack();
+        \core\notification::error(get_string('bulkconfirminemptypairs', 'block_courseimport'));
+        redirect(new url('/blocks/courseimport/bulk/index.php'));
+    }
+    $pairs = $pack['pairs'];
+    // Clear after we know the pack is valid so a failed double-submit cannot clear a good preview early.
+    bulk_submit_confirmation_cache::delete_pack();
+
     /* @global stdClass $USER */
-    $result = bulk_submitter::submit($pack['pairs'], (int) $USER->id);
+    $result = bulk_submitter::submit($pairs, (int) $USER->id);
     $bulkid = $result['bulkjob']->id;
     \core\notification::success(get_string('bulksubmitcreated', 'block_courseimport', [
         'bulkid' => $bulkid,

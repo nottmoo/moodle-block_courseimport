@@ -43,8 +43,7 @@
                 "sourceshortname": "SRC101",
                 "sourcefullname": "Source course",
                 "sourceid": 5,
-                "targetisnew": true,
-                "targetid": 0,
+                "targetid": 99,
                 "csvshortname": "TGT101",
                 "csvfullname": "Target course",
                 "actionlabel": "Will import"
@@ -100,7 +99,7 @@
             <thead>
                 <tr>
                     <th>{{#str}} bulkstatussource, block_courseimport {{/str}}</th>
-                    <th>{{#str}} bulkpreviewnewtargetheading, block_courseimport {{/str}}</th>
+                    <th>{{#str}} bulkstatustarget, block_courseimport {{/str}}</th>
                     <th>{{#str}} shortname {{/str}}</th>
                     <th>{{#str}} fullname {{/str}}</th>
                     <th>{{#str}} bulkpreviewaction, block_courseimport {{/str}}</th>
@@ -119,12 +118,7 @@
                         {{/hassourcecourse}}
                     </td>
                     <td>
-                        {{#targetisnew}}
-                        <span class="badge badge-info">{{#str}} bulkpreviewtargetnew, block_courseimport {{/str}}</span>
-                        {{/targetisnew}}
-                        {{^targetisnew}}
                         <span class="text-muted">#{{targetid}}</span>
-                        {{/targetisnew}}
                     </td>
                     <td>{{csvshortname}}</td>
                     <td>{{csvfullname}}</td>
@@ -142,7 +136,7 @@
         <a class="btn btn-primary" href="{{cancelurl}}">{{#str}} continue {{/str}}</a>
         {{/haspairs}}
         {{#haspairs}}
-        <form method="get" action="{{confirmbaseurl}}" class="d-inline">
+        <form method="post" action="{{confirmbaseurl}}" class="d-inline">
             <input type="hidden" name="confirm" value="1">
             <input type="hidden" name="sesskey" value="{{sesskey}}">
             <button type="submit" class="btn btn-primary">{{#str}} bulkconfirmsubmit, block_courseimport {{/str}}</button>

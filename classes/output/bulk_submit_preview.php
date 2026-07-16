@@ -104,7 +104,6 @@ final class bulk_submit_preview implements renderable, templatable {
                     'sourceshortname' => $sourcecourse ? s($sourcecourse->shortname) : '',
                     'sourcefullname' => $sourcecourse ? s($sourcecourse->fullname) : '',
                     'sourceid' => $sourceid,
-                    'targetisnew' => !empty($pair['pending_create']),
                     'targetid' => (int) ($pair['target_id'] ?? 0),
                     'csvshortname' => s($pair['csv_shortname'] ?? ''),
                     'csvfullname' => s($pair['csv_fullname'] ?? ''),
@@ -226,9 +225,6 @@ final class bulk_submit_preview implements renderable, templatable {
      * @return string|null
      */
     protected static function pair_skip_reason(array $pair): ?string {
-        if (!empty($pair['pending_create'])) {
-            return null;
-        }
         $targetid = (int) ($pair['target_id'] ?? 0);
         $sourceid = (int) ($pair['source_id'] ?? 0);
         if ($targetid < 1 || $sourceid < 1) {

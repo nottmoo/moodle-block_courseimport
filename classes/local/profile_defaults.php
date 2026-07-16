@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Import profile default settings shared by admin UI, install, and upgrade.
+ * Import profile default settings shared by the admin UI ({@see settings.php}).
  *
  * @package    block_courseimport
  * @copyright  2026 University of Nottingham

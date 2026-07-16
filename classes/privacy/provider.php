@@ -19,11 +19,11 @@ namespace block_courseimport\privacy;
 use core_privacy\local\metadata\collection;
 use core_privacy\local\request\approved_contextlist;
 use core_privacy\local\request\contextlist;
-use core_privacy\local\request\helper;
 use core_privacy\local\request\writer;
 use core_privacy\local\request\transform;
 use core_privacy\local\request\approved_userlist;
 use core_privacy\local\request\userlist;
+use block_courseimport\bulk_job;
 use block_courseimport\job;
 
 /**
@@ -61,6 +61,22 @@ class provider implements
             'timemodified' => 'privacy:metadata:block_courseimport:timemodified',
         ];
         $collection->add_database_table('block_courseimport', $jobs, 'privacy:metadata:block_courseimport');
+
+        $bulkjobs = [
+            'userid' => 'privacy:metadata:block_courseimport_bulk_job:userid',
+            'status' => 'privacy:metadata:block_courseimport_bulk_job:status',
+            'total_count' => 'privacy:metadata:block_courseimport_bulk_job:total_count',
+            'completed_count' => 'privacy:metadata:block_courseimport_bulk_job:completed_count',
+            'failed_count' => 'privacy:metadata:block_courseimport_bulk_job:failed_count',
+            'timecreated' => 'privacy:metadata:block_courseimport_bulk_job:timecreated',
+            'timemodified' => 'privacy:metadata:block_courseimport_bulk_job:timemodified',
+        ];
+        $collection->add_database_table(
+            'block_courseimport_bulk_job',
+            $bulkjobs,
+            'privacy:metadata:block_courseimport_bulk_job'
+        );
+
         // Does not export data from Moodle to another system.
         // Does not store any user preferences.
         return $collection;
@@ -76,7 +92,8 @@ class provider implements
         global $DB;
         $contextlist = new contextlist();
         $contextlist->set_component('block_courseimport');
-        if ($DB->record_exists('block_courseimport', ['userid' => $userid])) {
+        if ($DB->record_exists('block_courseimport', ['userid' => $userid])
+                || $DB->record_exists('block_courseimport_bulk_job', ['userid' => $userid])) {
             $contextlist->add_user_context($userid);
         }
         return $contextlist;
@@ -96,17 +113,25 @@ class provider implements
             return;
         }
         $user = $contextlist->get_user();
+        $params = ['userid' => $user->id];
+
         $sql = "SELECT ci.*, sc.fullname AS sourcename, tc.fullname AS targetname
                   FROM {block_courseimport} ci
              LEFT JOIN {course} sc ON sc.id = ci.source
              LEFT JOIN {course} tc ON tc.id = ci.target
                  WHERE ci.userid = :userid";
-        $params = ['userid' => $user->id];
         $records = $DB->get_records_sql($sql, $params);
         if (!empty($records)) {
             $subcontext = [get_string('privacy:export:jobs', 'block_courseimport')];
             $jobs = (object) array_map([__CLASS__, 'transform_job'], $records);
             writer::with_context($context)->export_data($subcontext, $jobs);
+        }
+
+        $bulkrecords = $DB->get_records('block_courseimport_bulk_job', ['userid' => $user->id], 'id ASC');
+        if (!empty($bulkrecords)) {
+            $bulksubcontext = [get_string('privacy:export:bulkjobs', 'block_courseimport')];
+            $bulkjobs = (object) array_map([__CLASS__, 'transform_bulk_job'], $bulkrecords);
+            writer::with_context($context)->export_data($bulksubcontext, $bulkjobs);
         }
     }
 
@@ -142,8 +167,7 @@ class provider implements
     /**
      * Get users who have data within a context.
      *
-     * @param $userlist The userlist containing the list of users who have data in this context/plugin combination.
-     *
+     * @param userlist $userlist The userlist containing the list of users who have data in this context/plugin combination.
      */
     public static function get_users_in_context(userlist $userlist) {
         $context = $userlist->get_context();
@@ -162,6 +186,13 @@ class provider implements
                        AND ctx.contextlevel = :contextuser
                  WHERE ctx.id = :contextid";
         $userlist->add_from_sql('userid', $sql, $params);
+
+        $bulksql = "SELECT bj.userid AS userid
+                      FROM {block_courseimport_bulk_job} bj
+                      JOIN {context} ctx ON ctx.instanceid = bj.userid
+                           AND ctx.contextlevel = :contextuser
+                     WHERE ctx.id = :contextid";
+        $userlist->add_from_sql('userid', $bulksql, $params);
     }
 
     /**
@@ -180,7 +211,7 @@ class provider implements
     }
 
     /**
-     * Deletes only jobs that have been processed for a single user.
+     * Deletes finished import and bulk jobs for a single user.
      *
      * We must not delete records that are being processed as that could break a running import.
      * We should not delete jobs until they have been processed.
@@ -192,8 +223,16 @@ class provider implements
         global $DB;
         $exclude = [job::STATE_PROCESSING, job::STATE_WAITING];
         list($sql, $params) = $DB->get_in_or_equal($exclude, SQL_PARAMS_NAMED, 'status', false);
-        $select = "status $sql AND userid = $userid";
+        $select = "status $sql AND userid = :userid";
+        $params['userid'] = $userid;
         $DB->delete_records_select('block_courseimport', $select, $params);
+
+        // Keep bulk parents that are still queued or processing so in-flight work is not broken.
+        $bulkexclude = [bulk_job::STATUS_QUEUED, bulk_job::STATUS_PROCESSING];
+        list($bulksql, $bulkparams) = $DB->get_in_or_equal($bulkexclude, SQL_PARAMS_NAMED, 'bstatus', false);
+        $bulkselect = "status $bulksql AND userid = :userid";
+        $bulkparams['userid'] = $userid;
+        $DB->delete_records_select('block_courseimport_bulk_job', $bulkselect, $bulkparams);
     }
 
     /**
@@ -203,11 +242,33 @@ class provider implements
      * @return array
      */
     protected static function transform_job(\stdClass $record): array {
-        return [
+        $data = [
             'sourcecourse' => "$record->source : $record->sourcename",
             'targetcourse' => "$record->target : $record->targetname",
             'backupid' => $record->backupid,
             'status' => job::format_status_label($record->status),
+            'timecreated' => transform::datetime($record->timecreated),
+            'timemodified' => transform::datetime($record->timemodified),
+        ];
+        if (!empty($record->bulk_job_id)) {
+            $data['bulk_job_id'] = (int) $record->bulk_job_id;
+        }
+        return $data;
+    }
+
+    /**
+     * Formats a bulk parent job record for export.
+     *
+     * @param \stdClass $record
+     * @return array
+     */
+    protected static function transform_bulk_job(\stdClass $record): array {
+        return [
+            'id' => (int) $record->id,
+            'status' => bulk_job::format_status_label($record->status),
+            'total_count' => (int) $record->total_count,
+            'completed_count' => (int) $record->completed_count,
+            'failed_count' => (int) $record->failed_count,
             'timecreated' => transform::datetime($record->timecreated),
             'timemodified' => transform::datetime($record->timemodified),
         ];

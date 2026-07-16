@@ -76,7 +76,6 @@ final class bulk_submit_service {
 
         $pairs = array_values($resolved);
         $seentargets = [];
-        $seencreateshortnames = [];
         foreach ($pairs as $pair) {
             $targetid = (int) ($pair['target_id'] ?? 0);
             if ($targetid > 0 && isset($seentargets[$targetid])) {
@@ -84,13 +83,6 @@ final class bulk_submit_service {
             }
             if ($targetid > 0) {
                 $seentargets[$targetid] = true;
-            }
-            if (!empty($pair['pending_create'])) {
-                $short = \core_text::strtolower(trim((string) ($pair['csv_shortname'] ?? '')));
-                if ($short !== '' && isset($seencreateshortnames[$short])) {
-                    throw new \moodle_exception('bulkduplicateshortnames', 'block_courseimport');
-                }
-                $seencreateshortnames[$short] = true;
             }
         }
 

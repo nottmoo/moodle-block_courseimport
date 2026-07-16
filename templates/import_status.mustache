@@ -18,13 +18,17 @@
     @template block_courseimport/import_status
 
     Single-course import progress: heading, core async progress bar, detail text, and return button.
+    Initialises block_courseimport/async via the template {{js}} section to poll job progress.
+    The AMD module selects elements by id using backupid as a prefix (for example #{{backupid}},
+    #{{backupid}}_status, #{{backupid}}_bar from core/async_backup_progress, #{{backupid}}_detail,
+    #{{backupid}}_button).
     See {@link https://moodledev.io/docs/5.0/guides/templates#documenting-the-templates template documentation}.
 
     Classes required for JS:
-    * block_courseimport/async (initialised from this template; polls block_courseimport_get_job_progress)
+    * none
 
     Data attributes required for JS:
-    * none (uses element ids: container `#{{backupid}}`, bar `#{{backupid}}_bar` from core/async_backup_progress partial)
+    * none
 
     Context variables required for this template:
     * backupid Import job id (string or int) used as HTML id prefix and passed to Async.init().
@@ -40,7 +44,7 @@
         "operation": "backup"
     }
 }}
-<div class="progressbar_container mb-4" id="{{backupid}}">
+<div class="progressbar_container" id="{{backupid}}">
     <h3 id="{{backupid}}_status">{{# str }} importpending, block_courseimport {{/ str }}</h3>
     {{> core/async_backup_progress }}
     <p id="{{backupid}}_detail">{{# str }} asyncnowait, backup {{/ str }}</p>

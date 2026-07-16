@@ -44,18 +44,10 @@ require_once($CFG->dirroot . '/backup/moodle2/backup_settingslib.php');
  */
 class import_helper {
     /**
-     * Fallback when no plugin config row exists for a profile setting.
-     *
-     * Install ({@see xmldb_block_courseimport_install}) and upgrade populate every setting from
-     * {@see profile_defaults::get_toggle_defaults()}, so this should only apply briefly if ever.
-     */
-    private const PROFILE_TOGGLE_UNSET_DEFAULT = true;
-
-    /**
      * Whether a profile setting is enabled (same interpretation as backup/import apply logic).
      *
-     * Saved site values win; missing rows use {@see self::PROFILE_TOGGLE_UNSET_DEFAULT}
-     * instead of rebuilding per-setting defaults from {@see profile_defaults::get_toggle_defaults()}.
+     * Saved site values win; missing rows use the matching default from
+     * {@see profile_defaults::get_toggle_defaults()} (same defaults as the admin settings page).
      *
      * @param string $key Profile setting name (without plugin prefix; same as profile_defaults keys).
      * @return bool
@@ -63,7 +55,8 @@ class import_helper {
     protected static function config_enabled(string $key): bool {
         $value = get_config('block_courseimport', $key);
         if ($value === false) {
-            return self::PROFILE_TOGGLE_UNSET_DEFAULT;
+            $defaults = profile_defaults::get_toggle_defaults();
+            $value = $defaults[$key] ?? '0';
         }
         return ((int) $value) === 1;
     }

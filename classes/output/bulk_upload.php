@@ -61,9 +61,9 @@ final class bulk_upload implements renderable, templatable {
         }
 
         $systemcontext = \context_system::instance();
-        $cansettings = has_capability('block/courseimport:manage', $systemcontext)
+        $showsettings = has_capability('block/courseimport:manage', $systemcontext)
             || has_capability('moodle/site:config', $systemcontext);
-        $settingsurl = $cansettings
+        $settingsurl = $showsettings
             ? (new url('/admin/settings.php', ['section' => 'blocksettingcourseimport']))->out(false)
             : '';
 
@@ -82,7 +82,7 @@ final class bulk_upload implements renderable, templatable {
             'formhtml' => $formhtml,
             'activebulknotice' => $activebulknotice,
             'enableditems' => $enableditems,
-            'cansettings' => $cansettings,
+            'showsettings' => $showsettings,
             'settingsurl' => $settingsurl,
         ]);
     }

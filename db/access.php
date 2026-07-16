@@ -76,7 +76,6 @@ $capabilities = [
         ],
     ],
     'block/courseimport:bulkrollover' => [
-        'riskbitmask' => RISK_DATALOSS,
         'captype' => 'write',
         'contextlevel' => CONTEXT_SYSTEM,
         'archetypes' => [

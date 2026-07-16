@@ -92,12 +92,6 @@ function xmldb_block_courseimport_upgrade($oldversion) {
             $dbman->create_table($bulktable);
         }
 
-        foreach (\block_courseimport\local\profile_defaults::get_toggle_defaults() as $key => $value) {
-            if (get_config('block_courseimport', $key) === false) {
-                set_config($key, $value, 'block_courseimport');
-            }
-        }
-
         upgrade_block_savepoint(true, 2026041700, 'courseimport');
     }
 
