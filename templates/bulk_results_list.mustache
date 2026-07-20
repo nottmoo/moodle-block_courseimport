@@ -26,23 +26,22 @@
     * none
 
     Context variables required for this template:
-    * heading Page title.
-    * hasjobs If true, table and paging are shown; if false, emptymessage is shown.
-    * paginationtext Short summary of the visible row range (may be empty when hasjobs is false).
+    * hasjobs If true, table and paging are shown; if false, the empty state is shown.
+    * from First visible row number (1-based) when hasjobs is true.
+    * to Last visible row number when hasjobs is true.
+    * total Total parent bulk jobs across all pages.
     * pagingtop Raw HTML for paging controls above the table (often empty when not needed).
-    * pagingbottom Raw HTML for paging controls below the table.
-    * tableheaders Array of column header strings (same length as columns in jobrows).
+    * pagingbottom Raw HTML for paging controls below the table (same markup as pagingtop).
     * jobrows List of row objects: idlabel, total, completed, failed, status, progressdisplay, viewlink (raw HTML link).
-    * emptymessage Message when hasjobs is false.
 
     Example context (json):
     {
-        "heading": "Bulk rollover jobs",
         "hasjobs": true,
-        "paginationtext": "Showing 1 to 2 of 2",
+        "from": 1,
+        "to": 2,
+        "total": 2,
         "pagingtop": "",
         "pagingbottom": "",
-        "tableheaders": ["Job", "Total", "Completed", "Failed", "Status", "Progress", ""],
         "jobrows": [
             {
                 "idlabel": "#101",
@@ -53,22 +52,25 @@
                 "progressdisplay": "40%",
                 "viewlink": "<a href=\\"#\\">View</a>"
             }
-        ],
-        "emptymessage": "No bulk jobs yet."
+        ]
     }
 }}
 <div class="block-courseimport-bulk-results-list">
-    <h2>{{heading}}</h2>
+    <h2>{{#str}} bulkstatuslistheading, block_courseimport {{/str}}</h2>
 
     {{#hasjobs}}
-        <div class="mb-2 text-muted">{{paginationtext}}</div>
+        <div class="mb-2 text-muted">{{#str}}bulkpagination, block_courseimport, {"from": {{from}}, "to": {{to}}, "total": {{total}}}{{/str}}</div>
         {{{pagingtop}}}
         <table class="generaltable">
             <thead>
                 <tr>
-                    {{#tableheaders}}
-                        <th>{{.}}</th>
-                    {{/tableheaders}}
+                    <th>{{#str}} bulkstatuscolumnd, block_courseimport {{/str}}</th>
+                    <th>{{#str}} bulkstatustotal, block_courseimport {{/str}}</th>
+                    <th>{{#str}} bulkstatuscompleted, block_courseimport {{/str}}</th>
+                    <th>{{#str}} bulkstatusfailed, block_courseimport {{/str}}</th>
+                    <th>{{#str}} bulkstatusstate, block_courseimport {{/str}}</th>
+                    <th>{{#str}} bulkstatusprogress, block_courseimport {{/str}}</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -88,6 +90,6 @@
         {{{pagingbottom}}}
     {{/hasjobs}}
     {{^hasjobs}}
-        <div class="alert alert-info">{{emptymessage}}</div>
+        <div class="alert alert-info">{{#str}} bulkstatusnone, block_courseimport {{/str}}</div>
     {{/hasjobs}}
 </div>

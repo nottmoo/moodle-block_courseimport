@@ -24,7 +24,7 @@ use core\output\templatable;
 use core\url;
 
 /**
- * Bulk job list on {@see results.php} (no bulkid): table + paging.
+ * Bulk job list for bulk/results.php when no bulkid is set (table + paging).
  *
  * @package    block_courseimport
  * @copyright  2026 University of Nottingham
@@ -68,7 +68,7 @@ final class bulk_results_list implements renderable, templatable {
     }
 
     /**
-     * Load list state and set page URL (list view).
+     * Load list state for a page of results (pagination base URL is returned in state).
      *
      * @param int $userid Current user id
      * @param int $page Page index for parent-job list
@@ -76,12 +76,9 @@ final class bulk_results_list implements renderable, templatable {
      * @return self
      */
     public static function fetch(int $userid, int $page, int $perpage): self {
-        global $PAGE;
-
         $totalcount = bulk_job::count_for_user($userid);
         $jobs = bulk_job::list_for_user_page($userid, $perpage, $page);
         $listbaseurl = new url('/blocks/courseimport/bulk/results.php');
-        $PAGE->set_url($listbaseurl, ['page' => $page]);
 
         return new self($jobs, $totalcount, $page, $perpage, $listbaseurl);
     }
@@ -114,36 +111,19 @@ final class bulk_results_list implements renderable, templatable {
         $from = $this->page * $this->perpage + 1;
         $to = $this->page * $this->perpage + count($jobrows);
 
-        $paginationtext = '';
-        $pagingtop = '';
-        $pagingbottom = '';
+        $paging = '';
         if ($hasjobs) {
-            $paginationtext = get_string('bulkpagination', 'block_courseimport', (object) [
-                'from' => $from,
-                'to' => $to,
-                'total' => $this->totalcount,
-            ]);
-            $pagingtop = $output->paging_bar($this->totalcount, $this->page, $this->perpage, $this->listbaseurl);
-            $pagingbottom = $pagingtop;
+            $paging = $output->paging_bar($this->totalcount, $this->page, $this->perpage, $this->listbaseurl);
         }
 
         return [
-            'heading' => get_string('bulkstatuslistheading', 'block_courseimport'),
             'hasjobs' => $hasjobs,
-            'paginationtext' => $paginationtext,
-            'pagingtop' => $pagingtop,
-            'pagingbottom' => $pagingbottom,
-            'tableheaders' => [
-                get_string('bulkstatuscolumnd', 'block_courseimport'),
-                get_string('bulkstatustotal', 'block_courseimport'),
-                get_string('bulkstatuscompleted', 'block_courseimport'),
-                get_string('bulkstatusfailed', 'block_courseimport'),
-                get_string('bulkstatusstate', 'block_courseimport'),
-                get_string('bulkstatusprogress', 'block_courseimport'),
-                '',
-            ],
+            'from' => $from,
+            'to' => $to,
+            'total' => $this->totalcount,
+            'pagingtop' => $paging,
+            'pagingbottom' => $paging,
             'jobrows' => $jobrows,
-            'emptymessage' => get_string('bulkstatusnone', 'block_courseimport'),
         ];
     }
 }
