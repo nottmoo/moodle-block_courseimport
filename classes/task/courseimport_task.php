@@ -16,7 +16,6 @@
 
 namespace block_courseimport\task;
 
-use block_courseimport\bulk_job;
 use block_courseimport\job;
 use block_courseimport\job_failed;
 use block_courseimport\messenger;
@@ -38,6 +37,21 @@ require_once($CFG->dirroot . '/backup/util/ui/import_extensions.php');
  */
 class courseimport_task extends \core\task\scheduled_task {
     /**
+     * Maximum child import jobs to start in one scheduled run.
+     *
+     * Sized for the historical manual queue (dozens at most). Bulk CSV can enqueue more;
+     * remaining jobs wait for later runs of this task.
+     */
+    public const MAX_JOBS_PER_RUN = 25;
+
+    /**
+     * Stop starting further jobs once this many seconds have elapsed in the run.
+     *
+     * The job already in progress is allowed to finish.
+     */
+    public const MAX_RUNTIME_SECONDS = 900;
+
+    /**
      * Get a descriptive name for this task (shown to admins).
      *
      * @return string
@@ -56,11 +70,17 @@ class courseimport_task extends \core\task\scheduled_task {
         // Orphaned queued jobs (deleted courses) are cleared before the normal queue.
         job::close_orphaned_queued_jobs();
 
-        // Get the jobs we wish to process and run them.
-        $results = job::get_queued_jobs();
+        $timestart = time();
+        $processed = 0;
+        $results = job::get_queued_jobs(self::MAX_JOBS_PER_RUN);
         foreach ($results as $result) {
+            if ($processed > 0 && (time() - $timestart) >= self::MAX_RUNTIME_SECONDS) {
+                mtrace('Stopping courseimport_task: runtime limit reached; remaining jobs stay queued.');
+                break;
+            }
             $job = job::create_from_record($result);
             $this->process_job($job);
+            $processed++;
         }
         $results->close();
     }
@@ -68,43 +88,27 @@ class courseimport_task extends \core\task\scheduled_task {
     /**
      * Imports content from the source course into the target course.
      *
+     * Deleted source/target courses on waiting jobs are handled by
+     * {@see job::close_orphaned_queued_jobs()} before the queue is read.
+     * {@see job::get_queued_jobs()} only returns rows whose courses still exist.
+     *
+     * Bulk parent counters are updated inside {@see job::set_status()} when this job
+     * reaches processing, finished, or failed — the task does not touch bulk_job directly.
+     *
      * @param \block_courseimport\job $job
      */
     protected function process_job(job $job) {
-        global $DB;
-
+        // Start processing; restore() sets finished, or the catch below sets failed.
+        $job->set_status(job::STATE_PROCESSING);
+        mtrace("Jobid: {$job->id}, Userid: {$job->user}, Import course: {$job->target}, Export course:{$job->source}");
         try {
-            // Start processing, successfully will change to 555555, otherwise abandon and email admin.
-            $job->set_status(job::STATE_PROCESSING);
-            mtrace("Jobid: {$job->id}, Userid: {$job->user}, Import course: {$job->target}, Export course:{$job->source}");
-            if (!$DB->record_exists('course', ['id' => $job->source])) {
-                $message = "Error: Job ({$job->id}) source course {$job->source} no longer exists.";
-                mtrace($message);
-                $job->set_status(job::STATE_FAILED);
-                if (messenger::failure(get_string('alertemailsubject', 'block_courseimport'), $message, $job->target)) {
-                    mtrace("Error! Jobid: {$job->id}. Failed to send email to admin.");
-                }
-                return;
-            }
-            if (!$DB->record_exists('course', ['id' => $job->target])) {
-                mtrace("Job ({$job->id}) target course {$job->target} no longer exists; marking finished.");
-                $job->set_status(job::STATE_FINISHED);
-                return;
-            }
-            try {
-                mtrace("Creating backup for course ID:{$job->source}");
-                $this->backup($job);
-                $this->restore($job);
-            } catch (job_failed $e) {
-                $job->set_status(job::STATE_FAILED);
-                if (messenger::failure($e->subject, $e->getMessage(), $job->target)) {
-                    mtrace("Error! Jobid: {$job->id}. Failed to send email to admin.");
-                }
-            }
-        } finally {
-            $bulkjobid = $job->bulkjobid ?? null;
-            if ($bulkjobid) {
-                bulk_job::reconcile_queued_parent_if_stale((int) $bulkjobid);
+            mtrace("Creating backup for course ID:{$job->source}");
+            $this->backup($job);
+            $this->restore($job);
+        } catch (job_failed $e) {
+            $job->set_status(job::STATE_FAILED);
+            if (!messenger::failure($e->subject, $e->getMessage(), $job->target)) {
+                mtrace("Error! Jobid: {$job->id}. Failed to send email to admin.");
             }
         }
     }
@@ -137,7 +141,7 @@ class courseimport_task extends \core\task\scheduled_task {
      * @throws \restore_controller_exception
      */
     protected function restore(job $job) {
-        global $CFG, $DB;
+        global $CFG;
 
         // Check the backup file is there.
         $tempdestination = $CFG->tempdir . '/backup/' . $job->bid;
@@ -145,14 +149,6 @@ class courseimport_task extends \core\task\scheduled_task {
             $message = "Error: Job ({$job->id}) could not find backup file $tempdestination.";
             mtrace($message);
             mtrace(get_string('unknownbackupexporterror', 'error')); // Shouldn't happen ever.
-            throw new job_failed($message);
-        }
-
-        // Fail before restore_controller / prechecks if the target course was deleted while queued.
-        if (!$DB->record_exists('course', ['id' => $job->target])) {
-            $message = "Error: Job ({$job->id}) target course {$job->target} no longer exists.";
-            mtrace($message);
-            fulldelete($tempdestination);
             throw new job_failed($message);
         }
 

@@ -349,23 +349,32 @@ class job {
     }
 
     /**
-     * Gets all the queued import jobs with both source and target courses present.
+     * Gets queued import jobs with both source and target courses present.
      *
      * Queued rows whose source or target course was deleted are handled by
      * {@see close_orphaned_queued_jobs()} before the cron task processes the queue.
      *
+     * @param int|null $limit Maximum rows to return; null for no limit.
      * @return \moodle_recordset
      * @throws \dml_exception
+     * @throws \coding_exception When {@see $limit} is less than 1.
      */
-    public static function get_queued_jobs(): \moodle_recordset {
+    public static function get_queued_jobs(?int $limit = null): \moodle_recordset {
         global $DB;
+        if ($limit !== null && $limit < 1) {
+            throw new \coding_exception('get_queued_jobs limit must be null or at least 1.');
+        }
         $sql = "SELECT ci.*, tc.fullname AS fromname, sc.fullname AS toname
                   FROM {block_courseimport} ci
                   JOIN {course} tc ON tc.id = ci.source
                   JOIN {course} sc ON sc.id = ci.target
-                 WHERE ci.status = :status";
+                 WHERE ci.status = :status
+              ORDER BY ci.id ASC";
         $params = ['status' => self::STATE_WAITING];
-        return $DB->get_recordset_sql($sql, $params);
+        if ($limit === null) {
+            return $DB->get_recordset_sql($sql, $params);
+        }
+        return $DB->get_recordset_sql($sql, $params, 0, $limit);
     }
 
     /**
