@@ -26,7 +26,10 @@ use core\output\templatable;
 use core\url;
 
 /**
- * Data for the {@see bulk_status} Mustache template (single bulk job view on results.php).
+ * Data for the bulk_status Mustache template (single bulk job view on results.php).
+ *
+ * {@see fetch()} loads the minimum database state; {@see export_for_template()} builds
+ * presentation fields when the page is rendered.
  *
  * @package    block_courseimport
  * @copyright  2026 University of Nottingham
@@ -34,20 +37,74 @@ use core\url;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class bulk_status implements renderable, templatable {
-    /** @var array<string, mixed> */
-    private array $data;
+    /** @var bulk_job Loaded parent bulk job. */
+    private bulk_job $bulk;
+
+    /** @var int Parent bulk job id. */
+    private int $bulkid;
+
+    /** @var string Normalised child list filter ({@see job::FILTER_*}). */
+    private string $filter;
+
+    /** @var int Zero-based child table page index. */
+    private int $childpage;
+
+    /** @var int Rows per page for the child table. */
+    private int $childperpage;
+
+    /** @var array<int, \stdClass> Raw child job records for the current page. */
+    private array $childrecords;
+
+    /** @var int Total child jobs (all filters). */
+    private int $childcountall;
+
+    /** @var int Finished child jobs. */
+    private int $childcountfinished;
+
+    /** @var int Failed child jobs. */
+    private int $childcountfailed;
+
+    /** @var int Incomplete child jobs. */
+    private int $childcountincomplete;
 
     /**
-     * Creates bulk status output state.
-     *
-     * @param array<string, mixed> $data JSON-serialisable context for block_courseimport/bulk_status
+     * @param bulk_job $bulk Loaded parent bulk job
+     * @param int $bulkid Parent bulk job id
+     * @param string $filter Normalised child list filter
+     * @param int $childpage Zero-based child table page index
+     * @param int $childperpage Rows per page for the child table
+     * @param array<int, \stdClass> $childrecords Raw child job records for the current page
+     * @param int $childcountall Total child jobs
+     * @param int $childcountfinished Finished child jobs
+     * @param int $childcountfailed Failed child jobs
+     * @param int $childcountincomplete Incomplete child jobs
      */
-    private function __construct(array $data) {
-        $this->data = $data;
+    private function __construct(
+        bulk_job $bulk,
+        int $bulkid,
+        string $filter,
+        int $childpage,
+        int $childperpage,
+        array $childrecords,
+        int $childcountall,
+        int $childcountfinished,
+        int $childcountfailed,
+        int $childcountincomplete
+    ) {
+        $this->bulk = $bulk;
+        $this->bulkid = $bulkid;
+        $this->filter = $filter;
+        $this->childpage = $childpage;
+        $this->childperpage = $childperpage;
+        $this->childrecords = $childrecords;
+        $this->childcountall = $childcountall;
+        $this->childcountfinished = $childcountfinished;
+        $this->childcountfailed = $childcountfailed;
+        $this->childcountincomplete = $childcountincomplete;
     }
 
     /**
-     * Build template context for one bulk job (validates access and updates parent job if stale).
+     * Loads the minimum database state needed to render one bulk job later.
      *
      * @param int $bulkid Parent bulk job id
      * @param int $childpage Child table page index
@@ -62,16 +119,15 @@ final class bulk_status implements renderable, templatable {
         string $filter = job::FILTER_ALL,
         int $childperpage = 20
     ): self {
-        global $USER, $PAGE, $OUTPUT;
+        global $USER;
 
         $bulk = bulk_job::load_viewable_bulk($bulkid, (int) $USER->id);
-        $snapshot = bulk_progress::snapshot_from_bulk_record($bulk, $bulkid);
-
         $filter = job::normalise_import_jobs_filter($filter);
-        $childcountall = $snapshot['childcountall'];
-        $childcountfinished = $snapshot['childcountfinished'];
-        $childcountfailed = $snapshot['childcountfailed'];
-        $childcountincomplete = $snapshot['childcountincomplete'];
+
+        $childcountall = job::count_import_jobs($bulkid);
+        $childcountfinished = job::count_import_jobs($bulkid, job::FILTER_FINISHED);
+        $childcountfailed = job::count_import_jobs($bulkid, job::FILTER_FAILED);
+        $childcountincomplete = job::count_import_jobs($bulkid, job::FILTER_INCOMPLETE);
         $childtotal = match ($filter) {
             job::FILTER_FINISHED => $childcountfinished,
             job::FILTER_FAILED => $childcountfailed,
@@ -88,90 +144,101 @@ final class bulk_status implements renderable, templatable {
             $childpage,
             $filter
         );
-        $childrows = bulk_results_view::build_child_job_table_rows($childrecords);
 
-        $childslice = array_values($childrows);
-        $rowoffset = $childpage * $childperpage;
-        foreach ($childslice as $i => $row) {
-            $childslice[$i]['rownum'] = $rowoffset + $i + 1;
-        }
-
-        $childnavurl = new url('/blocks/courseimport/bulk/results.php', [
-            'bulkid' => $bulkid,
-            'filter' => $filter,
-        ]);
-        $childpagination = '';
-        if ($childtotal > $childperpage) {
-            $from = $childpage * $childperpage + 1;
-            $to = min($childpage * $childperpage + $childperpage, $childtotal);
-            $childpagination .= \html_writer::div(
-                get_string('bulkpagination', 'block_courseimport', (object) ['from' => $from, 'to' => $to, 'total' => $childtotal]),
-                'mb-2 text-muted'
-            );
-            $childpagination .= $OUTPUT->paging_bar($childtotal, $childpage, $childperpage, $childnavurl);
-        }
-        $childpaginationhtml = $childtotal > $childperpage ? $childpagination : '';
-
-        $PAGE->set_url(new url('/blocks/courseimport/bulk/results.php', [
-            'bulkid' => $bulkid,
-            'page' => $childpage,
-            'filter' => $filter,
-        ]));
-        $PAGE->set_title(get_string('bulkstatusid', 'block_courseimport', $bulkid));
-        $PAGE->navbar->add(get_string('bulkrollover', 'block_courseimport'), new url('/blocks/courseimport/bulk/index.php'));
-        $PAGE->navbar->add(
-            get_string('bulkresultsheading', 'block_courseimport'),
-            new url('/blocks/courseimport/bulk/results.php')
+        return new self(
+            $bulk,
+            $bulkid,
+            $filter,
+            $childpage,
+            $childperpage,
+            $childrecords,
+            $childcountall,
+            $childcountfinished,
+            $childcountfailed,
+            $childcountincomplete
         );
-        $PAGE->navbar->add(get_string('bulkstatusid', 'block_courseimport', $bulkid));
-
-        $data = [
-            'bulkid' => $bulkid,
-            'heading' => get_string('bulkstatusid', 'block_courseimport', $bulkid),
-            'total' => $snapshot['total'],
-            'completed' => $snapshot['completed'],
-            'failed' => $snapshot['failed'],
-            'doneunits' => $snapshot['doneunits'],
-            'barlabel' => get_string('bulkstatusbarlabel', 'block_courseimport', (object) [
-                'done' => $snapshot['doneunits'],
-                'total' => $snapshot['total'],
-            ]),
-            'status' => $snapshot['status'],
-            'statuslabel' => bulk_job::format_status_label($snapshot['status']),
-            'progresstitle' => $snapshot['progresstitle'],
-            'progresspct' => $snapshot['progresspct'],
-            'isrunning' => $snapshot['isrunning'],
-            'hasfailed' => $snapshot['hasfailed'],
-            'countstext' => bulk_progress::format_count_summary_line(
-                $snapshot['completed'],
-                $snapshot['total'],
-                $snapshot['failed']
-            ),
-            'childpaginationtop' => $childpaginationhtml,
-            'childjobs' => $childslice,
-            'childheading' => get_string('bulkstatuschildjobs', 'block_courseimport'),
-            'childpaginationbottom' => $childpaginationhtml,
-            'showchildjobfilters' => true,
-            'childjobfilteritems' => bulk_results_view::child_job_filter_items(
-                $bulkid,
-                $filter,
-                $childcountall,
-                $childcountfinished,
-                $childcountfailed,
-                $childcountincomplete
-            ),
-        ];
-
-        return new self($data);
     }
 
     /**
-     * Exports Mustache context for the bulk status template.
+     * Builds Mustache context for the bulk status template.
      *
      * @param renderer_base $output
      * @return array<string, mixed>
      */
     public function export_for_template(renderer_base $output): array {
-        return $this->data;
+        $completed = $this->bulk->completedcount;
+        $failed = $this->bulk->failedcount;
+        $total = $this->bulk->totalcount;
+        $doneunits = bulk_job::count_done_units($this->bulk);
+        $status = $this->bulk->status;
+        $isrunning = bulk_job::is_parent_still_running($this->bulk);
+
+        $childtotal = match ($this->filter) {
+            job::FILTER_FINISHED => $this->childcountfinished,
+            job::FILTER_FAILED => $this->childcountfailed,
+            job::FILTER_INCOMPLETE => $this->childcountincomplete,
+            default => $this->childcountall,
+        };
+
+        $childrows = bulk_results_view::build_child_job_table_rows($this->childrecords);
+        $rowoffset = $this->childpage * $this->childperpage;
+        foreach ($childrows as $i => $row) {
+            $childrows[$i]['rownum'] = $rowoffset + $i + 1;
+        }
+
+        $showchildpagination = $childtotal > $this->childperpage;
+        $from = 0;
+        $to = 0;
+        $childpaging = '';
+        if ($showchildpagination) {
+            $from = $this->childpage * $this->childperpage + 1;
+            $to = min($this->childpage * $this->childperpage + $this->childperpage, $childtotal);
+            $childnavurl = new url('/blocks/courseimport/bulk/results.php', [
+                'bulkid' => $this->bulkid,
+                'filter' => $this->filter,
+            ]);
+            $childpaging = $output->paging_bar(
+                $childtotal,
+                $this->childpage,
+                $this->childperpage,
+                $childnavurl
+            );
+        }
+
+        return [
+            'bulkid' => $this->bulkid,
+            'heading' => get_string('bulkstatusid', 'block_courseimport', $this->bulkid),
+            'total' => $total,
+            'completed' => $completed,
+            'failed' => $failed,
+            'doneunits' => $doneunits,
+            'barlabel' => get_string('bulkstatusbarlabel', 'block_courseimport', (object) [
+                'done' => $doneunits,
+                'total' => $total,
+            ]),
+            'status' => $status,
+            'statuslabel' => bulk_job::format_status_label($status),
+            'progresstitle' => bulk_job::get_running_progress_title($status),
+            'progresspct' => bulk_progress::percentage_complete($doneunits, $total),
+            'isrunning' => $isrunning,
+            'hasfailed' => $failed > 0,
+            'countstext' => bulk_progress::format_count_summary_line($completed, $total, $failed),
+            'showchildpagination' => $showchildpagination,
+            'from' => $from,
+            'to' => $to,
+            'childlisttotal' => $childtotal,
+            'childpaging' => $childpaging,
+            'childjobs' => $childrows,
+            'childheading' => get_string('bulkstatuschildjobs', 'block_courseimport'),
+            'showchildjobfilters' => true,
+            'childjobfilteritems' => bulk_results_view::child_job_filter_items(
+                $this->bulkid,
+                $this->filter,
+                $this->childcountall,
+                $this->childcountfinished,
+                $this->childcountfailed,
+                $this->childcountincomplete
+            ),
+        ];
     }
 }

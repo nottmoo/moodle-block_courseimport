@@ -53,6 +53,19 @@ global $USER, $OUTPUT;
 $blockrenderer = $PAGE->get_renderer('block_courseimport');
 
 if ($bulkid) {
+    $PAGE->set_url(new url('/blocks/courseimport/bulk/results.php', [
+        'bulkid' => $bulkid,
+        'page' => $page,
+        'filter' => $filter,
+    ]));
+    $PAGE->set_title(get_string('bulkstatusid', 'block_courseimport', $bulkid));
+    $PAGE->navbar->add(get_string('bulkrollover', 'block_courseimport'), new url('/blocks/courseimport/bulk/index.php'));
+    $PAGE->navbar->add(
+        get_string('bulkresultsheading', 'block_courseimport'),
+        new url('/blocks/courseimport/bulk/results.php')
+    );
+    $PAGE->navbar->add(get_string('bulkstatusid', 'block_courseimport', $bulkid));
+
     $bulkstatus = bulk_status::fetch($bulkid, $page, $filter, $childperpage);
     echo $OUTPUT->header();
     echo $blockrenderer->render($bulkstatus);

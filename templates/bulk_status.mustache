@@ -43,8 +43,11 @@
     * showchildjobfilters When true, renders childjobfilteritems navigation.
     * childjobfilteritems List of objects: url, label, count, current (bool).
     * childheading Subheading above the child jobs table.
-    * childpaginationtop Raw HTML for pagination above the child table (may be empty).
-    * childpaginationbottom Raw HTML for pagination below the child table.
+    * showchildpagination When true, shows the Showing X–Y of Z line and paging controls.
+    * from First visible child row number (1-based) when showchildpagination is true.
+    * to Last visible child row number when showchildpagination is true.
+    * childlisttotal Filtered child job count used for pagination text.
+    * childpaging Raw HTML for Moodle paging_bar controls (may be empty).
     * childjobs List of row objects: rownum, target, targetid, targetlinkurl (optional URL string),
       source, sourceid, statelabel.
 
@@ -92,8 +95,11 @@
             }
         ],
         "childheading": "Import jobs",
-        "childpaginationtop": "",
-        "childpaginationbottom": "",
+        "showchildpagination": false,
+        "from": 1,
+        "to": 10,
+        "childlisttotal": 10,
+        "childpaging": "",
         "childjobs": [
             {
                 "rownum": 1,
@@ -157,7 +163,10 @@
     {{/showchildjobfilters}}
 
     <h3>{{childheading}}</h3>
-    {{{childpaginationtop}}}
+    {{#showchildpagination}}
+    <div class="mb-2 text-muted">{{#str}}bulkpagination, block_courseimport, {"from": {{from}}, "to": {{to}}, "total": {{childlisttotal}}}{{/str}}</div>
+    {{{childpaging}}}
+    {{/showchildpagination}}
     <div class="table-responsive">
         <table class="table table-striped table-sm">
             <thead>
@@ -192,7 +201,10 @@
             </tbody>
         </table>
     </div>
-    {{{childpaginationbottom}}}
+    {{#showchildpagination}}
+    <div class="mb-2 text-muted">{{#str}}bulkpagination, block_courseimport, {"from": {{from}}, "to": {{to}}, "total": {{childlisttotal}}}{{/str}}</div>
+    {{{childpaging}}}
+    {{/showchildpagination}}
 </div>
 
 {{#isrunning}}

@@ -187,28 +187,6 @@ class renderer extends \core_backup_renderer {
     }
 
     /**
-     * Renders the bulk job status page body ({@see bulk_status} template).
-     *
-     * @param bulk_status $bulkstatus
-     * @return string
-     */
-    public function render_bulk_status(bulk_status $bulkstatus): string {
-        $data = $bulkstatus->export_for_template($this);
-        return $this->render_from_template('block_courseimport/bulk_status', $data);
-    }
-
-    /**
-     * Bulk job list (results.php without bulkid).
-     *
-     * @param bulk_results_list $list
-     * @return string
-     */
-    public function render_bulk_results_list(bulk_results_list $list): string {
-        $data = $list->export_for_template($this);
-        return $this->render_from_template('block_courseimport/bulk_results_list', $data);
-    }
-
-    /**
      * Renders a progress object.
      *
      * @param \block_courseimport\output\progress $progress

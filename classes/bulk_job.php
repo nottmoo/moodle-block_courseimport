@@ -256,15 +256,19 @@ class bulk_job {
     }
 
     /**
-     * Loads a bulk job after optional reconcile, throwing when missing or not viewable.
+     * Loads a bulk job, throwing when missing or not viewable.
+     *
+     * Parent counters are updated when child jobs finish ({@see self::record_child_finished()})
+     * and as a cron safety net after each child run. Page/AJAX views must not recalculate them.
      *
      * @param int $bulkid Parent bulk job id.
      * @param int $userid User id to authorise.
-     * @param bool $reconcile When true, run {@see self::reconcile_queued_parent_if_stale()} first.
+     * @param bool $reconcile Reserved; must remain false for UI loads. Prefer relying on
+     *        incremental updates rather than reconciling on view.
      * @return self
      * @throws \moodle_exception
      */
-    public static function load_viewable_bulk(int $bulkid, int $userid, bool $reconcile = true): self {
+    public static function load_viewable_bulk(int $bulkid, int $userid, bool $reconcile = false): self {
         $bulk = self::get_record($bulkid);
         if (!$bulk || !self::user_can_view($bulk, $userid)) {
             throw new \moodle_exception('bulkstatusinvalid', 'block_courseimport');
@@ -430,8 +434,8 @@ class bulk_job {
 
     /**
      * The normal update path is incremental ({@see record_child_finished()} when a child finishes).
-     * This method is called after each cron child job and when loading the results page, in case
-     * that incremental update was missed or the parent queued/processing flag drifted.
+     * Called from cron after each child job as a safety net if that incremental update was missed
+     * or the parent queued/processing flag drifted. Do not call this on every results-page view.
      *
      * When the parent is still queued or processing:
      * - if any child is still waiting or processing, fix queued vs processing on the parent;
