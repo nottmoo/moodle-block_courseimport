@@ -50,7 +50,6 @@ class bulk_backup_helper {
         );
         $plan = $bc->get_plan();
         import_helper::disbable_userdata_import($plan);
-        import_helper::apply_plan_setting_toggles($plan);
         import_helper::hide_locked_settings($plan);
         foreach ($bc->get_plan()->get_tasks() as $task) {
             import_helper::filter_task($task);

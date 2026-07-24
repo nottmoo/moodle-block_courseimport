@@ -16,7 +16,10 @@
 
 /**
  * Settings for the courseimport block.
- * 
+ *
+ * Import include defaults are configured in core General import settings
+ * (Site administration → Courses → Backups → General import defaults), not here.
+ *
  * @package    block_courseimport
  * @copyright  2026 University of Nottingham
  * @author     Nisha Sarala <nisha.sarala@nottingham.ac.uk>
@@ -34,23 +37,4 @@ if ($hassiteconfig && !$ADMIN->locate('block_courseimport_bulkrollover')) {
         new url('/blocks/courseimport/bulk/index.php'),
         'block/courseimport:manage'
     ));
-}
-
-if ($ADMIN->fulltree) {
-    $settings->add(new admin_setting_heading(
-        'block_courseimport/profileheading',
-        get_string('courseimportsettings', 'block_courseimport'),
-        ''
-    ));
-
-    $profiledefaults = \block_courseimport\local\profile_defaults::get_toggle_defaults();
-    foreach ($profiledefaults as $key => $default) {
-        $settings->add(new admin_setting_configcheckbox(
-            'block_courseimport/' . $key,
-            get_string($key, 'block_courseimport'),
-            '',
-            (int)$default
-        ));
-    }
-
 }

@@ -53,6 +53,7 @@ const status = {
  * Starts checking progress of the job.
  */
 const start = () => {
+    getProgress();
     checkid = setInterval(getProgress, checkdelay);
 };
 
@@ -61,6 +62,21 @@ const start = () => {
  */
 const stop = () => {
     clearInterval(checkid);
+};
+
+/**
+ * Handles a failed progress poll without surfacing benign transport errors.
+ *
+ * @param {*} error Rejected value from the AJAX call.
+ */
+const handleFetchError = (error) => {
+    if (error === 'abort' || error === 'timeout') {
+        return;
+    }
+    const exception = error && error.exception ? error.exception : error;
+    if (exception && exception.errorcode) {
+        Notification.exception(exception);
+    }
 };
 
 /**
@@ -73,7 +89,7 @@ const getProgress = () => {
         args: {'id': jobid},
     }];
     let promises = Ajax.call(params, true, true, false, timeout);
-    promises[0].then(updateProgress).catch(Notification.exception);
+    promises[0].then(updateProgress).catch(handleFetchError);
 };
 
 /**
@@ -82,6 +98,10 @@ const getProgress = () => {
  * @param response Data returned from the progress web service.
  */
 const updateProgress = (response) => {
+    if (!bar) {
+        return;
+    }
+
     let progress = Math.round(response.progress * 100);
     let removeClass = 'doesnotexist'; // Use a value that should not exist.
     let addClass = '';
@@ -124,16 +144,22 @@ const updateProgress = (response) => {
  * @param {String} label
  */
 const updateBarText = (label) => {
+    if (!bar) {
+        return;
+    }
     bar.innerHTML = label;
 };
 
 /**
  * Sets up the polling of the webservice.
  *
- * @param {Number} id
+ * @param {Number|String} id
  */
 export const init = (id) => {
-    jobid = id;
+    jobid = parseInt(id, 10);
     bar = document.getElementById(id + '_bar');
+    if (!bar) {
+        return;
+    }
     start();
 };

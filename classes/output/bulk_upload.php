@@ -54,17 +54,17 @@ final class bulk_upload implements renderable, templatable {
         $activebulkjob = bulk_job::get_most_recent_queued_for_user($userid);
         $statusurl = (new url('/blocks/courseimport/bulk/results.php'))->out(false);
 
-        $labels = import_helper::get_enabled_profile_sidebar_labels();
         $enableditems = [];
-        foreach ($labels as $label) {
+        foreach (import_helper::get_enabled_import_default_labels() as $label) {
             $enableditems[] = ['label' => $label];
         }
 
         $systemcontext = \context_system::instance();
         $showsettings = has_capability('block/courseimport:manage', $systemcontext)
-            || has_capability('moodle/site:config', $systemcontext);
+            || has_capability('moodle/site:config', $systemcontext)
+            || has_capability('moodle/backup:backupcourse', $systemcontext);
         $settingsurl = $showsettings
-            ? (new url('/admin/settings.php', ['section' => 'blocksettingcourseimport']))->out(false)
+            ? (new url('/admin/settings.php', ['section' => 'importgeneralsettings']))->out(false)
             : '';
 
         $activebulknotice = null;

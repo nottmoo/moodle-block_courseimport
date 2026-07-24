@@ -17,7 +17,7 @@
 /**
  * Bulk rollover confirmation and queueing page.
  *
- * Receives a CSV upload (POST from {@see csv_upload_form}) 
+ * Receives a CSV upload (POST from {@see csv_upload_form})
  * (redirect from bulk/index.php after upload), resolves source/target course pairs,
  * stores the preview in session, and on confirm queues the bulk parent job and child
  * import jobs before redirecting to bulk/results.php.
@@ -28,13 +28,17 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+define('NO_OUTPUT_BUFFERING', true);
+
 require_once(dirname(__DIR__, 3) . '/config.php');
 
+use block_courseimport\bulk_job;
 use block_courseimport\bulk_submitter;
 use block_courseimport\local\form\csv_upload_form;
 use block_courseimport\local\bulk_submit_confirmation_cache;
 use block_courseimport\local\bulk_submit_service;
 use block_courseimport\output\bulk_submit_preview;
+use core\output\progress_bar;
 use core\url;
 
 require_login();
@@ -70,35 +74,55 @@ if ($confirm && confirm_sesskey()) {
     bulk_submit_confirmation_cache::delete_pack();
 
     /* @global stdClass $USER */
-    $result = bulk_submitter::submit($pairs, (int) $USER->id);
-    $bulkid = $result['bulkjob']->id;
-    \core\notification::success(get_string('bulksubmitcreated', 'block_courseimport', [
-        'bulkid' => $bulkid,
+    $bulkjob = new bulk_job((int) $USER->id);
+    $bulkjob->save();
+    $resultsurl = new url('/blocks/courseimport/bulk/results.php', ['bulkid' => $bulkjob->id]);
+
+    // Stream progress while queueing so large CSVs do not hit the browser/proxy idle timeout.
+    $PAGE->set_cacheable(false);
+    $PAGE->navbar->add(get_string('bulkrollover', 'block_courseimport'), new url('/blocks/courseimport/bulk/index.php'));
+    $PAGE->navbar->add(get_string('bulksubmitqueuing', 'block_courseimport'));
+    echo $OUTPUT->header();
+    echo $OUTPUT->heading(get_string('bulksubmitqueuing', 'block_courseimport'));
+    $progressbar = new progress_bar();
+    $progressbar->create();
+    echo $OUTPUT->continue_button($resultsurl);
+    echo $OUTPUT->footer();
+
+    \core\session\manager::write_close();
+    echo $OUTPUT->select_element_for_append();
+    \core_php_time_limit::raise(HOURSECS);
+    raise_memory_limit(MEMORY_EXTRA);
+
+    $result = bulk_submitter::submit($pairs, (int) $USER->id, $progressbar, $bulkjob);
+
+    echo $OUTPUT->notification(get_string('bulksubmitcreated', 'block_courseimport', [
+        'bulkid' => $bulkjob->id,
         'created' => $result['created'],
         'skipped' => $result['skipped'],
-        'failed'  => $result['failed'],
-    ]));
+        'failed' => $result['failed'],
+    ]), \core\output\notification::NOTIFY_SUCCESS);
     foreach ($result['skips'] as $skip) {
         $name = $skip['csv_shortname'] ?? null;
         if ($name === null && !empty($skip['target_id'])) {
             $name = '#' . (int) $skip['target_id'];
         }
-        \core\notification::info(get_string('bulkqueueskip', 'block_courseimport', (object) [
-            'name'   => s($name ?? '?'),
+        echo $OUTPUT->notification(get_string('bulkqueueskip', 'block_courseimport', (object) [
+            'name' => s($name ?? '?'),
             'reason' => get_string($skip['reason'] ?? 'bulkskipalreadyimported', 'block_courseimport'),
-        ]));
+        ]), \core\output\notification::NOTIFY_INFO);
     }
     foreach ($result['failures'] as $failure) {
         $name = $failure['csv_shortname'] ?? $failure['shortname'] ?? null;
         if ($name === null && !empty($failure['source_id'])) {
             $name = '#' . (int) $failure['source_id'];
         }
-        \core\notification::warning(get_string('bulkqueuefailure', 'block_courseimport', (object) [
-            'name'  => s($name ?? '?'),
+        echo $OUTPUT->notification(get_string('bulkqueuefailure', 'block_courseimport', (object) [
+            'name' => s($name ?? '?'),
             'error' => s($failure['error'] ?? get_string('bulkunknownerror', 'block_courseimport')),
-        ]));
+        ]), \core\output\notification::NOTIFY_WARNING);
     }
-    redirect(new url('/blocks/courseimport/bulk/results.php', ['bulkid' => $bulkid]));
+    exit;
 }
 
 $formurl = new url('/blocks/courseimport/bulk/submit.php');

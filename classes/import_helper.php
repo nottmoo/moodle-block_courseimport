@@ -26,7 +26,6 @@ namespace block_courseimport;
 
 use backup_setting;
 use base_setting;
-use block_courseimport\local\profile_defaults;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -37,40 +36,46 @@ require_once($CFG->dirroot . '/backup/moodle2/backup_settingslib.php');
 /**
  * Helper for the import page.
  *
+ * Root include defaults come from Moodle core General import settings
+ * ({@see backup_controller_dbops::apply_config_defaults()} for MODE_IMPORT).
+ * This helper only applies UoN-specific locks and per-activity exclusions.
+ *
  * @package    block_courseimport
  * @author     Neill Magill <neill.magill@nottingham.ac.uk>
  * @copyright  2020 University of Nottingham
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class import_helper {
-    /**
-     * Whether a profile setting is enabled (same interpretation as backup/import apply logic).
-     *
-     * Saved site values win; missing rows use the matching default from
-     * {@see profile_defaults::get_toggle_defaults()} (same defaults as the admin settings page).
-     *
-     * @param string $key Profile setting name (without plugin prefix; same as profile_defaults keys).
-     * @return bool
-     */
-    protected static function config_enabled(string $key): bool {
-        $value = get_config('block_courseimport', $key);
-        if ($value === false) {
-            $defaults = profile_defaults::get_toggle_defaults();
-            $value = $defaults[$key] ?? '0';
-        }
-        return ((int) $value) === 1;
-    }
 
     /**
-     * Human-readable labels for enabled profile options (admin order), for bulk upload sidebar.
+     * Labels for enabled core General import defaults (admin order), for the bulk upload sidebar.
      *
-     * @return string[] HTML-safe plain text lines
+     * @return string[] Plain-text labels from the backup lang pack.
      */
-    public static function get_enabled_profile_sidebar_labels(): array {
+    public static function get_enabled_import_default_labels(): array {
+        // Config key => [lang string in backup, default when config missing].
+        $settings = [
+            'backup_import_permissions' => ['generalpermissions', 0],
+            'backup_import_activities' => ['generalactivities', 1],
+            'backup_import_blocks' => ['generalblocks', 1],
+            'backup_import_filters' => ['generalfilters', 1],
+            'backup_import_badges' => ['generalbadges', 0],
+            'backup_import_calendarevents' => ['generalcalendarevents', 1],
+            'backup_import_groups' => ['generalgroups', 1],
+            'backup_import_competencies' => ['generalcompetencies', 1],
+            'backup_import_customfield' => ['generalcustomfield', 1],
+            'backup_import_contentbankcontent' => ['generalcontentbankcontent', 1],
+            'backup_import_legacyfiles' => ['generallegacyfiles', 1],
+        ];
+
         $out = [];
-        foreach (array_keys(profile_defaults::get_toggle_defaults()) as $key) {
-            if (self::config_enabled($key)) {
-                $out[] = get_string($key, 'block_courseimport');
+        foreach ($settings as $configkey => [$langkey, $default]) {
+            $value = get_config('backup', $configkey);
+            if ($value === false) {
+                $value = $default;
+            }
+            if ((int) $value === 1) {
+                $out[] = get_string($langkey, 'backup');
             }
         }
         return $out;
@@ -103,34 +108,6 @@ class import_helper {
             }
         }
         return $skip;
-    }
-
-    /**
-     * Applies include/exclude profile settings from plugin config to the backup plan.
-     *
-     * When a profile setting is enabled, the corresponding plan settings are left unchanged
-     * (Moodle core/general import locks and values still apply). When disabled, plan settings
-     * are forced off and locked.
-     *
-     * @param \backup_plan $plan
-     * @return void
-     */
-    public static function apply_plan_setting_toggles(\backup_plan $plan): void {
-        $rootsettings = $plan->get_settings();
-        foreach (profile_defaults::get_plan_setting_map() as $configkey => $settingnames) {
-            if (self::config_enabled($configkey)) {
-                continue;
-            }
-            foreach ($settingnames as $settingname) {
-                if (!isset($rootsettings[$settingname])) {
-                    continue;
-                }
-                $setting = $rootsettings[$settingname];
-                if ($setting instanceof \base_setting) {
-                    self::disable_setting($setting);
-                }
-            }
-        }
     }
 
     /**
@@ -174,29 +151,25 @@ class import_helper {
         }
     }
 
-
     /**
-     * Disables the import of selected activities.
+     * Applies UoN-specific activity exclusions for Jump to final step / bulk queue.
+     *
+     * Root include toggles are left to core General import settings. This method only
+     * unticks Announcements, Assignments, Signup sheets, Turnitin, and video resources.
      *
      * @param \base_task $task
      * @return void
      */
     public static function filter_task(\base_task $task) {
-        $includeactivities = self::config_enabled('includeactivitiesresources');
         foreach ($task->get_settings() as $setting) {
             $settingname = $setting->get_name();
-
-            if (!$includeactivities && preg_match('/_[0-9]+_included$|_included$/', $settingname) === 1) {
-                self::disable_setting($setting);
-                continue;
-            }
 
             // Unselect announcement forum activities.
             if (preg_match('/^(forum_)\K[0-9]+(?=_included)/', $settingname, $instanceid) === 1) {
                 self::unselect_announcement($setting, $instanceid[0]);
             }
 
-            // Unselect moodle assignment and  tutorialbooking activities.
+            // Unselect moodle assignment and tutorialbooking activities.
             if (preg_match('/^((assign|tutorialbooking)_)\K[0-9]+(?=_included)/', $settingname) === 1) {
                 self::unselect_activity($setting);
             }

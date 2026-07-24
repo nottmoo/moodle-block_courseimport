@@ -34,22 +34,46 @@ class bulk_submitter {
      *
      * @param array<int, array<string, mixed>> $pairs Resolved pairs from {@see module_pair_resolver::resolve()}.
      * @param int $userid User submitting the bulk batch.
+     * @param \core\output\progress_bar|null $progressbar Optional non-AJAX progress bar for long confirm runs.
+     * @param bulk_job|null $bulkjob Existing parent row to queue into; created when null.
      * @return array{bulkjob: bulk_job, created: int, skipped: int, failed: int, failures: array<int, array<string, mixed>>, skips: array<int, array<string, mixed>>}
      */
-    public static function submit(array $pairs, int $userid): array {
+    public static function submit(
+        array $pairs,
+        int $userid,
+        ?\core\output\progress_bar $progressbar = null,
+        ?bulk_job $bulkjob = null
+    ): array {
         global $DB;
 
-        $bulkjob = new bulk_job($userid);
-        $bulkjob->save();
+        if ($bulkjob === null) {
+            $bulkjob = new bulk_job($userid);
+            $bulkjob->save();
+        }
 
         $created = 0;
         $skipped = 0;
         $failed = 0;
         $failures = [];
         $skips = [];
+        $total = count($pairs);
+        $current = 0;
 
         $transaction = $DB->start_delegated_transaction();
         foreach ($pairs as $pair) {
+            $current++;
+            if ($progressbar !== null) {
+                // Keep PHP from timing out on large batches; each pair may create a backup controller.
+                \core_php_time_limit::raise(120);
+                $progressbar->update(
+                    $current,
+                    max(1, $total),
+                    get_string('bulksubmitprogress', 'block_courseimport', (object) [
+                        'current' => $current,
+                        'total' => $total,
+                    ])
+                );
+            }
             $source = (int) ($pair['source_id'] ?? 0);
             $target = (int) ($pair['target_id'] ?? 0);
             if ($source <= 0 || $target <= 0) {
@@ -88,6 +112,10 @@ class bulk_submitter {
         $bulkjob->apply_status_after_submit($created, $skipped);
 
         $transaction->allow_commit();
+
+        if ($progressbar !== null) {
+            $progressbar->update_full(100, get_string('bulksubmitqueuedone', 'block_courseimport'));
+        }
 
         return [
             'bulkjob' => $bulkjob,

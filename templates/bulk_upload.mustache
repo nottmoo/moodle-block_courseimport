@@ -18,7 +18,7 @@
     @template block_courseimport/bulk_upload
 
     Bulk CSV rollover upload page: main column (heading, optional active-job notice, rendered upload form)
-    and optionally a sidebar when the user may change import settings (enabled profile + link).
+    and optionally a sidebar listing enabled core General import defaults with a link to change them.
 
     Classes required for JS:
     * none
@@ -32,8 +32,8 @@
     * formhtml Raw HTML for the Moodle form (from moodleform::display()).
     * activebulknotice Optional object when the user has a queued bulk job: url (string), jobid (int).
     * enableditems List of objects with key label (string) for the sidebar checklist.
-    * showsettings When true, the import profile sidebar is shown; omitted users see no sidebar.
-    * settingsurl Block admin settings URL; set only when showsettings is true.
+    * showsettings When true, the import defaults sidebar is shown.
+    * settingsurl Core General import defaults admin URL; set only when showsettings is true.
 
     Example context (json):
     {
@@ -45,11 +45,11 @@
             "jobid": 12
         },
         "enableditems": [
-            {"label": "Activities"},
-            {"label": "Blocks"}
+            {"label": "Include activities and resources"},
+            {"label": "Include blocks"}
         ],
         "showsettings": true,
-        "settingsurl": "/admin/settings.php?section=blocksettingcourseimport"
+        "settingsurl": "/admin/settings.php?section=importgeneralsettings"
     }
 }}
 <div class="block-courseimport-bulk-upload container-fluid">
@@ -91,7 +91,7 @@
                         <li class="text-muted small">{{#str}} bulkenabledsettingsnone, block_courseimport {{/str}}</li>
                         {{/enableditems}}
                     </ul>
-                    <a class="btn btn-outline-secondary btn-sm" href="{{settingsurl}}">{{#str}} courseimportsettings, block_courseimport {{/str}}</a>
+                    <a class="btn btn-outline-secondary btn-sm" href="{{settingsurl}}">{{#str}} bulkimportdefaultslink, block_courseimport {{/str}}</a>
                 </div>
             </div>
         </div>

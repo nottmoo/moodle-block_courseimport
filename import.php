@@ -97,13 +97,11 @@ if (!($bc = backup_ui::load_controller($backupid))) {
     );
     $plan = $bc->get_plan();
     import_helper::disbable_userdata_import($plan);
-    import_helper::apply_plan_setting_toggles($plan);
     // For the initial stage we want to hide all locked settings and if there are no visible settings move to the next stage.
     $visiblesettings = import_helper::hide_locked_settings($plan);
     import_ui::skip_current_stage(!$visiblesettings);
 
-    // Set the defaults we want to use for tasks, we do it here so that they have
-    // an effect when jumping directly to the final stage.
+    // Apply UoN activity exclusions here so they take effect when jumping to the final stage.
     $tasks = $bc->get_plan()->get_tasks();
     foreach ($tasks as $task) {
         import_helper::filter_task($task);

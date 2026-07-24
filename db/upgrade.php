@@ -103,5 +103,26 @@ function xmldb_block_courseimport_upgrade($oldversion) {
         upgrade_block_savepoint(true, 2026041800, 'courseimport');
     }
 
+    if ($oldversion < 2026072400) {
+        // Duplicate include_* profile settings removed; use core General import defaults instead.
+        $removedprofilekeys = [
+            'includepermissionoverrides',
+            'includeactivitiesresources',
+            'includeblocks',
+            'includefiles',
+            'includefilters',
+            'includecalendarevents',
+            'includequestionbank',
+            'includegroupsgroupings',
+            'includecustomfields',
+            'includecontentbankcontent',
+            'includelegacycoursefiles',
+        ];
+        foreach ($removedprofilekeys as $key) {
+            unset_config($key, 'block_courseimport');
+        }
+        upgrade_block_savepoint(true, 2026072400, 'courseimport');
+    }
+
     return true;
 }

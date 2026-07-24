@@ -106,7 +106,7 @@ class block_courseimport extends block_base {
     }
 
     /**
-     * Site-level settings (import profile, bulk limits) are defined in settings.php.
+     * Bulk rollover entry is registered in settings.php; import include defaults use core General import settings.
      */
     public function has_config() {
         return true;
