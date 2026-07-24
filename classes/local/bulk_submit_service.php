@@ -31,20 +31,6 @@ use block_courseimport\module_pair_resolver;
 final class bulk_submit_service {
 
     /**
-     * Parses CSV from raw bytes (e.g. {@see \moodleform::get_file_content()}).
-     *
-     * @param string $csvcontent
-     * @return array{pairs: array, errors: array, summary: array}
-     * @throws \moodle_exception
-     */
-    public static function build_confirmation_payload_from_csv_string(string $csvcontent): array {
-        if ($csvcontent === '') {
-            throw new \moodle_exception('bulkcsvrequired', 'block_courseimport');
-        }
-        return self::build_confirmation_payload_from_parser(csv_parser::from_string($csvcontent));
-    }
-
-    /**
      * Builds confirmation payload by resolving each standard CSV row.
      *
      * @param csv_parser $csv Parser positioned before the first data row.
@@ -98,7 +84,10 @@ final class bulk_submit_service {
     }
 
     /**
-     * Reads a draft filepicker item by draft id (e.g. {@see optional_param()} only, without a fresh form post).
+     * Streams a filepicker draft CSV from filestore and resolves each row (line at a time).
+     *
+     * Upload always goes through {@see \block_courseimport\local\form\csv_upload_form} on
+     * bulk/index.php so the file is already in the user draft area; callers pass that draft id.
      *
      * @param int $userid Current user id (draft owner).
      * @param int $draftitemid Filepicker draft item id.

@@ -43,39 +43,43 @@ final class bulk_submit_preview implements renderable, templatable {
     }
 
     /**
-     * Build template context for the bulk CSV confirmation preview.
+     * Build template context from one cached page of pairs/errors (not the full CSV result set).
      *
-     * @param array<int, array<string, mixed>> $resolvedpairs
-     * @param array<int, array<string, mixed>> $resolutionerrors
-     * @param array $summarycounts Keys: rows, resolved, unmatched.
+     * @param string $packid Confirmation cache pack id (isolates concurrent tabs).
+     * @param array $summarycounts Keys: rows, resolved, unmatched, toimport, skipped.
+     * @param array<int, array<string, mixed>> $pairslice Current page of resolved pairs.
+     * @param int $pairtotal Total resolved pairs across all pages.
+     * @param array<int, array<string, mixed>> $errorslice Current page of errors.
+     * @param int $errortotal Total errors across all pages.
      * @param int $previewpage Zero-based page index for resolved pairs table.
      * @param int $errorpage Zero-based page index for errors table.
      * @param int $rowsperpage Max rows per preview table page.
      * @return self
      */
     public static function fetch(
-        array $resolvedpairs,
-        array $resolutionerrors,
+        string $packid,
         array $summarycounts,
+        array $pairslice,
+        int $pairtotal,
+        array $errorslice,
+        int $errortotal,
         int $previewpage,
         int $errorpage,
         int $rowsperpage
     ): self {
         global $DB, $OUTPUT;
 
-        $skipcounts = self::count_skip_and_import($resolvedpairs);
-        $summarydisplay = (object) array_merge($summarycounts, $skipcounts);
+        $summarydisplay = (object) $summarycounts;
         $summarytext = get_string('bulkpreviewsummary', 'block_courseimport', $summarydisplay);
 
+        $baseparams = ['packid' => $packid];
         $pairrows = [];
         $pairpaginationtop = '';
         $pairpaginationbottom = '';
-        $haspairs = !empty($resolvedpairs);
+        $haspairs = $pairtotal > 0;
 
         if ($haspairs) {
-            $pairtotal = count($resolvedpairs);
-            $pairslice = array_slice($resolvedpairs, $previewpage * $rowsperpage, $rowsperpage);
-            $pairnavurl = new url('/blocks/courseimport/bulk/submit.php', ['errorpage' => $errorpage]);
+            $pairnavurl = new url('/blocks/courseimport/bulk/submit.php', $baseparams + ['errorpage' => $errorpage]);
 
             $sourceids = array_filter(array_column($pairslice, 'source_id'));
             $sourcenames = [];
@@ -115,17 +119,18 @@ final class bulk_submit_preview implements renderable, templatable {
         $errorrows = [];
         $errorpaginationtop = '';
         $errorpaginationbottom = '';
-        $haserrors = !empty($resolutionerrors);
+        $haserrors = $errortotal > 0;
 
         if ($haserrors) {
-            $errtotal = count($resolutionerrors);
-            $errslice = array_slice($resolutionerrors, $errorpage * $rowsperpage, $rowsperpage);
-            $errnavurl = new url('/blocks/courseimport/bulk/submit.php', ['previewpage' => $previewpage]);
+            $errnavurl = new url(
+                '/blocks/courseimport/bulk/submit.php',
+                $baseparams + ['previewpage' => $previewpage]
+            );
 
-            if ($errtotal > $rowsperpage) {
+            if ($errortotal > $rowsperpage) {
                 $errorpaginationtop = self::build_pagination_html(
                     $OUTPUT,
-                    $errtotal,
+                    $errortotal,
                     $errorpage,
                     $rowsperpage,
                     $errnavurl,
@@ -134,7 +139,7 @@ final class bulk_submit_preview implements renderable, templatable {
                 $errorpaginationbottom = $errorpaginationtop;
             }
 
-            foreach ($errslice as $err) {
+            foreach ($errorslice as $err) {
                 $errorrows[] = [
                     'rowlabel' => isset($err['row']) ? (string) $err['row'] : '',
                     'errortype' => (string) ($err['errortype'] ?? 'bulkunknownerror'),
@@ -143,6 +148,12 @@ final class bulk_submit_preview implements renderable, templatable {
                 ];
             }
         }
+
+        $cancelurl = (new url('/blocks/courseimport/bulk/submit.php', [
+            'cancel' => 1,
+            'packid' => $packid,
+            'sesskey' => sesskey(),
+        ]))->out(false);
 
         return new self([
             'summarytext' => $summarytext,
@@ -154,8 +165,9 @@ final class bulk_submit_preview implements renderable, templatable {
             'errorrows' => $errorrows,
             'errorpaginationtop' => $errorpaginationtop,
             'errorpaginationbottom' => $errorpaginationbottom,
-            'cancelurl' => (new url('/blocks/courseimport/bulk/index.php'))->out(false),
+            'cancelurl' => $cancelurl,
             'confirmbaseurl' => (new url('/blocks/courseimport/bulk/submit.php'))->out(false),
+            'packid' => $packid,
             'sesskey' => sesskey(),
         ]);
     }
@@ -197,25 +209,6 @@ final class bulk_submit_preview implements renderable, templatable {
         );
         $html .= $output->paging_bar($total, $page, $perpage, $baseurl, $pageparam);
         return $html;
-    }
-
-    /**
-     * Counts pairs that will be queued vs skipped on confirm.
-     *
-     * @param array<int, array<string, mixed>> $resolvedpairs
-     * @return array{toimport: int, skipped: int}
-     */
-    protected static function count_skip_and_import(array $resolvedpairs): array {
-        $toimport = 0;
-        $skipped = 0;
-        foreach ($resolvedpairs as $pair) {
-            if (self::pair_skip_reason($pair) !== null) {
-                $skipped++;
-            } else {
-                $toimport++;
-            }
-        }
-        return ['toimport' => $toimport, 'skipped' => $skipped];
     }
 
     /**

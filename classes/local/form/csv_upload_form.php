@@ -23,7 +23,10 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir . '/formslib.php');
 
 /**
- * CSV upload for bulk rollover.
+ * CSV upload for bulk rollover (filepicker → user draft filestore).
+ *
+ * Used only on bulk/index.php. After submit, the draft item id is passed to bulk/submit.php
+ * so the CSV is streamed from filestore rather than loaded as a whole string.
  *
  * @package    block_courseimport
  * @copyright  2026 University of Nottingham

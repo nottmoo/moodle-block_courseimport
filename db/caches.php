@@ -17,7 +17,8 @@
 /**
  * Cache definitions (MUC).
  *
- * Session-mode bulk preview payload: avoids storing large structures on the raw PHP session object.
+ * Session-mode bulk preview payload: paged entries per upload pack id (avoids one monolithic
+ * session blob and isolates concurrent browser tabs).
  *
  * @package    block_courseimport
  * @copyright  2026 University of Nottingham

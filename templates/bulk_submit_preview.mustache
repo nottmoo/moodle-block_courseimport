@@ -29,9 +29,10 @@
     * pairrows List of resolved pair row objects.
     * pairpaginationtop Raw HTML for pagination above the pairs table (may be empty).
     * pairpaginationbottom Raw HTML for pagination below the pairs table (may be empty).
-    * cancelurl URL back to bulk upload when there are no pairs to confirm.
+    * cancelurl URL that clears this pack id then returns to bulk upload.
     * confirmbaseurl Form action URL for confirm submit (when haspairs).
-    * sesskey Session key for confirm submit.
+    * packid Confirmation cache pack id (isolates concurrent browser tabs).
+    * sesskey Session key for confirm / cancel.
 
     Example context (json):
     {
@@ -55,8 +56,9 @@
         "errorrows": [],
         "errorpaginationtop": "",
         "errorpaginationbottom": "",
-        "cancelurl": "/blocks/courseimport/bulk/index.php",
+        "cancelurl": "/blocks/courseimport/bulk/submit.php?cancel=1&packid=abc&sesskey=xyz",
         "confirmbaseurl": "/blocks/courseimport/bulk/submit.php",
+        "packid": "abc123packid01",
         "sesskey": "abc123"
     }
 }}
@@ -138,9 +140,11 @@
         {{#haspairs}}
         <form method="post" action="{{confirmbaseurl}}" class="d-inline">
             <input type="hidden" name="confirm" value="1">
+            <input type="hidden" name="packid" value="{{packid}}">
             <input type="hidden" name="sesskey" value="{{sesskey}}">
             <button type="submit" class="btn btn-primary">{{#str}} bulkconfirmsubmit, block_courseimport {{/str}}</button>
         </form>
+        <a class="btn btn-secondary ms-2" href="{{cancelurl}}">{{#str}} cancel {{/str}}</a>
         {{/haspairs}}
     </div>
 </div>
